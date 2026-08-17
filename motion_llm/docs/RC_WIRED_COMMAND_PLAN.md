@@ -71,9 +71,15 @@ shape17→shape3 dance 병합 선례를 따름). motion_llm에는 P3(백엔드 �
   동일. 명목 대비 ±12µs는 EdgeTX 표시 관례로 로봇 보드 스케일에서 소멸 추정.
   시리얼 신뢰성 수정: 타임아웃 시 포트 유지 + 재시도. 전체 127 tests OK.
 
+**정본 병합 완료 (2026-08-18)**: motion_llm은 이제 **git 저장소**(main 브랜치)다.
+베이스라인(title/credit 자막 포함) → RC delta 2커밋 → merge 커밋. 병합 후 133 tests
+OK, 기본 모드 부팅 시 패드 12개·mock·시리얼 미사용 확인 (RC는 토글 전 존재감 0).
+사본 `rc_link/motion_llm_rc`는 보관용으로 강등. rc_list 갱신은
+`rc_link/gen_rc_list.py <로봇백업 k1_config> motions.yaml`. 후속 변경은 git으로 관리.
+
 **다음 (로봇 복구 후, P2)**: `/ai_sapiens_rc/status` 에코로 스위프 재검증(Damping
 상태라 안전) → 정지(ReadyPose) 진입 → E-stop 요원 두고 단일 모션 → dance 실기
-오프셋 보정 → GuapVer2 이름 정리 → 정본 병합.
+오프셋 보정 → GuapVer2 이름 정리 (다이얼엔 MimicGuap — 패드 목록과 이름 불일치).
 
 ## 1. 목표
 
