@@ -295,6 +295,7 @@ async function pollStatus(){
   try {
     const d = await (await fetch('/status')).json();
     gatewayState = d.gateway || 'offline';
+    if (d.backend) backendName = d.backend;  // RC 모드 토글을 실시간 반영
     const cur = d.current_request;
     if (cur && cur.motion) busyUntil = Math.max(busyUntil, Date.now() + 1500);
   } catch (e) { gatewayState = 'offline'; }

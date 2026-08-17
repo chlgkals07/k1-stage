@@ -638,68 +638,60 @@ motions:
 #   time_out  = 넘어짐 없이 에피소드를 끝낸 비율 (배포선 0.99)
 #   전 항목 anchor_ori(전복) 0.0000 — 시뮬에서 뒤집힌 사례는 없다
 rc_list:
-  updated: 2026-08-15
-  source: 192.168.55.1:/data/ai_sapiens_private/ai_sapiens_sim2real/config/k1_config.yaml
+  updated: 2026-08-18
+  source: ai_sapiens_backup/ai_sapiens_sim2real_20260818 (로봇 실배포 k1_config)
   select:
     bank: CH5    # 1000 = A (input_code 4), 2000 = B (input_code 5)
     slot: CH11   # 1000 부터 20us 간격, tolerance 5
   banks:
-    A:   # 인사 · 제스처 · 아이들. 전부 safe
+    A:
       ch5: 1000
       input_code: 4
       slots:
-      - {slot: 200, ch11: 1000, state: MimicNewKnightlyBowR001A429, ko: "기사식 절", safety: safe, reward: 135.67, time_out: 0.9990}
-      - {slot: 201, ch11: 1020, state: MimicNewWelcoming001A142, ko: "환영 인사", safety: safe, reward: 136.85, time_out: 0.9998}
-      - {slot: 202, ch11: 1040, state: MimicNewKissingHandsThanksStadium001A042, ko: "손키스 감사", safety: safe, reward: 135.59, time_out: 0.9997}
-      - {slot: 203, ch11: 1060, state: MimicNewHighFiveCrowdR001A432, ko: "하이파이브", safety: safe, reward: 134.24, time_out: 0.9976}
-      - {slot: 204, ch11: 1080, state: MimicNewTastyR001A118, ko: "맛있다", safety: safe, reward: 136.85, time_out: 1.0000}
-      - {slot: 205, ch11: 1100, state: MimicNewNoSpeak001A097, ko: "말 못해", safety: safe, reward: 136.77, time_out: 0.9998}
-      - {slot: 206, ch11: 1120, state: MimicNewJustRealizedR001A185, ko: "아 그렇구나", safety: safe, reward: 136.52, time_out: 0.9998}
-      - {slot: 207, ch11: 1140, state: MimicNewIGotThis001A101, ko: "내가 할게", safety: safe, reward: 135.78, time_out: 0.9990}
-      - {slot: 208, ch11: 1160, state: MimicNewListeningR001A116, ko: "경청", safety: safe, reward: 135.05, time_out: 0.9995}
-      - {slot: 209, ch11: 1180, state: MimicNewWhatDoYouWantR002A428, ko: "뭘 원해?", safety: safe, reward: 134.67, time_out: 0.9993}
-      - {slot: 210, ch11: 1200, state: MimicNewPointDirHorizontalRightHand315HeadFrontR004A031, ko: "오른손 가리키기", safety: safe, reward: 135.27, time_out: 1.0000}
-      - {slot: 211, ch11: 1220, state: MimicNewIdleHandsOnBackLoopR001A029, ko: "뒷짐 대기", safety: safe, reward: 138.90, time_out: 1.0000, note: "아이들 루프 20.4s"}
-      - {slot: 212, ch11: 1240, state: MimicNewLook000R001A428, ko: "둘러보기", safety: safe, reward: 137.66, time_out: 0.9988}
-      - {slot: 213, ch11: 1260, state: MimicNewPresentLeftR001A428, ko: "왼손 안내", safety: safe, reward: 136.59, time_out: 0.9990}
-      - {slot: 214, ch11: 1280, state: MimicNewFireSpurMeR002A429, ko: "불붙었어", safety: safe, reward: 136.90, time_out: 0.9998}
-      - {slot: 215, ch11: 1300, state: MimicNewLookAroundEyesCoverOneHandR001A500, ko: "손차양 둘러보기", safety: safe, reward: 136.65, time_out: 0.9998}
-      - {slot: 216, ch11: 1320, state: MimicNewFanningYourselfR001A500, ko: "부채질", safety: safe, reward: 138.18, time_out: 0.9998, note: "21.8s"}
-      - {slot: 217, ch11: 1340, state: MimicNewDontComeAnyCloserBothHandsR002A456, ko: "오지 마", safety: safe, reward: 135.93, time_out: 0.9995}
-      - {slot: 218, ch11: 1360, state: MimicNewNeutralFearR001A545, ko: "겁먹음", safety: safe, reward: 137.00, time_out: 1.0000}
-      - {slot: 219, ch11: 1380, state: MimicNewTheRingR001A429, ko: "더 링", safety: safe, reward: 134.66, time_out: 0.9992}
-    B:   # 댄스 · 퍼포먼스 · 실기 검증 대상
+      - {slot: 200, ch11: 1000, state: MimicNewWelcoming001A142}
+      - {slot: 201, ch11: 1020, state: MimicCasualGreeting, ko: "캐주얼 인사", safety: safe}
+      - {slot: 202, ch11: 1040, state: MimicWaveHand, ko: "손 흔들기", safety: safe}
+      - {slot: 203, ch11: 1060, state: MimicBowNavel, ko: "배꼽 인사", safety: safe}
+      - {slot: 204, ch11: 1080, state: MimicBowCourtly, ko: "궁정식 인사", safety: safe}
+      - {slot: 205, ch11: 1100, state: MimicNewKnightlyBowR001A429, ko: "기사식 인사", safety: safe}
+      - {slot: 206, ch11: 1120, state: MimicByeBye, ko: "배웅 인사", safety: safe}
+      - {slot: 207, ch11: 1140, state: MimicClapHands, ko: "박수", safety: safe}
+      - {slot: 208, ch11: 1160, state: MimicCrowdCheer, ko: "큰 박수", safety: safe}
+      - {slot: 209, ch11: 1180, state: MimicBravo, ko: "정중한 박수", safety: safe}
+      - {slot: 210, ch11: 1200, state: MimicNewHighFiveCrowdR001A432}
+      - {slot: 211, ch11: 1220, state: MimicComeHere, ko: "이리 오세요", safety: safe}
+      - {slot: 212, ch11: 1240, state: MimicNewKissingHandsThanksStadium001A042}
+      - {slot: 213, ch11: 1260, state: MimicCalmDown, ko: "진정하세요", safety: safe}
+      - {slot: 214, ch11: 1280, state: MimicChefsKiss, ko: "손키스", safety: safe}
+      - {slot: 215, ch11: 1300, state: MimicNewListeningR001A116}
+      - {slot: 216, ch11: 1320, state: MimicNewLookAroundEyesCoverOneHandR001A500}
+      - {slot: 217, ch11: 1340, state: MimicNewIdleHandsOnBackLoopR001A029, note: "아이들 루프 20.4s"}
+      - {slot: 218, ch11: 1360, state: MimicNewLook000R001A428}
+      - {slot: 219, ch11: 1380, state: MimicCrossedArms, ko: "팔짱", safety: safe}
+    B:
       ch5: 2000
       input_code: 5
       slots:
-      - {slot: 200, ch11: 1000, state: MimicNewDanceNinjaStyle003A464, ko: "닌자 댄스", safety: caution, reward: 132.20, time_out: 0.9993}
-      - {slot: 201, ch11: 1020, state: MimicNewMacarena001A545, ko: "마카레나", safety: caution, reward: 130.88, time_out: 0.9988, note: "29.5s — 신규 중 최장, 오차 누적"}
-      - {slot: 202, ch11: 1040, state: MimicNewRockOut002A487, ko: "록 아웃", safety: caution, reward: 130.03, time_out: 0.9937}
-      - {slot: 203, ch11: 1060, state: MimicNewFancySpinR001A430, ko: "팬시 스핀", safety: caution, reward: 129.70, time_out: 0.9932, note: "회전 — 공간 확보"}
-      - {slot: 204, ch11: 1080, state: MimicNewDanceVogueDancehallOpenClose270R001A316, ko: "보그 댄스홀 270", safety: caution, reward: 129.11, time_out: 0.9985, note: "270도 회전 — 요 드리프트"}
-      - {slot: 205, ch11: 1100, state: MimicNewDanceWesternBodyPercussionR001A306, ko: "바디 퍼커션", safety: caution, reward: 126.89, time_out: 0.9973, note: "reward 경계"}
-      - {slot: 206, ch11: 1120, state: MimicNewDanceVogueShakeItBabe180RFast001A316, ko: "보그 셰이크 180", safety: caution, reward: 124.19, time_out: 0.9976, note: "배포선(126) 미달"}
-      - {slot: 207, ch11: 1140, state: MimicNewDanceHiphopFlintstonesKickBallChangeR002A311, ko: "플린스톤 킥볼체인지", safety: caution, reward: 120.50, time_out: 0.9905, note: "배포선 미달 · 편차 큼"}
-      - {slot: 208, ch11: 1160, state: MimicNewShadowBoxingR001A362, ko: "섀도 복싱", safety: caution, reward: 126.79, time_out: 0.9961, note: "reward 경계"}
-      - {slot: 209, ch11: 1180, state: MimicNewJumpingJack001A033, ko: "점핑잭", safety: restricted, reward: 127.97, time_out: 0.9960, note: "점프 — 착지 sim2real 격차"}
-      - {slot: 210, ch11: 1200, state: MimicNewFlexOnEmR001A529, ko: "플렉스", safety: restricted, reward: 131.06, time_out: 0.9854, note: "신규 중 time_out 최저 — 넘어짐 확인용"}
-      - {slot: 211, ch11: 1220, state: MimicNewJumpForJoyR002A431, ko: "기쁨의 점프", safety: restricted, reward: 132.08, time_out: 0.9961, note: "점프 — 착지 sim2real 격차"}
-      - {slot: 212, ch11: 1240, state: MimicNewTarzanR001A098, ko: "타잔", safety: caution, reward: 135.77, time_out: 0.9993}
-      - {slot: 213, ch11: 1260, state: MimicNewSlapR001A457, ko: "손바닥 치기", safety: restricted, reward: 135.51, time_out: 1.0000, note: "때리는 동작 — 주변 사람 확인"}
-      - {slot: 214, ch11: 1280, state: MimicCartwheel, ko: "카트휠 (시드 0042)", safety: restricted, note: "곡예 — 넓은 공간과 E-stop 필수"}
-      - {slot: 215, ch11: 1300, state: MimicPushUp, ko: "팔굽혀펴기", safety: restricted, reward: 130.50, note: "바닥 접촉"}
-      # 슬롯 216~219 (CH11 1320~1380) 는 비어 있다
-  # 로봇에 자산과 상태 정의는 올라가 있지만 RC 슬롯에서는 뺀 것들.
-  # 이어학습이 끝나면 rc_new_motions.py 의 BENCHED 에서 BANK_B 로 옮긴다.
-  benched:
-    - {state: MimicNewDanceGunslingerSmokeshow001A464, ko: "건슬링어 스모크쇼", reward: 114.44, time_out: 0.9819, reason: "40000 이어학습 중"}
-    - {state: MimicNewDanceHiphopShuffleR001A316, ko: "힙합 셔플", reward: 109.34, time_out: 0.9669, reason: "40000 이어학습 중"}
-    - {state: MimicNewDanceTakeTheL001A464, ko: "테이크 더 엘", reward: 106.58, time_out: 0.9557, reason: "40000 이어학습 중"}
-    - {state: MimicNewTheAirplane002A492, ko: "비행기", reward: 122.95, time_out: 0.9898, reason: "40000 이어학습 중"}
-    - {state: MimicNewShowBicepRWalkArcCwStartRCheckingTimeR001A472, ko: "알통 자랑 + 걷기", reward: 118.67, time_out: 0.9861, reason: "40000 이어학습 중"}
-    - {state: MimicNewDesperatePrayerR001A432, ko: "간절한 기도", reward: 86.36, time_out: 0.8333, reason: "리타게팅 실패 — anchor_height 4.5%, 실기에서 주저앉음"}
-
-# 모션이 아닌 상태 전이. LLM 이 "그만", "쉬어" 같은 말에 쓸 수 있다.
+      - {slot: 200, ch11: 1000, state: MimicBadChestpopVer2, ko: "체스트팝 v2", safety: safe}
+      - {slot: 201, ch11: 1020, state: MimicGuapIntroP2, ko: "구압 인트로", safety: caution}
+      - {slot: 202, ch11: 1040, state: MimicGuap, ko: "구압", safety: caution}
+      - {slot: 203, ch11: 1060, state: MimicSnuCheer, ko: "서울대 응원", safety: caution}
+      - {slot: 204, ch11: 1080, state: MimicStraykidsThisAndThat, ko: "스키즈 안무", safety: caution}
+      - {slot: 205, ch11: 1100, state: MimicNewMacarena001A545, ko: "마카레나", safety: safe, note: "29.5s — 신규 중 최장, 오차 누적"}
+      - {slot: 206, ch11: 1120, state: MimicTkdHorseStanceBodyPunch, ko: "주춤서 몸통지르기", safety: caution}
+      - {slot: 207, ch11: 1140, state: MimicShuffleDance, ko: "셔플 댄스", safety: caution}
+      - {slot: 208, ch11: 1160, state: MimicDanceBasicTurnV1360RLoopFast003A325, ko: "턴 댄스", safety: caution}
+      - {slot: 209, ch11: 1180, state: MimicDanceJazzHands, ko: "재즈핸즈", safety: safe}
+      - {slot: 210, ch11: 1200, state: MimicNewDanceVogueDancehallOpenClose270R001A316, note: "270도 회전 — 요 드리프트"}
+      - {slot: 211, ch11: 1220, state: MimicDanceFloss, ko: "플로스 댄스", safety: caution}
+      - {slot: 212, ch11: 1240, state: MimicNewRockOut002A487, ko: "락아웃", safety: caution}
+      - {slot: 213, ch11: 1260, state: MimicBoxingNewton, ko: "복싱", safety: restricted}
+      - {slot: 214, ch11: 1280, state: MimicShadowBoxing, ko: "섀도우 복싱", safety: restricted}
+      - {slot: 215, ch11: 1300, state: MimicNewShadowBoxingR001A362, note: "reward 경계"}
+      - {slot: 216, ch11: 1320, state: MimicSquat, ko: "스쿼트", safety: caution}
+      - {slot: 217, ch11: 1340, state: MimicPushUp, ko: "팔굽혀펴기", safety: caution, note: "바닥 접촉"}
+      - {slot: 218, ch11: 1360, state: MimicCartwheel, ko: "옆돌기", safety: caution, note: "곡예 — 넓은 공간과 E-stop 필수"}
+      - {slot: 219, ch11: 1380, state: MimicNewSnuCheerHeadShort, ko: "서울대 응원 (최신)", safety: caution}
 control_states:
   - state: ReadyPose
     ko: 준비 자세
