@@ -53,7 +53,7 @@
     "title": "ATEEZ - Bad",
     "credit": "ATEEZ 'Bad' 안무 영상",
     "media_len_sec": 27.5,
-    "offset_note": "기억 기반 +1200 (+1000이었을 수도) — 실기 재보정 필요"
+    "offset_note": "+1200 확정 (2026-08-18) — 로봇 실기 시 재확인"
   },
   "badchestpopv2-rc": {
     "motion": "MimicBadChestpopVer2",
