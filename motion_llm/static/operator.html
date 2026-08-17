@@ -47,6 +47,7 @@ ul{padding:0;margin:0;list-style:none}li{border-left:3px solid var(--line);backg
 <header><span class="dot" id="dot"></span><h1>K1 운영자</h1><span class="mode-badge" id="modeBadge">MODE 확인 중</span><a class="button" href="/pad">관객 화면</a><a class="button" href="/dance">댄스 싱크</a></header>
 <main>
 <section><h2>정지</h2><button class="danger" id="stopBtn">정지 — 실행 중인 동작 중단</button><p class="hint">실행 중에도 항상 누를 수 있습니다. 로봇을 <code>ReadyPose</code>로 되돌립니다. 즉시 탈출이 필요하면 RC Damping 또는 E-stop을 사용하세요.</p></section>
+<section><h2>명령 경로</h2><p class="hint">기본은 Wi-Fi(relay)/mock. <b>RC 모드</b>는 유선 USB→RC→ELRS로 같은 명령을 보낸다 — UI·무대·버튼은 완전히 동일하고, 다이얼에 없는 동작만 실행 시점에 거부된다. 조건: RC 전원 ON + USB Serial 연결 + 라디오 Tools에서 K1PC 실행. <b>로봇 부팅 직후엔 위의 정지(ReadyPose)를 먼저 눌러야</b> 동작 실행이 된다.</p><div class="settings"><span class="hint" id="rcState">경로 확인 중…</span><button class="primary" id="rcToggle">RC 모드 켜기</button></div><p class="hint" id="rcMsg"></p></section>
 <section><h2>Robot 상태</h2><p class="hint" id="summary">상태를 읽는 중…</p><div class="cards" id="cards"></div></section>
 <section><h2>수동 실행</h2><p class="hint">현재 robot gateway가 허용한 동작만 표시합니다. 실행 중에는 새 요청이 거부됩니다.</p><div id="motions"></div></section>
 <section><h2>무대 (dance)</h2><p class="hint">영상·소리는 display(TV)에서 나온다. <b>무대 정지는 영상만 멈춘다 — 로봇은 동작을 끝까지 마친다.</b> 로봇 즉시 중단은 위의 빨간 정지 또는 RC. 오프셋 미세 조정은 <a href="/dance" style="color:var(--accent)">댄스 싱크</a> 페이지에서.</p><div class="settings"><div class="field"><label for="dancePreset">프리셋</label><select id="dancePreset"></select></div><span class="hint" id="danceInfo"></span><button class="primary" id="danceStart">▶ 무대 시작</button><button class="danger" id="danceStop">■ 무대 정지</button></div></section>
@@ -58,12 +59,24 @@ let catalog=[], apiAllowed=new Set(), mockAllowed=new Set(), padAllowed=new Set(
 const operatorQuery=new URLSearchParams(location.search);
 if(operatorQuery.has("token")){operatorQuery.delete("token");const clean=operatorQuery.toString();history.replaceState(null,"",location.pathname+(clean?"?"+clean:""));}
 const labels={offline:'오프라인',manual:'수동 모드',api_warming:'API 준비 중',ready:'API 준비됨',queued:'요청 대기',dispatching:'전송 중',accepted:'수락됨',executing:'실행 중',completed:'완료',rejected:'거부됨',stopping:'정지 중',interrupted:'중단됨'};
-function setModeBadge(backend){const badge=$('#modeBadge');const names={mock:'MOCK · 기록만',relay:'RELAY · PC→ROBOT',robot:'ROBOT · 직접 연결'};badge.textContent=names[backend]||'MODE 확인 불가';badge.className='mode-badge '+(names[backend]?backend:'')}
+function setModeBadge(backend){const badge=$('#modeBadge');const names={mock:'MOCK · 기록만',relay:'RELAY · PC→ROBOT',robot:'ROBOT · 직접 연결',rc:'RC · 유선 RC→ELRS'};badge.textContent=names[backend]||'MODE 확인 불가';badge.className='mode-badge '+(names[backend]?backend:'')}
+let currentBackend="";
+function renderRc(){const on=currentBackend==="rc";$('#rcToggle').textContent=on?'RC 모드 끄기 — 기본 경로 복귀':'RC 모드 켜기 — 유선 RC로 전환';$('#rcState').textContent='현재 경로: '+(currentBackend||'확인 중')}
+$('#rcToggle').onclick=async()=>{
+  const on=currentBackend!=="rc";
+  $('#rcToggle').disabled=true; $('#rcMsg').textContent=on?'RC 탐색 중…':'';
+  try{
+    const r=await fetch('/rc/mode',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({on})});
+    const d=await r.json(); $('#rcMsg').textContent=d.msg||'';
+  }catch(e){$('#rcMsg').textContent='전환 실패: '+e.message}
+  $('#rcToggle').disabled=false; await refresh();
+};
 function text(v){return v===undefined||v===null||v===''?'-':String(v)}
 function card(label,value,kind=''){return '<div class="card"><span class="label">'+label+'</span><span class="value '+kind+'">'+text(value)+'</span></div>'}
 function renderStatus(d){
   const robot=d.robot||{}, current=d.current_request||{}, event=d.last_event||{};
   const state=labels[d.gateway]||d.gateway||"확인 중"; gatewayState=d.gateway||"offline";
+  if(d.backend){currentBackend=d.backend; backendName=d.backend; setModeBadge(d.backend)} renderRc();
   $('#summary').textContent=state+(event.msg?' · '+event.msg:'');
   $('#dot').className='dot '+(d.gateway==='ready'?'ready':d.gateway==='api_warming'?'warming':'');
   $('#cards').innerHTML=

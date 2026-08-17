@@ -34,6 +34,7 @@ import yaml
 
 from robot_backend import RobotBackend
 from relay_backend import RelayBackend
+from rc_backend import RcBackend
 from session_log import SessionLog
 
 HERE = Path(__file__).parent
@@ -136,6 +137,8 @@ class State:
     def __init__(self, backend, ready_only=False, access_token=None, llm_allowlist=None,
                  session_log=None, pad_allowlist=None, pad_llm_exclude=None):
         self.backend = backend
+        # RC 모드 토글의 복귀 지점. 토글은 self.backend 만 바꾼다.
+        self._primary_backend = backend
         self.ready_only = ready_only
         self.items, self.by_state = load_catalog()
         self.allowed = {m["state"] for m in llm_motions(self.items, ready_only)}
@@ -171,6 +174,10 @@ class State:
         self.stage_set_at = time.time()
         self.stage_rev = 0
         self._dance_timer = None
+        # RC 백엔드 전용: 발사 1.5s 전에 다이얼·게이트를 미리 잡는 PREP 타이머
+        self._dance_prep_timer = None
+        # display 가 없을 때의 무대 자동 종료 fallback (추정 길이 + 여유 뒤)
+        self._dance_autostop_timer = None
         # 무대 세대 번호. Timer.cancel() 은 이미 시작된 콜백을 못 멈추므로, 콜백이
         # "내가 걸렸던 그 무대가 아직 유효한가"를 이 번호로 확인한다. stage=='dance'
         # 검사만으로는 부족하다 — A 재생 중 B 를 시작하면 A 의 늦은 콜백이 B 가 만든
@@ -286,13 +293,47 @@ class State:
                            gateway_status=out.get("status"), request_id=out.get("request_id"))
 
     def status(self):
-        return self.backend.status()
+        out = self.backend.status()
+        out["backend"] = self.backend.name
+        return out
+
+    def set_rc_mode(self, on):
+        """명령 경로 전환: on=True 면 유선 RC(ELRS), off 면 원래 백엔드 복귀.
+
+        RC 백엔드는 켤 때마다 새로 만든다 — RcSerial 은 close 후 재사용이 안 되고,
+        연결 진단(ping)을 이 시점에 해야 실패 원인을 운영자에게 보여줄 수 있다.
+        UI·allowlist·무대는 그대로다: 다이얼에 없는 동작은 실행 시점에만 거부된다.
+        """
+        with self.lock:
+            if on:
+                if self.backend.name == "rc":
+                    return {"ok": True, "backend": "rc", "msg": "이미 RC 모드입니다"}
+                rc = RcBackend(HERE / "motions.yaml", HERE / "gateway_config.yaml")
+                ok, msg = rc.connect_check()
+                if not ok:
+                    rc.stop()
+                    return {"ok": False, "backend": self.backend.name, "msg": msg}
+                self.backend = rc
+                self.session_log.write("backend_switch", backend="rc")
+                return {"ok": True, "backend": "rc", "msg": msg}
+            if self.backend.name == "rc":
+                self.backend.stop()  # 시리얼 포트 해제
+                self.backend = self._primary_backend
+                self.session_log.write("backend_switch", backend=self.backend.name)
+            return {"ok": True, "backend": self.backend.name,
+                    "msg": f"기본 경로({self.backend.name}) 복귀"}
 
     # ── dance: display(TV) 재생 + 서버 스케줄 ──────────────────────
     # 폴링 지연(±300ms)이 매번 달라 "명령 보고 즉시 재생"은 싱크가 안 맞는다.
     # 미래의 절대 시각(base = now + 리드타임)을 정해 두고, 동작은 서버 Timer 가,
     # 음원은 display 가 server_now 와의 시계차로 각자 그 시각에 맞춘다.
     DANCE_LEAD_SEC = 2.0
+    # 무대 자동 종료 fallback: display 가 영상 종료를 알려주지 못하는 상황(창을 안
+    # 열었거나 죽음)에서 "무대 실행중"이 TTL(8분)까지 걸려 있지 않게, max(영상 실측
+    # 길이, 로봇 동작 추정 길이) + 여유가 지나면 서버가 스스로 무대를 내린다.
+    # display 의 정상 종료가 먼저 오면 세대 번호 불일치로 이 타이머는 무시된다.
+    DANCE_AUTOSTOP_MARGIN_SEC = 5.0
+    DANCE_AUTOSTOP_DEFAULT_SEC = 60.0
 
     def start_dance(self, name=None, preset=None):
         """저장된 프리셋 이름 또는 inline preset(보정 중인 현재 값)으로 무대를 시작한다."""
@@ -333,12 +374,42 @@ class State:
         with self.lock:
             if self._dance_timer:
                 self._dance_timer.cancel()
+            if self._dance_prep_timer:
+                self._dance_prep_timer.cancel()
+                self._dance_prep_timer = None
+            if self._dance_autostop_timer:
+                self._dance_autostop_timer.cancel()
+                self._dance_autostop_timer = None
             self._dance_gen += 1
             self._dance_timer = threading.Timer(
                 max(0.0, motion_at - time.time()),
                 self._fire_dance_motion, (motion, self._dance_gen))
             self._dance_timer.daemon = True
             self._dance_timer.start()
+            # RC 백엔드는 발사 엣지 지터를 줄이려고 1.5s 전에 PREP(code 0, 무해)를 건다.
+            # 실패해도 발사는 RUN 으로 폴백되므로 best-effort 다.
+            if motion and hasattr(self.backend, "prepare"):
+                self._dance_prep_timer = threading.Timer(
+                    max(0.0, motion_at - time.time() - 1.5),
+                    self._prep_dance_motion, (motion, self._dance_gen))
+                self._dance_prep_timer.daemon = True
+                self._dance_prep_timer.start()
+            motion_dur = None
+            if motion and hasattr(self.backend, "motion_duration"):
+                motion_dur = self.backend.motion_duration(motion)
+            media_len = None
+            try:
+                media_len = float(preset.get("media_len_sec") or 0) or None
+            except (TypeError, ValueError):
+                media_len = None
+            # 영상·동작 중 긴 쪽 기준 (둘 다 모르면 기본값)
+            duration = max(motion_dur or 0.0, media_len or 0.0) \
+                or self.DANCE_AUTOSTOP_DEFAULT_SEC
+            self._dance_autostop_timer = threading.Timer(
+                max(0.0, motion_at - time.time()) + duration + self.DANCE_AUTOSTOP_MARGIN_SEC,
+                self._auto_stop_dance, (self._dance_gen,))
+            self._dance_autostop_timer.daemon = True
+            self._dance_autostop_timer.start()
             self._set_stage_locked("dance", {
                 "name": name, "motion": motion, "ko": info.get("ko", motion),
                 # 무대 화면 자막: title 은 공식 명칭(중앙 큰 글씨), credit 은 출처(하단 작게).
@@ -360,6 +431,22 @@ class State:
         if motion:
             self.play(motion, reason="dance 무대", source="manual")
 
+    def _prep_dance_motion(self, motion, gen):
+        with self.lock:
+            if gen != self._dance_gen or self.stage != "dance":
+                return
+        try:
+            self.backend.prepare(motion)
+        except Exception as exc:  # PREP 는 best-effort — 발사는 RUN 으로 폴백된다
+            print(f"[rc] PREP 실패(무시): {exc}", flush=True)
+
+    def _auto_stop_dance(self, gen):
+        with self.lock:
+            if gen != self._dance_gen or self.stage != "dance":
+                return
+        print("  DANCE 자동 종료 (추정 시간 경과 — display 종료 신호 없음)")
+        self.stop_dance("무대 자동 종료 (추정 시간 경과)")
+
     def stop_dance(self, reason="무대 정지"):
         """무대(영상·예약)만 내린다. **로봇은 절대 건드리지 않는다.**
 
@@ -372,6 +459,12 @@ class State:
             if self._dance_timer:
                 self._dance_timer.cancel()
                 self._dance_timer = None
+            if self._dance_prep_timer:
+                self._dance_prep_timer.cancel()
+                self._dance_prep_timer = None
+            if self._dance_autostop_timer:
+                self._dance_autostop_timer.cancel()
+                self._dance_autostop_timer = None
             # 이미 시작된(cancel 이 못 잡은) 콜백도 세대 불일치로 무력화한다.
             self._dance_gen += 1
             self._set_stage_locked("idle")
@@ -583,6 +676,12 @@ class Handler(BaseHTTPRequestHandler):
             self.state.clear_conversation()
             return self._send(200, {"ok": True})
 
+        if path == "/rc/mode":
+            out = self.state.set_rc_mode(bool(payload.get("on")))
+            print(f"  RC모드 {'ON 시도' if payload.get('on') else 'OFF'} → "
+                  f"{out['backend']}  {out['msg']}")
+            return self._send(200 if out["ok"] else 400, out)
+
         if path == "/stop":
             # source 는 서버가 강제한다. 클라이언트가 llm 을 주장할 수 없게 한다.
             out = self.state.stop_motion(payload.get("reason", ""))
@@ -714,6 +813,8 @@ def main():
                     help="PC relay 모드. 예: https://192.168.60.1:8443")
     ap.add_argument("--relay-token", default=os.environ.get("K1_RELAY_TOKEN", ""),
                     help="로봇 gateway token (기본: K1_RELAY_TOKEN)")
+    ap.add_argument("--rc", action="store_true",
+                    help="RcBackend 사용 — 유선 RC(ELRS) 경로로 명령 전송")
     ap.add_argument("--gateway-token", default=os.environ.get("K1_GATEWAY_TOKEN", ""),
                     help="이 gateway의 고정 token (기본: K1_GATEWAY_TOKEN 또는 랜덤)")
     ap.add_argument("--ready-only", action="store_true",
@@ -724,10 +825,10 @@ def main():
     ap.add_argument("--no-transcripts", action="store_true",
                     help="발화 원문 대신 길이만 기록 (행사장 프라이버시 모드)")
     args = ap.parse_args()
-    if args.robot and args.relay:
-        ap.error("--robot 과 --relay 는 동시에 사용할 수 없습니다")
-    if (args.robot or args.relay) and not args.https:
-        ap.error("--robot/--relay 는 토큰 cookie 보호를 위해 --https 와 함께 실행해야 합니다")
+    if sum(map(bool, (args.robot, args.relay, args.rc))) > 1:
+        ap.error("--robot / --relay / --rc 는 동시에 사용할 수 없습니다")
+    if (args.robot or args.relay or args.rc) and not args.https:
+        ap.error("--robot/--relay/--rc 는 토큰 cookie 보호를 위해 --https 와 함께 실행해야 합니다")
     if args.relay and not args.relay_token:
         ap.error("--relay 는 --relay-token 또는 K1_RELAY_TOKEN 이 필요합니다")
 
@@ -739,6 +840,8 @@ def main():
         policy = gateway_config["policy"]
         backend = RelayBackend(args.relay, args.relay_token, policy["api_allowlist"],
                                policy.get("relay_timeout_sec", 2.0))
+    elif args.rc:
+        backend = RcBackend(HERE / "motions.yaml", HERE / "gateway_config.yaml")
     else:
         backend = MockBackend()
     if args.robot:
@@ -747,7 +850,7 @@ def main():
                              enabled=not args.no_log)
     Handler.state = State(
         backend,
-        ready_only=args.ready_only or args.robot or bool(args.relay),
+        ready_only=args.ready_only or args.robot or bool(args.relay) or args.rc,
         access_token=args.gateway_token or None,
         llm_allowlist=gateway_config["policy"].get("llm_allowlist"),
         pad_allowlist=gateway_config["policy"].get("pad_allowlist"),

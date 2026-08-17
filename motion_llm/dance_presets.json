@@ -7,7 +7,8 @@
     "offset_ms": -1500,
     "volume": 10,
     "title": "관악을 보아라",
-    "credit": "서울대학교 응원단"
+    "credit": "서울대학교 응원단",
+    "media_len_sec": 84.5
   },
   "straykids": {
     "motion": "MimicStraykidsThisAndThat",
@@ -17,7 +18,8 @@
     "offset_ms": 500,
     "volume": 100,
     "title": "Stray Kids - This and That",
-    "credit": "Stray Kids 'This and That' 안무 영상"
+    "credit": "Stray Kids 'This and That' 안무 영상",
+    "media_len_sec": 22.0
   },
   "badchestpopv2": {
     "motion": "MimicBadChestpopVer2",
@@ -27,6 +29,16 @@
     "offset_ms": 0,
     "volume": 100,
     "title": "ATEEZ - Bad",
-    "credit": "ATEEZ 'Bad' 안무 영상"
+    "credit": "ATEEZ 'Bad' 안무 영상",
+    "media_len_sec": 27.5
+  },
+  "rctest": {
+    "motion": "MimicNewMacarena001A545",
+    "media": "straykids.mp4",
+    "clip": "",
+    "seek": 0,
+    "offset_ms": 0,
+    "volume": 30,
+    "media_len_sec": 22.0
   }
 }
