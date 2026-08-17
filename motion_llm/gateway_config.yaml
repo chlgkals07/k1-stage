@@ -1,0 +1,157 @@
+ros:
+  heartbeat_topic: /ai_sapiens/api_mode_heartbeat
+  status_topic: /ai_sapiens/mode_status
+  request_service: /ai_sapiens/request_mode_by_name
+  list_modes_service: /ai_sapiens/list_modes
+  heartbeat_hz: 10
+
+policy:
+  # api_allowlist: gateway 가 실행을 허용하는 전부. 운영자 수동 버튼이 여기서 나온다.
+  # llm_allowlist: 그중 모델이 스스로 고를 수 있는 것.
+  #
+  # 2026-08-14 전 자산 개방: 체크포인트·실험본 뺀 실동작 전부(71) 를 API 버튼으로.
+  # restricted(복싱류·카트휠린)도 버튼 개방 — 운영자 화면에 빨간 띠, E-stop 전제.
+  # LLM 은 llm_allowlist 21 로 불변이며 restricted 는 llm_motions() 가 구조적으로 거른다.
+  # 제어 상태(Damping/ZeroPose/ReadyPose/Velocity)와 turnit ckpt·실험본은 넣지 않는다.
+  api_allowlist:
+    # ── greeting ──
+    - MimicBow
+    - MimicBowCourtly
+    - MimicNewKnightlyBowR001A429
+    - MimicBowNavel
+    - MimicByeBye
+    - MimicCasualGreeting
+    - MimicWaveHand
+    # ── reaction ──
+    - MimicBadChestpop
+    - MimicBadChestpopVer2
+    - MimicBravo
+    - MimicChefsKiss
+    - MimicClapHands
+    - MimicCrowdCheer
+    - Mimiclove
+    # ── guide ──
+    - MimicAiming
+    - MimicBeckon
+    - MimicCalmDown
+    - MimicComeHere
+    # ── idle ──
+    - MimicBodyStretch
+    - MimicCheckingTime
+    - MimicCoinPick
+    - MimicCrossedArms
+    - MimicIdleBase
+    # ── expression ──
+    - MimicAnseKabanse
+    - MimicBegRub
+    - MimicBossDustBrushingNew
+    - MimicBossDustBrushingR001A036
+    - MimicDeepDab001A467
+    - MimicGuap
+    - MimicGuapIntro
+    - MimicGuapIntroP2
+    - MimicGuapVer2
+    # ── performance ──
+    - MimicBillyJean
+    - MimicBurpee
+    - MimicCartwheel
+    - MimicCrossedArmsTurn
+    - MimicDance1
+    - MimicDance2
+    - MimicDanceBasicTurnV1360RLoopFast003A325
+    - MimicDanceBlindingLights
+    - MimicDanceClick
+    - MimicDanceCrossTurn360
+    - MimicDanceCrossTurnFull
+    - MimicDanceFishin
+    - MimicDanceFloss
+    - MimicDanceJazzHands
+    - MimicHaminJumpFront
+    - MimicJump
+    - MimicNewMacarena001A545
+    - MimicOmbrinho
+    - MimicPara
+    - MimicPushUp
+    - MimicRedRed
+    - MimicRedRedNewton
+    - MimicRedRedWoojin
+    - MimicNewRockOut002A487
+    - MimicShuffleDance
+    - MimicNewSnuCheerHeadShort
+    - MimicSnuCheer
+    - MimicSnuCheerGvhmr
+    - MimicSquat
+    - MimicSquat05
+    - MimicStraykidsThisAndThat
+    - MimicTaeguk
+    - MimicTkd1poomBasic
+    - MimicTkdHorseStanceBodyPunch
+    - Mimicbad
+    - Mimicggang_1
+    - Mimicggang_2
+    - Mimicggang_3
+    # ── intense ──
+    - MimicBoxingK05
+    - MimicBoxingLpfW9
+    - MimicBoxingNewUrdf
+    - MimicBoxingNewton
+    - MimicCartwheelin
+    - MimicCartwheelBallTq42
+    - MimicShadowBoxing
+    - MimicWalk1Subject1
+  llm_allowlist:
+    - MimicWaveHand
+    - MimicBowNavel
+    - MimicBadChestpopVer2
+    - MimicAnseKabanse
+    - MimicBeckon
+    - MimicBodyStretch
+    - MimicBowCourtly
+    - MimicBravo
+    - MimicByeBye
+    - MimicCalmDown
+    - MimicCasualGreeting
+    - MimicCheckingTime
+    - MimicChefsKiss
+    - MimicCoinPick
+    - MimicComeHere
+    - MimicCrossedArms
+    - MimicCrowdCheer
+    - MimicDeepDab001A467
+    # 명시 요청 전용 (desc 로 게이팅)
+    - MimicPushUp
+    - MimicDanceJazzHands
+    - MimicCartwheel
+  # pad_allowlist: 관객이 아이패드(/pad)에서 직접 누를 수 있는 것.
+  #
+  # 2026-08-16 사용자 지정 12개. 이전 판(전부 safety:safe 인 인사·호응 모음)과 달리
+  # 이건 **쇼케이스**다. restricted(섀도우 복싱)와 caution(팔굽혀펴기·스쿼트)이 들어 있다.
+  #   → 안전은 이제 목록이 아니라 운영 전제로 지킨다: 공간 확보 + RC 대기 상시.
+  # 12개 전부 static/clips/<state>.mp4 렌더 클립이 있어야 한다(모니터가 튼다).
+  # 현장에서 빼고 넣는 건 이 목록 한 줄이면 된다.
+  pad_allowlist:
+    # ── 2026-08-18 최종 12 (사용자 확정, 순서 = 패드 그리드 번호) ──
+    - MimicBowNavel                  # 01 배꼽인사
+    - MimicShadowBoxing              # 02 섀도우 복싱
+    - MimicDanceJazzHands            # 03 재즈 핸즈
+    - MimicWaveHand                  # 04 손흔들기
+    - MimicBowCourtly                # 05 궁정식 인사
+    - MimicNewMacarena001A545        # 06 마카레나
+    - MimicNewKnightlyBowR001A429    # 07 기사식 인사
+    - MimicSquat                     # 08 스쿼트
+    - MimicChefsKiss                 # 09 손키스
+    - MimicPushUp                    # 10 팔굽혀펴기
+    - MimicNewRockOut002A487         # 11 rock out
+    - MimicGuapVer2                  # 12 Guap ver2
+  # pad_llm_exclude: /pad 음성 경로에서만 빼는 동작.
+  # 2026-08-17: 버튼 12종은 말로도 돼야 한다는 사용자 확정으로 PushUp·JazzHands 는
+  # 제외를 풀었다 (버튼 12에 포함). 카트휠만 남는다 — 최대 공간 + E-stop 대기 전제라
+  # 관객이 말로 부를 수 없다. 진행자가 / 로 열면 21개 그대로다.
+  pad_llm_exclude:
+    - MimicCartwheel
+  # 운영자 정지 버튼이 요청하는 상태. allowlist 를 우회하는 별도 경로라
+  # api_allowlist/llm_allowlist 에는 넣지 않는다 (넣으면 LLM 에 노출될 위험이 있다).
+  stop_state: ReadyPose
+  entry_timeout_sec: 5
+  status_timeout_sec: 1
+  relay_timeout_sec: 2

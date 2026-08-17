@@ -1,0 +1,823 @@
+# K1 모션 카탈로그
+#
+# 이 파일이 LLM / 키워드 라우터 / 웹 UI 세 곳의 공통 입력이다.
+# state 는 /ai_sapiens/request_mode_by_name 에 그대로 넘기는 이름이다.
+#
+# safety:
+#   safe       상체 위주, 제자리. 관객 근처에서 써도 되는 것
+#   caution    전신 사용 또는 이동. 공간 확보 필요
+#   restricted 격한 동작. LLM 에게 노출하지 않고 사람이 직접 고를 때만
+#
+# llm: false 인 항목은 LLM 도구 목록에서 제외된다 (중복 변형본 / 학습 체크포인트).
+#      RC 다이얼로는 여전히 부를 수 있다.
+
+motions:
+
+  # ── 인사 / 접객 ─────────────────────────────────────────────
+  - state: MimicBowNavel
+    en: "BOW"
+    category: greeting
+    ko: 배꼽 인사
+    desc: 두 손을 배 앞에 모으고 허리를 깊이 숙이는 정중한 인사
+    tags: [인사, 첫인사, 감사, 사과, 존경, 격식]
+    safety: safe
+    llm: true
+    page: X
+    slot: 203
+
+  - state: MimicWaveHand
+    en: "WAVE"
+    category: greeting
+    ko: 손 흔들기
+    desc: 한 손을 들어 좌우로 흔드는 가벼운 인사. 멀리 있는 사람에게도 보인다
+    tags: [인사, 환영, 작별, 반가움, 가벼움]
+    safety: safe
+    llm: true
+    page: X
+    slot: 202
+
+  # ── 호응 / 축하 ─────────────────────────────────────────────
+  - state: MimicClapHands
+    category: reaction
+    ko: 박수
+    desc: 두 손을 마주쳐 박수를 친다. 축하나 칭찬에 쓴다
+    tags: [박수, 축하, 칭찬, 환영, 호응, 잘했어]
+    safety: safe
+    llm: true
+    page: SA
+    slot: 200
+
+  - state: Mimiclove
+    category: reaction
+    ko: 러브 어택
+    desc: 애정을 표현하는 동작. 좋아한다는 감정 표현
+    tags: [사랑, 애정, 좋아, 하트, 감정]
+    safety: safe
+    llm: true
+    page: SA
+    slot: 202
+
+  - state: MimicBegRub
+    category: expression
+    ko: 애원하기
+    desc: 두 손을 비비며 부탁하는 동작. 조르거나 사정할 때
+    tags: [부탁, 애원, 미안, 조르기, 귀여움]
+    safety: safe
+    llm: true
+    page: SA
+    slot: 201
+
+  # ── 표현 / 리액션 ───────────────────────────────────────────
+  - state: MimicBadChestpop
+    en: "CHEST POP"
+    category: reaction
+    ko: 체스트 팝
+    desc: 가슴을 튕기는 리듬 동작. 짧고 임팩트 있다
+    tags: [리듬, 뽐내기, 자신감, 임팩트, 짧음]
+    safety: safe
+    llm: true
+    page: X
+    slot: 201
+
+  - state: MimicAiming
+    category: guide
+    ko: 조준하기
+    desc: 팔을 뻗어 한 방향을 겨누는 동작. 무언가를 가리킬 때
+    tags: [가리키기, 지목, 방향, 겨냥, 주목]
+    safety: safe
+    llm: true
+    page: SA
+    slot: 203
+
+  - state: Mimicbad
+    category: performance
+    ko: 배드
+    desc: 마이클 잭슨 Bad 안무의 동작
+    tags: [춤, 팝, 마이클잭슨, 퍼포먼스]
+    safety: caution
+    llm: true
+    page: SA
+    slot: 209
+
+  # ── 무대 퍼포먼스 (춤) ──────────────────────────────────────
+  - state: MimicShuffleDance
+    category: performance
+    ko: 셔플 댄스
+    desc: 발을 빠르게 미끄러뜨리는 셔플 댄스. 신나는 분위기에 맞다
+    tags: [춤, 신남, 흥, 파티, 경쾌]
+    safety: caution
+    llm: true
+    page: X
+    slot: 209
+
+  - state: MimicBillyJean
+    category: performance
+    ko: 빌리진
+    desc: 마이클 잭슨 Billie Jean 안무
+    tags: [춤, 팝, 마이클잭슨, 클래식, 퍼포먼스]
+    safety: caution
+    llm: true
+    page: SA
+    slot: 206
+
+  - state: MimicPara
+    category: performance
+    ko: 파라파라
+    desc: 팔을 크게 휘젓는 파라파라 댄스. 동작이 크고 화려하다
+    tags: [춤, 화려함, 신남, 팔동작]
+    safety: caution
+    llm: true
+    page: SA
+    slot: 205
+
+  - state: MimicDanceBasicTurnV1360RLoopFast003A325
+    category: performance
+    ko: 턴 댄스
+    desc: 제자리에서 360도 회전하는 댄스
+    tags: [춤, 회전, 턴, 화려함]
+    safety: caution
+    llm: true
+    page: X
+    slot: 208
+
+  - state: MimicDance1
+    category: performance
+    ko: 댄스 1
+    desc: 기본 댄스 동작 1번
+    tags: [춤, 기본]
+    safety: caution
+    llm: true
+    page: SD
+    slot: 202
+
+  - state: MimicDance2
+    category: performance
+    ko: 댄스 2
+    desc: 기본 댄스 동작 2번
+    tags: [춤, 기본]
+    safety: caution
+    llm: true
+    page: SD
+    slot: 203
+
+  - state: MimicOmbrinho
+    category: performance
+    ko: 옴브리뉴
+    desc: 어깨를 쓰는 리듬 댄스
+    tags: [춤, 어깨, 리듬, 라틴]
+    safety: caution
+    llm: true
+    page: SA
+    slot: 208
+
+  - state: MimicRedRed
+    category: performance
+    ko: 레드레드
+    desc: 레드레드 안무
+    tags: [춤, 케이팝, 퍼포먼스]
+    safety: caution
+    llm: true
+    page: SD
+    slot: 204
+
+  # 2026-08-18 패드 12 교체용. 로봇 state 는 타 작업자가 등록해 둔 New 계열 (RC 2p 212).
+  - state: MimicNewRockOut002A487
+    en: "ROCK OUT"
+    category: performance
+    ko: 락아웃
+    desc: 팔을 크게 흔드는 록 콘서트 호응 동작
+    tags: [락, 호응, 신남, 콘서트]
+    safety: caution
+    llm: false
+    status: ready
+
+  - state: MimicGuap
+    en: "GUAP"
+    category: expression
+    ko: 구압
+    desc: 구압 안무
+    tags: [춤, 퍼포먼스]
+    safety: caution
+    llm: true
+    page: X
+    slot: 206
+
+  # ── 무술 / 시연 ─────────────────────────────────────────────
+  - state: MimicTkd1poomBasic
+    category: performance
+    ko: 태권도 1품
+    desc: 태권도 품새 1장. 절도 있고 격식 있는 무술 시연
+    tags: [태권도, 무술, 시연, 절도, 한국, 격식]
+    safety: caution
+    llm: true
+    page: X
+    slot: 200
+
+  # 2026-08-18 추가. policies/k1 패키징본(등급 "배포 가능", reward 129.6) 배포.
+  # RC 2페이지 206 을 RedRed 에서 이어받았다 (RedRed state 는 유지, API 로는 호출 가능).
+  - state: MimicTkdHorseStanceBodyPunch
+    category: performance
+    ko: 주춤서 몸통지르기
+    desc: 태권도 주춤서기 자세에서 몸통 지르기. 절도 있는 무술 시연
+    tags: [태권도, 무술, 지르기, 시연, 절도]
+    safety: caution
+    llm: false
+    page: SA
+    slot: 206
+
+  - state: MimicTaeguk
+    category: performance
+    ko: 태극 1장
+    desc: 태극 1장 품새. 태권도 기본 품새
+    tags: [태권도, 무술, 시연, 한국, 품새]
+    safety: caution
+    llm: true
+    page: X
+    slot: 204
+
+  # ── 일상 동작 ───────────────────────────────────────────────
+  - state: MimicWalk1Subject1
+    category: intense
+    ko: 걷기
+    desc: 앞으로 걸어가는 동작
+    tags: [걷기, 이동, 일상]
+    safety: caution
+    llm: true
+    page: SA
+    slot: 207
+
+  - state: MimicSquat
+    en: "SQUAT"
+    category: performance
+    ko: 스쿼트
+    desc: 무릎을 굽혀 앉았다 일어나는 동작
+    tags: [운동, 스쿼트, 앉기, 일상]
+    safety: caution
+    llm: true
+    page: SA
+    slot: 204
+
+  - state: MimicCoinPick
+    category: idle
+    ko: 동전 줍기
+    desc: 허리를 숙여 바닥의 물건을 줍는 동작
+    tags: [줍기, 숙이기, 물건, 일상]
+    safety: caution
+    llm: true
+    page: SD
+    slot: 201
+
+  # ── 격한 동작 (LLM 비노출) ──────────────────────────────────
+  - state: MimicShadowBoxing
+    en: "SHADOW BOXING"
+    category: intense
+    ko: 섀도우 복싱
+    # pad 음성에 합류하는 restricted 라 지목 게이팅을 desc 에 박는다 (모델의 유일한 근거)
+    desc: 허공에 주먹을 내지르는 복싱 동작. 사용자가 섀도우 복싱이나 복싱을 정확히 지목해 요청할 때만 쓴다. 주변 공간 확보가 필요하다
+    tags: [복싱, 격투, 운동, 역동]
+    safety: restricted
+    llm: false
+    page: SD
+    slot: 200
+
+  - state: MimicBoxingNewton
+    category: intense
+    ko: 복싱
+    desc: 복싱 동작
+    tags: [복싱, 격투, 역동]
+    safety: restricted
+    llm: false
+    page: SD
+    slot: 205
+
+  # ── 중복 변형본 / 학습 체크포인트 (LLM 비노출) ──────────────
+  # RC 다이얼로는 부를 수 있으나, LLM 에게는 원본만 보여준다.
+  # cooldown_sec: 연타 방지. gateway 가 강제한다. 값이 없는 모션은 대기시간 0 이라
+  #   인사류의 "새 발화에서 같은 동작 재실행"(실물 검증됨) 은 그대로 유지된다.
+  # interruptible: 데이터만 둔다. 정지는 항상 허용되므로 이 값으로 막지 않는다.
+  #   실행 중 "다른 모션으로 교체" 기능을 만들 때 쓸 값이다.
+  - {state: MimicBadChestpopVer2, category: reaction, ko: 체스트팝 v2,  desc: 체스트팝 변형본,        tags: [변형본], safety: safe,       llm: true,  page: X,     slot: 205, cooldown_sec: 8, interruptible: true}
+  # 표시명은 그냥 GUAP (2026-08-18 사용자 확정 — 패드에 v2 표기 안 씀). state 는 불변.
+  - {state: MimicGuapVer2, en: "GUAP", category: expression, ko: 구압,      desc: 구압 안무,            tags: [변형본], safety: caution,    llm: false, page: X,     slot: 207}
+  - {state: MimicSquat05, category: performance,         ko: 스쿼트 05,    desc: 스쿼트 변형본,          tags: [변형본], safety: caution,    llm: false, page: SD,    slot: 207}
+  - {state: MimicBoxingNewUrdf, category: intense,   ko: 복싱 변형A,   desc: 복싱 변형본,            tags: [변형본], safety: restricted, llm: false, page: SD,    slot: 206}
+  - {state: MimicBoxingLpfW9, category: intense,     ko: 복싱 변형B,   desc: 복싱 변형본,            tags: [변형본], safety: restricted, llm: false, page: SD,    slot: 208}
+  - {state: MimicRedRedNewton, category: performance,    ko: 레드레드 변형, desc: 레드레드 변형본,        tags: [변형본], safety: caution,    llm: false, page: SD,    slot: 209}
+  - {state: MimicBoxingK05, category: intense,       ko: 복싱 변형C,   desc: 복싱 변형본,            tags: [변형본], safety: restricted, llm: false, page: SA+SD, slot: 208}
+  - {state: MimicRedRedWoojin, category: performance,    ko: 레드레드 초기, desc: 레드레드 초기 버전,     tags: [변형본], safety: caution,    llm: false, page: SA+SD, slot: 209}
+  - {state: MimicTurnIt05000,     ko: 턴댄스 ckpt05000, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 200}
+  - {state: MimicTurnIt10000,     ko: 턴댄스 ckpt10000, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 201}
+  - {state: MimicTurnIt15000,     ko: 턴댄스 ckpt15000, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 202}
+  - {state: MimicTurnIt20000,     ko: 턴댄스 ckpt20000, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 203}
+  - {state: MimicTurnIt25000,     ko: 턴댄스 ckpt25000, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 204}
+  - {state: MimicTurnIt30000,     ko: 턴댄스 ckpt30000, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 205}
+  - {state: MimicTurnIt35000,     ko: 턴댄스 ckpt35000, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 206}
+  - {state: MimicTurnIt39999,     ko: 턴댄스 ckpt39999, desc: 턴댄스 학습 체크포인트, tags: [체크포인트], safety: caution, llm: false, page: SA+SD, slot: 207}
+
+  # ══════════════════════════════════════════════════════════════════
+  #  아래는 아직 학습 전이다 (status: planned).
+  #  seed: 는 BONES-SEED 원본 파일명 — 리타기팅/학습 작업지시서로 쓴다.
+  #  tier: 1 = 대화 루프에 필수 / 2 = 볼거리 / 3 = 선택
+  #
+  #  1단계(로봇 없이 대화 검증)에서는 planned 도 LLM 에 노출한다.
+  #  로봇에 붙일 때 --ready-only 로 실행하면 학습 끝난 것만 남는다.
+  # ══════════════════════════════════════════════════════════════════
+
+  # ── A. 기본·대기 (Idle) ─ 유휴 루프의 재료. 이게 있어야 "살아있는" 느낌이 난다
+  - {state: MimicIdleBase, category: idle, ko: 기본 자세, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "가만히 서 있는 기본 대기 자세", tags: [대기, 기본, 정지, 차렷],
+     seed: dance_basic_first_entry_position_R_002__A309}
+  - {state: MimicCrossedArms, category: idle, ko: 팔짱, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "팔짱을 끼고 여유롭게 서 있는다", tags: [대기, 팔짱, 여유, 느긋],
+     seed: crossed_arms_idle_right_to_idle_R_001__A456}
+  - {state: MimicCrossedArmsTurn, category: performance, ko: 팔짱 턴, tier: 3, status: ready, safety: caution, llm: true,
+     desc: "팔짱을 낀 채 몸을 돌려 다른 쪽을 본다", tags: [대기, 팔짱, 회전, 둘러보기],
+     seed: crossed_arms_idle_turn_270_R_001__A456}
+  - {state: MimicHandsOnBack, ko: 뒷짐, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "두 손을 뒤로 모으고 서 있는 점잖은 대기 자세", tags: [대기, 뒷짐, 점잖음, 격식],
+     seed: idle_hands_on_back_loop_R_001__A029}
+  - {state: MimicListening, ko: 듣는 자세, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "상대의 말을 귀 기울여 듣는 자세", tags: [경청, 듣기, 관심, 대화, 끄덕],
+     seed: listening_R_001__A116}
+  - {state: MimicCheckingTime, category: idle, ko: 시간 확인, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "손목시계를 보는 시늉을 한다. 시간 질문이나 기다리는 상황에 쓴다. 실제 시간은 말로 답한다", tags: [대기, 시간, 지루함, 기다림],
+     seed: checking_time_R_002__A187}
+  - {state: MimicFanning, ko: 부채질, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "손으로 부채질을 한다. 덥거나 답답할 때", tags: [더위, 덥다, 부채질, 답답],
+     seed: fanning_yourself_R_001__A500}
+  - {state: MimicLookBack, ko: 뒤돌아보기, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "뒤를 돌아본다", tags: [뒤, 돌아보기, 확인, 두리번],
+     seed: look_000_R_001__A428}
+  - {state: MimicLookAround, ko: 두리번거리기, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "손을 이마에 대고 주변을 둘러보며 무언가를 찾는다", tags: [대기, 두리번, 찾기, 궁금, 탐색],
+     seed: look_around_eyes_cover_one_hand_R_001__A500}
+  - {state: MimicStretch, ko: 기지개, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "몸을 쭉 펴며 기지개를 켠다", tags: [대기, 스트레칭, 피곤, 기지개],
+     seed: body_stretch_opt_1_001__A029}
+
+  # ── B. 인사·맞이·배웅 ────────────────────────────────────────────
+  - {state: MimicCasualGreeting, category: greeting, ko: 캐주얼 인사, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "가볍게 손을 들어 편하게 인사한다. 처음 만나 반길 때 쓴다. 작별에는 쓰지 않는다", tags: [인사, 안녕, 가벼움, 친근],
+     seed: casual_greeting_R_001__A428}
+  - {state: MimicWelcoming, ko: 어서오세요, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "두 팔을 벌려 환영하며 맞이한다", tags: [환영, 어서와, 맞이, 반가움, 손님],
+     seed: welcoming_001__A142}
+  - {state: MimicBowPolite, ko: 정중한 인사, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "허리를 숙여 정중하게 인사한다. 감사나 사과, 격식 있는 자리에 쓴다", tags: [인사, 정중, 격식, 감사, 존경],
+     seed: bow_R_001__A429}
+  - {state: MimicBowCourtly, en: "COURTLY BOW", category: greeting, ko: 궁정식 인사, tier: 3, status: ready, safety: safe, llm: true,
+     desc: "우아하게 손을 뻗으며 하는 궁정식 인사. 공연이나 연출 요청에만 쓴다. 일반 인사에는 쓰지 않는다", tags: [인사, 우아, 격식, 연출],
+     seed: courtly_bow_female_R_001__A429}
+  # 2026-08-14 학습 완료(model_11999) 확인 후 ready 로 정정. 로봇 배포는 별도 확인 필요.
+  - {state: MimicNewKnightlyBowR001A429, en: "KNIGHT BOW", category: greeting, ko: 기사식 인사, tier: 3, status: ready, safety: safe, llm: true,
+     desc: "한쪽 팔을 가슴에 대고 하는 기사식 인사", tags: [인사, 기사, 격식, 연출],
+     seed: knightly_bow_R_001__A429}
+  - {state: MimicByeBye, category: greeting, ko: 배웅 인사, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "손을 흔들며 작별 인사를 한다. 헤어질 때 전용. 만남 인사에는 쓰지 않는다", tags: [작별, 배웅, 안녕히, 바이바이, 잘가],
+     seed: bye_bye_salute_R_002__A474}
+  - {state: MimicComeHere, category: guide, ko: 이리 오세요, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "손짓으로 가까이 오라고 부른다", tags: [부르기, 이리와, 오세요, 손짓, 초대],
+     seed: come_here_R_002__A456}
+  - {state: MimicBeckon, category: guide, ko: 오라이, tier: 2, status: ready, safety: safe, llm: true,
+     desc: "팔을 크게 휘저어 오라고 신호한다", tags: [부르기, 신호, 유도, 오라이],
+     seed: beckon_R_001__A428}
+
+  # ── C. 안내·지시·제지 ─ 로봇이 먼저 말을 거는 동작들 ──────────────
+  - {state: MimicPresentLeft, ko: 왼쪽 안내, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "왼쪽을 손으로 가리키며 안내한다", tags: [안내, 왼쪽, 이쪽, 방향, 소개],
+     seed: present_left_R_001__A428}
+  - {state: MimicPresentRight, ko: 오른쪽 안내, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "오른쪽을 손으로 가리키며 안내한다", tags: [안내, 오른쪽, 이쪽, 방향, 소개],
+     seed: present_right_R_001__A428}
+  - {state: MimicPointDirection, ko: 방향 지시, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "팔을 뻗어 특정 방향을 정확히 가리킨다", tags: [가리키기, 방향, 지시, 저쪽],
+     seed: point_dir_horizontal_right_hand_315_head_front_R_004__A031}
+  - {state: MimicDontComeCloser, ko: 오지 마세요, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "두 손을 앞으로 내밀어 더 가까이 오지 말라고 제지한다", tags: [제지, 정지, 오지마, 안전, 거리],
+     seed: dont_come_any_closer_both_hands_R_002__A456}
+  - {state: MimicCalmDown, category: guide, ko: 진정하세요, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "손바닥을 아래로 눌러 진정시킨다", tags: [진정, 차분, 천천히, 안정, 제지],
+     seed: calm_down_R_001__A432}
+  - {state: MimicQuiet, ko: 조용히, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "입에 손가락을 대고 조용히 하라고 한다", tags: [조용, 정숙, 쉿, 침묵],
+     seed: no_speak_001__A097}
+
+  # ── D. 직접 인터랙션 (접촉) ──────────────────────────────────────
+  - {state: MimicHighFive, ko: 하이파이브, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "손을 들어 하이파이브를 한다", tags: [하이파이브, 손뼉, 인사, 신남, 접촉],
+     seed: high_five_crowd_R_001__A432}
+  - {state: MimicSseSseSse, ko: 쎄쎄쎄, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "두 손을 마주치는 손놀이", tags: [놀이, 쎄쎄쎄, 손놀이, 아이, 접촉],
+     seed: anse_kabanse_R_001__A459}
+  # 2인 접촉 동작. 사람이 매달리는 형태라 안전 검토 전까지 LLM 비노출.
+  - {state: MimicAirplane, ko: 비행기 놀이, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "사람을 들어올리는 비행기 놀이. 2인 접촉, 안전 검토 필요", tags: [놀이, 접촉, 위험],
+     seed: the_airplane_002__A492}
+  # slap_R (뺨 때리기) 은 의도적으로 카탈로그에 넣지 않는다. 학습도 권장하지 않는다.
+
+  # ── E. 호응·환호 ─────────────────────────────────────────────────
+  - {state: MimicBravo, category: reaction, ko: 정중한 박수, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "격식 있게 천천히 박수를 친다. 축사나 공식 순서에 쓴다. 신나는 환호에는 쓰지 않는다", tags: [박수, 브라보, 정중, 격식, 축하],
+     seed: bravo_R_001__A431}
+  - {state: MimicCrowdCheer, category: reaction, ko: 큰 박수, tier: 1, status: ready, safety: safe, llm: true,
+     desc: "두 팔을 크게 흔들며 환호한다. 신나는 축하와 응원에 쓴다. 차분한 자리에는 쓰지 않는다", tags: [환호, 박수, 신남, 응원, 축하, 호응],
+     seed: crowd_cheer_001__A029}
+  - {state: MimicJumpForJoy, ko: 기쁨의 점프, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "기뻐서 폴짝 뛰며 축하한다", tags: [기쁨, 축하, 세리머니, 신남, 점프],
+     seed: jump_for_joy_R_002__A431}
+  - {state: MimicTheRing, ko: 머리 위 원, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "두 팔로 머리 위에 큰 동그라미를 만든다. 맞다는 표시", tags: [동그라미, 맞아, 정답, 좋아, 오케이],
+     seed: the_ring_R_001__A429}
+  - {state: MimicChefsKiss, en: "CHEF'S KISS", category: reaction, ko: 손키스, tier: 2, status: ready, safety: safe, llm: true,
+     desc: "손끝에 입맞추고 펼치는 감탄 제스처", tags: [감탄, 훌륭, 최고, 맛있다, 완벽],
+     seed: chefs_kiss_R_001__A051}
+  - {state: MimicKissingHands, ko: 손 뽀뽀 인사, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "손에 입맞춤을 하고 관중에게 감사를 표한다", tags: [감사, 고마움, 인사, 관중, 애정],
+     seed: kissing_hands_thanks_stadium_001__A042}
+  # Kozakiewicz_gesture 는 외설 제스처라 카탈로그와 학습 대상 모두에서 제외한다.
+
+  # ── F. 감정 표현 ─ LLM 이 대화에 반응할 때 쓰는 재료 ──────────────
+  - {state: MimicFear, ko: 놀람/무서움, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "겁먹고 움츠러든다", tags: [무서움, 놀람, 겁, 두려움, 깜짝],
+     seed: neutral_fear_R_001__A545}
+  - {state: MimicJustRealized, ko: 아차 하는 탄식, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "무언가를 뒤늦게 깨닫고 탄식한다", tags: [탄식, 아차, 깨달음, 실수, 아이고],
+     seed: just_realized_R_001__A185}
+  - {state: MimicPrayer, ko: 간절한 기도, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "두 손을 모아 간절히 빈다", tags: [기도, 간절, 부탁, 소원, 제발],
+     seed: desperate_prayer_R_001__A432}
+  - {state: MimicTasty, ko: 배고파/맛있다, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "배를 문지르며 맛있다거나 배고프다고 표현한다", tags: [배고픔, 맛있다, 음식, 먹고싶다],
+     seed: tasty_R_001__A118}
+  - {state: MimicIGotThis, ko: 나만 믿어, tier: 1, status: planned, safety: safe, llm: true,
+     desc: "자신 있다는 듯 당당한 제스처", tags: [자신감, 걱정마, 나만믿어, 당당, 괜찮아],
+     seed: i_got_this_001__A101}
+  - {state: MimicFireSpurMe, ko: 의욕 충전, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "스스로를 북돋우며 의욕을 불태운다", tags: [의욕, 파이팅, 열정, 화이팅, 힘내],
+     seed: fire_spur_me_R_002__A429}
+  - {state: MimicWhatDoYouWant, ko: "뭔데?", tier: 2, status: planned, safety: safe, llm: true,
+     desc: "어깨를 으쓱하며 뭐냐고 되묻는다", tags: [의문, 뭐지, 글쎄, 모르겠다, 갸웃],
+     seed: what_do_you_want_R_002__A428}
+  - {state: MimicDustBrushing, ko: 어깨 털기, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "어깨의 먼지를 툭툭 털어낸다. 여유롭고 잘난 척", tags: [여유, 잘난척, 시크, 먼지, 쿨],
+     seed: boss_dust_brushing_R_001__A036}
+
+  # ── G. 포즈·자랑 (포토) ──────────────────────────────────────────
+  - {state: MimicBicepCheck, ko: 근육+시간체크, tier: 3, status: planned, safety: caution, llm: true,
+     desc: "근육을 보여주고 걸으며 시간을 확인하는 연속 동작", tags: [근육, 자랑, 포즈, 연속],
+     seed: show_bicep_R_walk_arc_cw_start_R_checking_time_R_001__A472}
+  - {state: MimicFlexOnEm, ko: 근육 자랑, tier: 2, status: planned, safety: safe, llm: true,
+     desc: "팔을 굽혀 알통을 자랑한다", tags: [근육, 자랑, 힘, 포즈, 사진],
+     seed: flex_on_em_R_001__A529}
+  - {state: MimicTarzan, ko: 가슴 두드리기, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "타잔처럼 가슴을 두드린다", tags: [타잔, 가슴, 힘, 포효, 자랑],
+     seed: tarzan_R_001__A098}
+  - {state: MimicRockOut, ko: 에어기타, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "허공에 기타를 치는 시늉을 한다", tags: [기타, 락, 음악, 신남, 연주],
+     seed: rock_out_002__A487}
+  - {state: MimicFancySpin, ko: 팬시한 턴, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "멋지게 한 바퀴 돈다", tags: [회전, 턴, 멋짐, 포즈, 마무리],
+     seed: fancy_spin_R_001__A430}
+
+  # ── H. 댄스 ─────────────────────────────────────────────────────
+  - {state: MimicDanceBlindingLights, category: performance, ko: 블라인딩 라이츠, tier: 2, status: ready, safety: caution, llm: true,
+     desc: "The Weeknd 의 Blinding Lights 챌린지 안무", tags: [춤, 챌린지, 팝, 유행],
+     seed: dance_blinding_lights_004__A464}
+  - {state: MimicDanceClick, category: performance, ko: 클릭 댄스, tier: 2, status: ready, safety: caution, llm: true,
+     desc: "손가락을 튕기는 리듬 댄스", tags: [춤, 리듬, 경쾌],
+     seed: dance_click_002__A465}
+  - {state: MimicDanceFloss, category: performance, ko: 플로스 댄스, tier: 2, status: ready, safety: caution, llm: true,
+     desc: "팔을 몸 앞뒤로 흔드는 플로스 댄스", tags: [춤, 플로스, 유행, 재미],
+     seed: dance_floss_002__A464}
+  - {state: MimicDanceGunslinger, ko: 건슬링어, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "총잡이 컨셉의 화려한 댄스", tags: [춤, 화려, 컨셉],
+     seed: dance_gunslinger_smokeshow_001__A464}
+  - {state: MimicDanceFlintstones, ko: 킥볼체인지, tier: 3, status: planned, safety: caution, llm: true,
+     desc: "힙합 킥볼체인지 스텝", tags: [춤, 힙합, 스텝],
+     seed: dance_hiphop_flintstones_kick_ball_change_R_002__A311}
+  - {state: MimicDanceHiphopShuffle, ko: 힙합 셔플, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "힙합 셔플 스텝", tags: [춤, 힙합, 셔플, 스텝],
+     seed: dance_hiphop_shuffle_R_001__A316}
+  - {state: MimicDanceJazzHands, en: "JAZZ HANDS", category: performance, ko: 재즈핸즈, tier: 2, status: ready, safety: safe, llm: true,
+     desc: "재즈핸즈 춤을 춘다. 사용자가 재즈핸즈나 춤을 정확히 지목해 요청할 때만 쓴다. 신난다고 먼저 추지 않는다", tags: [춤, 재즈, 손, 화려, 마무리],
+     seed: dance_jazz_hands_002__A464, cooldown_sec: 10}
+  - {state: MimicDanceNinja, ko: 닌자 댄스, tier: 3, status: planned, safety: caution, llm: true,
+     desc: "닌자 컨셉 댄스", tags: [춤, 닌자, 컨셉],
+     seed: dance_ninja_style_003__A464}
+  - {state: MimicDanceTakeTheL, ko: 테이크 더 엘, tier: 3, status: planned, safety: caution, llm: true,
+     desc: "다리를 차며 추는 Take the L 댄스", tags: [춤, 유행, 게임, 재미],
+     seed: dance_take_the_l_001__A464}
+  - {state: MimicDanceVogueDancehall, ko: 보그 댄스홀, tier: 3, status: planned, safety: caution, llm: true,
+     desc: "보그 스타일 댄스홀 안무", tags: [춤, 보그, 화려],
+     seed: dance_vogue_dancehall_open_close_270_R_001__A316}
+  - {state: MimicDanceVogueShake, ko: 보그 셰이크, tier: 3, status: planned, safety: caution, llm: true,
+     desc: "빠른 보그 셰이크 안무", tags: [춤, 보그, 빠름],
+     seed: dance_vogue_shake_it_babe_180_R_fast_001__A316}
+  - {state: MimicDanceBodyPercussion, ko: 바디 퍼커션, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "몸을 두드려 리듬을 만드는 바디 퍼커션", tags: [춤, 리듬, 타악, 박자],
+     seed: dance_western_body_percussion_R_001__A306}
+  # 2026-08-14 학습 완료(model_19999) 확인 후 ready 로 정정. 로봇 배포는 별도 확인 필요.
+  - {state: MimicNewMacarena001A545, en: "MACARENA", category: performance, ko: 마카레나, tier: 2, status: ready, safety: safe, llm: true,
+     desc: "누구나 아는 마카레나 춤. 상체 위주라 따라하기 쉽다", tags: [춤, 마카레나, 유명, 따라하기, 관객참여],
+     seed: macarena_001__A545}
+
+  # ── I. 운동·전신 ────────────────────────────────────────────────
+  - {state: MimicJumpingJack, ko: 팔벌려뛰기, tier: 2, status: planned, safety: caution, llm: true,
+     desc: "팔벌려뛰기 운동 동작", tags: [운동, 체조, 점프, 준비운동],
+     seed: jumping_jack_001__A033}
+  - {state: MimicShadowBoxingSeed, ko: 섀도우 복싱 (seed), tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "허공에 주먹을 내지르는 복싱", tags: [복싱, 격투, 역동],
+     seed: shadow_boxing_R_001__A362}
+
+  # ── J. 고난도·곡예 ─ 별도 트랙. LLM 에 절대 노출하지 않는다 ────────
+  - {state: MimicCartwheel, category: performance, ko: 옆돌기, tier: 3, status: ready, safety: caution, llm: true,
+     desc: "옆돌기를 한다. 사용자가 옆돌기나 카트휠을 정확히 지목해 요청할 때만 쓴다. 넓은 공간 확보가 전제이며 먼저 하지 않는다", tags: [곡예, 고난도], seed: cartwheel_R_001__A415, cooldown_sec: 20}
+  - {state: MimicCartwheelin, ko: 옆돌기 연속, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "연속 옆돌기", tags: [곡예, 고난도], seed: cartwheelin_001__A487}
+  - {state: MimicFlip360, ko: 360 백플립, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "360도 회전 후 착지", tags: [곡예, 고난도, 점프], seed: flip_360_hero_landing_001__A304}
+  - {state: MimicWallJump, ko: 벽차기 점프, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "벽을 차고 뛰어오른다", tags: [곡예, 고난도, 벽], seed: hook_jump_off_wall_R_001__A304}
+  - {state: MimicShoulderRoll, ko: 구르기 착지, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "뛰어 어깨로 구르며 착지", tags: [곡예, 고난도, 구르기], seed: tiger_jump_to_shoulder_roll_R_001__A304}
+  - {state: MimicDodge270, ko: 회피 270, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "몸을 틀어 피한다", tags: [곡예, 회피], seed: ib_dodge_270_R_001__A437}
+  - {state: MimicDodgeBack, ko: 뒤로 회피, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "뒤로 물러나며 피한다", tags: [곡예, 회피], seed: ib_dodge_back_L_001__A437}
+  - {state: MimicBoxJumpOn, ko: 박스 점프, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "박스 위로 뛰어올라 180도 돈다. 소품 필요", tags: [곡예, 소품, 점프], seed: box_jump_on_180_001__A359}
+  - {state: MimicBoxDown, ko: 박스 내려오기, tier: 3, status: planned, safety: restricted, llm: false,
+     desc: "50cm 박스에서 내려온다. 소품 필요", tags: [곡예, 소품], seed: come_down_50cm_box_R_001__A045}
+
+  # ── 로봇 실측 추가분 (2026-08-12) ────────────────────────────
+  # 로봇 list_modes 에는 로드돼 있는데 카탈로그에 없던 항목들. 출처는
+  # docs/ROBOT_MODES_20260812.md 의 실제 캡처다.
+  # desc 는 seed/metadata/seed_metadata_v004.csv 의 content_short_description /
+  # content_natural_desc_1 에서 가져왔다. 추측으로 채우지 않았다.
+  # 전부 llm: false — 운영자 수동 버튼 전용이고 실물 검증 전이다.
+  - {state: MimicBow, category: greeting, ko: 허리 숙여 인사, status: ready, safety: caution, llm: false,
+     desc: "고개와 상체를 숙여 인사한다. 앞으로 작은 한 발을 내딛는다",
+     tags: [인사, 목례, 발이동], seed: bow_R_001__A428}
+  - {state: MimicBossDustBrushingR001A036, category: expression, ko: 먼지 털기, status: ready, safety: caution, llm: false,
+     desc: "왼쪽 어깨의 먼지를 오른손 등으로 털어내는 자신만만한 동작. 수평 이동이 있다",
+     tags: [제스처, 여유, 자신감, 이동], seed: boss_dust_brushing_R_001__A405}
+  - {state: MimicBossDustBrushingNew, category: expression, ko: 먼지 털기 (신규), status: ready, safety: caution, llm: false,
+     desc: "먼지 털기 동작의 변형본. 수평 이동이 있다",
+     tags: [제스처, 여유, 자신감, 변형본, 이동], seed: boss_dust_brushing_R_001__A405}
+  - {state: MimicAnseKabanse, category: expression, ko: 안세카반세, status: ready, safety: safe, llm: true,
+     desc: "안세카반세 게임을 하는 동작. 제자리에서 상대와 주고받는 놀이 제스처",
+     tags: [놀이, 게임, 제스처, 상호작용], seed: anse_kabanse_R_001__A456}
+  - {state: MimicBodyStretch, category: idle, ko: 몸 늘리기, status: ready, safety: safe, llm: true,
+     desc: "넓게 선 채 오른손을 머리 위로 넘겨 왼쪽으로 몸을 늘린다. 제자리 스트레칭",
+     tags: [스트레칭, 준비운동, 제자리], seed: body_stretch_v001_001__A359}
+  - {state: MimicDeepDab001A467, en: "DEEP DAB", category: expression, ko: 딥 댑, status: ready, safety: safe, llm: true,
+     desc: "댑을 깊게 하는 포즈. 제자리에서 짧게 끝난다",
+     tags: [댑, 포즈, 춤, 멋짐], seed: dance_deep_dab_001__A464}
+  # seed metadata 에 대응 항목이 없다. 로드맵 3.1 의 기술만 근거라 정보가 부족해 caution.
+  - {state: MimicGuapIntroP2, category: expression, ko: 구압 인트로, status: ready, safety: caution, llm: false,
+     desc: "자기소개 뒤에 쓰는 짧은 시그니처 포즈. 실물 확인 전이라 이동량 미상",
+     tags: [소개, 포즈, 시그니처]}
+
+  # ── shape10 신규 학습분 (2026-08-13 export 확인, 로봇 로드 미확인) ──
+  # state 이름은 로봇 list_modes 실측 후 교정한다 (tools/check_modes.sh).
+  # 전부 llm: false + planned — 실측·실물 검증 전에는 어느 경로로도 열지 않는다.
+  - {state: MimicPushUp, en: "PUSH UP", category: performance, ko: 팔굽혀펴기, status: ready, safety: caution, llm: true,
+     desc: "엎드려 팔굽혀펴기를 한다. 사용자가 팔굽혀펴기나 푸시업을 정확히 지목해 요청할 때만 쓴다. 운동·힘 얘기가 나왔다고 먼저 하지 않는다",
+     tags: [운동, 체조, 팔굽혀펴기], seed: push_up_seq_001__A360, cooldown_sec: 15}
+  - {state: MimicSnuCheer, category: performance, ko: 서울대 응원, status: ready, safety: caution, llm: false,
+     desc: "응원 동작. 실물 확인 전이라 동작 범위 미상",
+     tags: [응원, 환호], seed: snu_cheer}
+  # 2026-08-17 개소식 dance 용 최신본. 로봇의 snu_cheer_head_short 자산 = shape10
+  # 0065 산출물 (onnx md5 로 대조 확인). 타 작업자가 배포·등록해 둔 state 를 잇는다.
+  - {state: MimicNewSnuCheerHeadShort, category: performance, ko: 서울대 응원 (최신), status: ready, safety: caution, llm: false,
+     desc: "서울대 응원 최신본 (head_short 0065). dance 무대 전용",
+     tags: [응원, 환호, 무대], seed: snu_cheer_head_short}
+  - {state: MimicStraykidsThisAndThat, category: performance, ko: 스키즈 안무, status: ready, safety: caution, llm: false,
+     desc: "Stray Kids 안무 일부. 실물 확인 전이라 동작 범위 미상",
+     tags: [춤, 케이팝, 퍼포먼스], seed: straykids_this_and_that}
+
+  # ── 전 자산 개방 추가분 (2026-08-14, RC 2x20 + API 버튼 전면화) ──
+  # 로봇 자산에 있는데 카탈로그에 없던 실동작들. 전부 운영자 버튼 전용(llm: false).
+  - {state: MimicGuapIntro, category: expression, ko: 구압 인트로 v1, status: ready, safety: caution, llm: false,
+     desc: "구압 인트로 초기 버전. p2 이전 학습본", tags: [소개, 포즈, 변형본]}
+  - {state: MimicBurpee, category: performance, ko: 버피, status: ready, safety: caution, llm: false,
+     desc: "엎드렸다 일어나며 뛰는 버피 운동. 전신 체조", tags: [운동, 체조, 전신], seed: burpee_001__A360}
+  - {state: MimicDanceCrossTurn360, category: performance, ko: 크로스 턴 360, status: ready, safety: caution, llm: false,
+     desc: "교차 스텝으로 360도 도는 기본 댄스 턴", tags: [춤, 회전, 기본기], seed: dance_basic_cross_turn_360_R_002__A306}
+  - {state: MimicDanceCrossTurnFull, category: performance, ko: 크로스 턴 풀, status: ready, safety: caution, llm: false,
+     desc: "교차 스텝 풀 턴 댄스", tags: [춤, 회전, 기본기], seed: dance_basic_cross_turn_full_R_002__A308}
+  - {state: Mimicggang_1, category: performance, ko: 깡 1, status: ready, safety: caution, llm: false,
+     desc: "깡 안무 파트 1", tags: [춤, 케이팝]}
+  - {state: Mimicggang_2, category: performance, ko: 깡 2, status: ready, safety: caution, llm: false,
+     desc: "깡 안무 파트 2", tags: [춤, 케이팝]}
+  - {state: Mimicggang_3, category: performance, ko: 깡 3, status: ready, safety: caution, llm: false,
+     desc: "깡 안무 파트 3", tags: [춤, 케이팝]}
+  - {state: MimicHaminJumpFront, category: performance, ko: 하민 점프, status: ready, safety: caution, llm: false,
+     desc: "앞으로 뛰는 점프 동작", tags: [점프, 역동]}
+  - {state: MimicJump, category: performance, ko: 점프, status: ready, safety: caution, llm: false,
+     desc: "제자리 점프", tags: [점프]}
+  - {state: MimicDanceFishin, category: performance, ko: 피싱 댄스, status: ready, safety: caution, llm: false,
+     desc: "낚시하는 흉내의 피싱 댄스", tags: [춤, 재미], seed: dance_fishin_002__A467}
+  - {state: MimicCartwheelin, category: intense, ko: 카트휠린, status: ready, safety: restricted, llm: false,
+     desc: "옆돌기 변형 곡예. 실물 미검증, 넓은 공간과 E-stop 필수", tags: [곡예, 위험], seed: cartwheelin_001__A487}
+  - {state: MimicSnuCheerGvhmr, category: performance, ko: 서울대 응원 (GVHMR), status: ready, safety: caution, llm: false,
+     desc: "GVHMR 파이프라인으로 다시 뽑은 서울대 응원 동작. 기존 버전과 비교용", tags: [응원, 환호, 변형본], seed: snu_cheer_gvhmr}
+  - {state: MimicCartwheelBallTq42, category: intense, ko: 카트휠 (ball tq42), status: ready, safety: restricted, llm: false,
+     desc: "카트휠 중간 학습본(ball torquefix). 비교용. 넓은 공간과 E-stop 필수", tags: [곡예, 위험, 변형본]}
+
+# ── RC 조종기 뱅크 ──────────────────────────────────────────────
+# 로봇 실기(192.168.55.1)의 k1_config.yaml mimic_selector / mimic_selector_b
+# 반영본이다. state 는 로봇 config 의 상태 이름 그대로다.
+# server.py 런타임 로더는 motions / control_states 만 읽으므로 이 블록은
+# 사람과 웹 UI 용 참고 자료다.
+#
+# 조작: CH5 로 뱅크를 고르고(하 = A / 상 = B), CH11 다이얼로 슬롯을 고른다.
+#       CH11 은 1000 부터 20us 간격, selector code 는 200 부터.
+#
+# safety 판단 근거는 학습 로그의 Episode_Termination 비율이다.
+#   time_out  = 넘어짐 없이 에피소드를 끝낸 비율 (배포선 0.99)
+#   전 항목 anchor_ori(전복) 0.0000 — 시뮬에서 뒤집힌 사례는 없다
+rc_list:
+  updated: 2026-08-15
+  source: 192.168.55.1:/data/ai_sapiens_private/ai_sapiens_sim2real/config/k1_config.yaml
+  select:
+    bank: CH5    # 1000 = A (input_code 4), 2000 = B (input_code 5)
+    slot: CH11   # 1000 부터 20us 간격, tolerance 5
+  banks:
+    A:   # 인사 · 제스처 · 아이들. 전부 safe
+      ch5: 1000
+      input_code: 4
+      slots:
+      - {slot: 200, ch11: 1000, state: MimicNewKnightlyBowR001A429, ko: "기사식 절", safety: safe, reward: 135.67, time_out: 0.9990}
+      - {slot: 201, ch11: 1020, state: MimicNewWelcoming001A142, ko: "환영 인사", safety: safe, reward: 136.85, time_out: 0.9998}
+      - {slot: 202, ch11: 1040, state: MimicNewKissingHandsThanksStadium001A042, ko: "손키스 감사", safety: safe, reward: 135.59, time_out: 0.9997}
+      - {slot: 203, ch11: 1060, state: MimicNewHighFiveCrowdR001A432, ko: "하이파이브", safety: safe, reward: 134.24, time_out: 0.9976}
+      - {slot: 204, ch11: 1080, state: MimicNewTastyR001A118, ko: "맛있다", safety: safe, reward: 136.85, time_out: 1.0000}
+      - {slot: 205, ch11: 1100, state: MimicNewNoSpeak001A097, ko: "말 못해", safety: safe, reward: 136.77, time_out: 0.9998}
+      - {slot: 206, ch11: 1120, state: MimicNewJustRealizedR001A185, ko: "아 그렇구나", safety: safe, reward: 136.52, time_out: 0.9998}
+      - {slot: 207, ch11: 1140, state: MimicNewIGotThis001A101, ko: "내가 할게", safety: safe, reward: 135.78, time_out: 0.9990}
+      - {slot: 208, ch11: 1160, state: MimicNewListeningR001A116, ko: "경청", safety: safe, reward: 135.05, time_out: 0.9995}
+      - {slot: 209, ch11: 1180, state: MimicNewWhatDoYouWantR002A428, ko: "뭘 원해?", safety: safe, reward: 134.67, time_out: 0.9993}
+      - {slot: 210, ch11: 1200, state: MimicNewPointDirHorizontalRightHand315HeadFrontR004A031, ko: "오른손 가리키기", safety: safe, reward: 135.27, time_out: 1.0000}
+      - {slot: 211, ch11: 1220, state: MimicNewIdleHandsOnBackLoopR001A029, ko: "뒷짐 대기", safety: safe, reward: 138.90, time_out: 1.0000, note: "아이들 루프 20.4s"}
+      - {slot: 212, ch11: 1240, state: MimicNewLook000R001A428, ko: "둘러보기", safety: safe, reward: 137.66, time_out: 0.9988}
+      - {slot: 213, ch11: 1260, state: MimicNewPresentLeftR001A428, ko: "왼손 안내", safety: safe, reward: 136.59, time_out: 0.9990}
+      - {slot: 214, ch11: 1280, state: MimicNewFireSpurMeR002A429, ko: "불붙었어", safety: safe, reward: 136.90, time_out: 0.9998}
+      - {slot: 215, ch11: 1300, state: MimicNewLookAroundEyesCoverOneHandR001A500, ko: "손차양 둘러보기", safety: safe, reward: 136.65, time_out: 0.9998}
+      - {slot: 216, ch11: 1320, state: MimicNewFanningYourselfR001A500, ko: "부채질", safety: safe, reward: 138.18, time_out: 0.9998, note: "21.8s"}
+      - {slot: 217, ch11: 1340, state: MimicNewDontComeAnyCloserBothHandsR002A456, ko: "오지 마", safety: safe, reward: 135.93, time_out: 0.9995}
+      - {slot: 218, ch11: 1360, state: MimicNewNeutralFearR001A545, ko: "겁먹음", safety: safe, reward: 137.00, time_out: 1.0000}
+      - {slot: 219, ch11: 1380, state: MimicNewTheRingR001A429, ko: "더 링", safety: safe, reward: 134.66, time_out: 0.9992}
+    B:   # 댄스 · 퍼포먼스 · 실기 검증 대상
+      ch5: 2000
+      input_code: 5
+      slots:
+      - {slot: 200, ch11: 1000, state: MimicNewDanceNinjaStyle003A464, ko: "닌자 댄스", safety: caution, reward: 132.20, time_out: 0.9993}
+      - {slot: 201, ch11: 1020, state: MimicNewMacarena001A545, ko: "마카레나", safety: caution, reward: 130.88, time_out: 0.9988, note: "29.5s — 신규 중 최장, 오차 누적"}
+      - {slot: 202, ch11: 1040, state: MimicNewRockOut002A487, ko: "록 아웃", safety: caution, reward: 130.03, time_out: 0.9937}
+      - {slot: 203, ch11: 1060, state: MimicNewFancySpinR001A430, ko: "팬시 스핀", safety: caution, reward: 129.70, time_out: 0.9932, note: "회전 — 공간 확보"}
+      - {slot: 204, ch11: 1080, state: MimicNewDanceVogueDancehallOpenClose270R001A316, ko: "보그 댄스홀 270", safety: caution, reward: 129.11, time_out: 0.9985, note: "270도 회전 — 요 드리프트"}
+      - {slot: 205, ch11: 1100, state: MimicNewDanceWesternBodyPercussionR001A306, ko: "바디 퍼커션", safety: caution, reward: 126.89, time_out: 0.9973, note: "reward 경계"}
+      - {slot: 206, ch11: 1120, state: MimicNewDanceVogueShakeItBabe180RFast001A316, ko: "보그 셰이크 180", safety: caution, reward: 124.19, time_out: 0.9976, note: "배포선(126) 미달"}
+      - {slot: 207, ch11: 1140, state: MimicNewDanceHiphopFlintstonesKickBallChangeR002A311, ko: "플린스톤 킥볼체인지", safety: caution, reward: 120.50, time_out: 0.9905, note: "배포선 미달 · 편차 큼"}
+      - {slot: 208, ch11: 1160, state: MimicNewShadowBoxingR001A362, ko: "섀도 복싱", safety: caution, reward: 126.79, time_out: 0.9961, note: "reward 경계"}
+      - {slot: 209, ch11: 1180, state: MimicNewJumpingJack001A033, ko: "점핑잭", safety: restricted, reward: 127.97, time_out: 0.9960, note: "점프 — 착지 sim2real 격차"}
+      - {slot: 210, ch11: 1200, state: MimicNewFlexOnEmR001A529, ko: "플렉스", safety: restricted, reward: 131.06, time_out: 0.9854, note: "신규 중 time_out 최저 — 넘어짐 확인용"}
+      - {slot: 211, ch11: 1220, state: MimicNewJumpForJoyR002A431, ko: "기쁨의 점프", safety: restricted, reward: 132.08, time_out: 0.9961, note: "점프 — 착지 sim2real 격차"}
+      - {slot: 212, ch11: 1240, state: MimicNewTarzanR001A098, ko: "타잔", safety: caution, reward: 135.77, time_out: 0.9993}
+      - {slot: 213, ch11: 1260, state: MimicNewSlapR001A457, ko: "손바닥 치기", safety: restricted, reward: 135.51, time_out: 1.0000, note: "때리는 동작 — 주변 사람 확인"}
+      - {slot: 214, ch11: 1280, state: MimicCartwheel, ko: "카트휠 (시드 0042)", safety: restricted, note: "곡예 — 넓은 공간과 E-stop 필수"}
+      - {slot: 215, ch11: 1300, state: MimicPushUp, ko: "팔굽혀펴기", safety: restricted, reward: 130.50, note: "바닥 접촉"}
+      # 슬롯 216~219 (CH11 1320~1380) 는 비어 있다
+  # 로봇에 자산과 상태 정의는 올라가 있지만 RC 슬롯에서는 뺀 것들.
+  # 이어학습이 끝나면 rc_new_motions.py 의 BENCHED 에서 BANK_B 로 옮긴다.
+  benched:
+    - {state: MimicNewDanceGunslingerSmokeshow001A464, ko: "건슬링어 스모크쇼", reward: 114.44, time_out: 0.9819, reason: "40000 이어학습 중"}
+    - {state: MimicNewDanceHiphopShuffleR001A316, ko: "힙합 셔플", reward: 109.34, time_out: 0.9669, reason: "40000 이어학습 중"}
+    - {state: MimicNewDanceTakeTheL001A464, ko: "테이크 더 엘", reward: 106.58, time_out: 0.9557, reason: "40000 이어학습 중"}
+    - {state: MimicNewTheAirplane002A492, ko: "비행기", reward: 122.95, time_out: 0.9898, reason: "40000 이어학습 중"}
+    - {state: MimicNewShowBicepRWalkArcCwStartRCheckingTimeR001A472, ko: "알통 자랑 + 걷기", reward: 118.67, time_out: 0.9861, reason: "40000 이어학습 중"}
+    - {state: MimicNewDesperatePrayerR001A432, ko: "간절한 기도", reward: 86.36, time_out: 0.8333, reason: "리타게팅 실패 — anchor_height 4.5%, 실기에서 주저앉음"}
+
+# 모션이 아닌 상태 전이. LLM 이 "그만", "쉬어" 같은 말에 쓸 수 있다.
+control_states:
+  - state: ReadyPose
+    ko: 준비 자세
+    desc: 서 있는 기본 준비 자세로 돌아간다. 모션을 멈추고 대기할 때
+    tags: [대기, 정지, 준비, 그만, 쉬어]
+    safety: safe
+    llm: true
+
+  - state: Velocity
+    ko: 보행 대기
+    desc: 걷기/이동이 가능한 상태로 전환한다
+    tags: [보행, 이동, 걷기모드]
+    safety: caution
+    llm: true
+
+# 학습 전용 backlog metadata. server.py runtime loader는 motions/control_states만 읽는다.
+training_backlog:
+  updated: 2026-08-13
+  # 2026-08-13: shape10 outputs/ 에 ONNX export 완료 확인 (~/Projects/shape10/outputs).
+  # 카탈로그 planned 매칭 21개 + 신규 3개(push_up, snu_cheer, straykids).
+  # 로봇 로드 여부와 state 이름은 tools/check_modes.sh 실측으로만 확정한다 —
+  # 이름 변환 규칙이 없고 seed 충돌(anse A456/A459, bow A428/A429) 위험이 있다.
+  shape10_exported_20260813: true
+  source_metadata: ../seed/metadata/seed_metadata_v004.csv
+  worklist: docs/MOTION_TRAINING_WORKLIST.csv
+  cohort_01: docs/MOTION_TRAINING_COHORT_01.csv
+  counts:
+    user_list_total: 61
+    excluded: 2
+    planned_trainable: 59
+    bvh_verified: 59
+    g1_csv_present_in_workspace: 0
+  runtime_policy:
+    keep_planned_out_of_robot_allowlist: true
+    promote_only_after: [trained, offline_validated, robot_verified]
+  slot_hints:
+    MimicIdleBase: "1"
+    MimicWelcoming: "5/6"
+    MimicByeBye: "7"
+    MimicPresentLeft: "8"
+    MimicPresentRight: "9"
+    MimicHighFive: "12"
+    MimicBravo: "13"
+    MimicCrowdCheer: "14"
+    MimicTheRing: "16 candidate"
+    MimicJumpForJoy: "17"
+    MimicDanceBlindingLights: "18/21 material"
+    MimicDanceClick: "18/21 material"
+    MimicDanceFloss: "18/21 material"
+    MimicDanceGunslinger: "18/21 material"
+    MimicDanceFlintstones: "18/21 material"
+    MimicDanceHiphopShuffle: "18/21 material"
+    MimicDanceJazzHands: "18/21 material"
+    MimicDanceNinja: "18/21 material"
+    MimicDanceTakeTheL: "18/21 material"
+    MimicDanceVogueDancehall: "18/21 material"
+    MimicDanceVogueShake: "18/21 material"
+    MimicDanceBodyPercussion: "18/21 material"
+    MimicNewMacarena001A545: "18/21 material"
+    MimicBicepCheck: "20"
+  first_cohort:
+    id: interaction_core_01
+    purpose: safe_conversation_interactions
+    states:
+      - MimicListening
+      - MimicCasualGreeting
+      - MimicWelcoming
+      - MimicBowPolite
+      - MimicByeBye
+      - MimicComeHere
+      - MimicPresentLeft
+      - MimicCalmDown
+      - MimicBravo
+      - MimicIGotThis
+  excluded:
+    - seed: slap_R_001__A457
+      reason: contact/aggressive gesture; not for public operation
+    - seed: Kozakiewicz_gesture_stadium_002__A044
+      reason: obscene gesture; not for public operation
+  alias_overrides:
+    MimicHandsOnBack:
+      catalog_seed: idle_hands_on_back_loop_R_001__A029
+      actual_bvh_stem: idle_hands_on_back_loop_001__A029
+    MimicStretch:
+      catalog_seed: body_stretch_opt_1_001__A029
+      actual_bvh_stem: body_stretch_1_001__A029
+    MimicPresentRight:
+      catalog_seed: present_right_R_001__A428
+      actual_bvh_stem: desperate_prayer_R_002__A428
+      note: name mismatch; preview before training
+    MimicPointDirection:
+      catalog_seed: point_dir_horizontal_right_hand_315_head_front_R_004__A031
+      actual_bvh_stem: point_direction_horizontal_right_hand_315_head_front_004__A031
+    MimicHighFive:
+      catalog_seed: high_five_crowd_R_001__A432
+      actual_bvh_stem: hifive_crowd_R_001__A432
+    MimicKissingHands:
+      catalog_seed: kissing_hands_thanks_stadium_001__A042
+      actual_bvh_stem: m_kissing_hands_thanks_stadium_001__A042
+    MimicJustRealized:
+      catalog_seed: just_realized_R_001__A185
+      actual_bvh_stem: just_realised_R_001__A185
+    MimicDustBrushing:
+      catalog_seed: boss_dust_brushing_R_001__A036
+      actual_bvh_stem: boss_dust_brushing_001__A036
+    MimicTarzan:
+      catalog_seed: tarzan_R_001__A098
+      actual_bvh_stem: tarzan_001__A098
+    MimicDanceGunslinger:
+      catalog_seed: dance_gunslinger_smokeshow_001__A464
+      actual_bvh_stem: dance_hit_it_002__A464
+    MimicDanceNinja:
+      catalog_seed: dance_ninja_style_003__A464
+      actual_bvh_stem: ninja_style_003__A464
+    MimicDanceVogueDancehall:
+      catalog_seed: dance_vogue_dancehall_open_close_270_R_001__A316
+      actual_bvh_stem: dance_vouge_dancehall_open_close_270_R_001__A316
+    MimicDanceVogueShake:
+      catalog_seed: dance_vogue_shake_it_babe_180_R_fast_001__A316
+      actual_bvh_stem: dance_vouge_shake_it_babe_180_R_fast_001__A316
+

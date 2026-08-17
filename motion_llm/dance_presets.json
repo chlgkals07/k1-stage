@@ -1,0 +1,32 @@
+{
+  "snucheer": {
+    "motion": "MimicNewSnuCheerHeadShort",
+    "media": "응원단 fade_out.mp4",
+    "clip": "",
+    "seek": 0,
+    "offset_ms": -1500,
+    "volume": 10,
+    "title": "관악을 보아라",
+    "credit": "서울대학교 응원단"
+  },
+  "straykids": {
+    "motion": "MimicStraykidsThisAndThat",
+    "media": "straykids.mp4",
+    "clip": "MimicStraykidsThisAndThat",
+    "seek": 0,
+    "offset_ms": 500,
+    "volume": 100,
+    "title": "Stray Kids - This and That",
+    "credit": "Stray Kids 'This and That' 안무 영상"
+  },
+  "badchestpopv2": {
+    "motion": "MimicBadChestpopVer2",
+    "media": "bad.mp4",
+    "clip": "",
+    "seek": 0,
+    "offset_ms": 0,
+    "volume": 100,
+    "title": "ATEEZ - Bad",
+    "credit": "ATEEZ 'Bad' 안무 영상"
+  }
+}

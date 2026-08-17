@@ -1,0 +1,11 @@
+priority,state,ko,catalog_seed,actual_bvh_path,duration_frames,category,safety,preview_required,retarget_status,train_status,offline_eval_status,robot_verify_status,notes
+1,MimicListening,듣는 자세,listening_R_001__A116,seed/soma_uniform/bvh/230112/listening_R_001__A116.bvh,443,Gestures,safe,yes,todo,todo,todo,todo,
+2,MimicCasualGreeting,캐주얼 인사,casual_greeting_R_001__A428,seed/soma_uniform/bvh/230713/casual_greeting_R_001__A428.bvh,490,Communication,safe,yes,todo,todo,todo,todo,
+3,MimicWelcoming,어서오세요,welcoming_001__A142,seed/soma_uniform/bvh/230124/welcoming_001__A142.bvh,693,Gestures,safe,yes,todo,todo,todo,todo,slot 5/6
+4,MimicBowPolite,정중한 인사,bow_R_001__A429,seed/soma_uniform/bvh/230713/bow_R_001__A429.bvh,693,Gestures,safe,yes,todo,todo,todo,todo,
+5,MimicByeBye,배웅 인사,bye_bye_salute_R_002__A474,seed/soma_uniform/bvh/231010/bye_bye_salute_R_002__A474.bvh,370,Gestures,safe,yes,todo,todo,todo,todo,slot 7
+6,MimicComeHere,이리 오세요,come_here_R_002__A456,seed/soma_uniform/bvh/231004/come_here_R_002__A456.bvh,480,Gestures,safe,yes,todo,todo,todo,todo,
+7,MimicPresentLeft,왼쪽 안내,present_left_R_001__A428,seed/soma_uniform/bvh/230713/present_left_R_001__A428.bvh,670,Gestures,safe,yes,todo,todo,todo,todo,slot 8
+8,MimicCalmDown,진정하세요,calm_down_R_001__A432,seed/soma_uniform/bvh/230713/calm_down_R_001__A432.bvh,802,Gestures,safe,yes,todo,todo,todo,todo,
+9,MimicBravo,정중한 박수,bravo_R_001__A431,seed/soma_uniform/bvh/230713/bravo_R_001__A431.bvh,1058,Gestures,safe,yes,todo,todo,todo,todo,slot 13
+10,MimicIGotThis,나만 믿어,i_got_this_001__A101,seed/soma_uniform/bvh/230103/i_got_this_001__A101.bvh,393,Gestures,safe,yes,todo,todo,todo,todo,

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>SHAPE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
+<style>
+/* ── SHAPE 디자인 토큰 — 화이트 톤 (Monitor 와 통일, 2026-08-18 사용자 요청) ──
+   bg #f8f9ff · card #fff · border #dfe3f4 · ink #101638 · steel #5b638a
+   번호/강조 violet #7667ff · 실행 #193fe8 · READY green                  */
+:root{
+  --bg:#f8f9ff; --card:#ffffff; --card2:#eef1ff; --panel:#ffffff;
+  --line:#dfe3f4; --fg:#101638; --dim:#5b638a; --num:#7667ff;
+  --exec:#193fe8; --ready:#16a34a; --violet:#8b5cf6; --cyan:#0ea5e9;
+  --font:"Inter",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);font-family:var(--font);color:var(--fg)}
+
+/* 시안은 1024×768 고정 캔버스 — 통째로 scale */
+#cv{position:fixed;left:50%;top:50%;width:1024px;height:768px;
+  transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center;
+  background:var(--bg);overflow:hidden}
+
+/* 헤더 */
+#cv h1{position:absolute;top:52px;left:36px;font-size:40px;font-weight:800;letter-spacing:.01em}
+.tagline{position:absolute;top:118px;left:36px;font-size:13px;line-height:18px;color:var(--dim)}
+.divider{position:absolute;top:156px;left:36px;width:952px;height:1px;background:var(--line)}
+#statusRow{position:absolute;top:56px;right:36px;display:flex;align-items:center;gap:10px}
+#state{font-size:14px;font-weight:700;color:var(--dim)}
+.dot{width:10px;height:10px;border-radius:50%;background:#fb7185}
+.dot.ok{background:var(--ready)} .dot.busy{background:#fbbf24} .dot.hear{background:var(--cyan)}
+
+/* ── 좌측: 4×3 커맨드 그리드 (01_iPad_No Selection 시안 기하) ──
+   카드 130×132 · 열간 20 · 행간 33, top 234 → 그리드가 좌측 열 전체(234~696)를
+   채운다. talk 제거로 생긴 하단 빈칸은 별도 요소가 아니라 이 늘어난 행간·카드
+   높이가 흡수한다 (시안 방식). */
+#motions{position:absolute;top:234px;left:34px;width:580px;height:462px;
+  display:grid;grid-template-columns:repeat(4,130px);grid-auto-rows:132px;
+  column-gap:20px;row-gap:33px;align-content:start}
+button.motion{
+  border-radius:12px;background:var(--card);border:1px solid var(--line);
+  color:var(--dim);text-align:left;padding:12px 12px 12px;cursor:pointer;
+  box-shadow:0 1px 3px rgba(16,22,56,.06);
+  display:flex;flex-direction:column;gap:6px;font-family:inherit}
+button.motion .num{font-size:11px;font-weight:600;line-height:15px}
+button.motion b{font-size:14px;font-weight:700;line-height:18px;color:var(--fg);
+  letter-spacing:.01em;white-space:normal;word-break:keep-all}
+button.motion small{font-size:10px;line-height:13px;color:var(--dim)}
+button.motion .sel{margin-top:auto;font-size:10px;line-height:14px;letter-spacing:.08em}
+button.motion.selected{background:var(--card2);border-color:var(--violet);color:var(--fg);box-shadow:0 2px 8px rgba(139,92,246,.25)}
+button.motion.selected .sel{color:var(--ready)}
+button.motion:active{transform:scale(.97);background:var(--card2)}
+button.motion:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+
+/* ── 우측 패널 (x 640, 폭 348) ── */
+#previewPanel{position:absolute;top:186px;right:36px;width:348px;bottom:36px;
+  border-radius:16px;background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(16,22,56,.07);
+  padding:24px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+#cancelBtn{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;
+  border:1px solid var(--line);background:transparent;color:var(--dim);
+  font:600 16px/1 var(--font);cursor:pointer}
+#cancelBtn:disabled{opacity:0;pointer-events:none}
+#selNum{font-size:15px;font-weight:600;color:var(--num);min-height:18px}
+#previewName{font-size:26px;font-weight:800;letter-spacing:.02em;min-height:32px}
+#previewMedia{border-radius:12px;background:#0d1020;border:1px solid var(--line);
+  height:170px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#previewMedia video{width:100%;height:100%;object-fit:cover;display:none}
+#previewMedia .ph{font-size:44px;opacity:.5}
+#previewHint{font-size:13px;line-height:1.5;color:var(--dim)}
+.statusline{display:flex;align-items:baseline;gap:10px;margin-top:auto}
+.statusline .k{font-size:11px;letter-spacing:.1em;color:var(--dim)}
+#padStatus{font-size:18px;font-weight:800;color:var(--ready);letter-spacing:.04em}
+#goBtn{height:64px;border-radius:12px;border:0;background:var(--exec);color:#ffffff;
+  font:700 20px/1 var(--font);cursor:pointer;letter-spacing:.02em}
+#goBtn:disabled{opacity:.35;cursor:not-allowed}
+/* 실행 progress (expectedDuration = 클립 길이 + 2초, 시안 RULE 10 의 시각화) */
+#progWrap{display:none;flex-direction:column;gap:8px}
+#progTrack{height:12px;border-radius:6px;background:#e4e8f8;overflow:hidden}
+#progFill{height:100%;width:0%;background:linear-gradient(90deg,var(--violet),var(--cyan))}
+
+/* (음성 제거 2026-08-18) TALK 오버레이 CSS 는 여기 있었다 */
+</style>
+</head>
+<body>
+<div id="cv">
+  <h1>SHAPE</h1>
+  <div class="tagline">Select a command, review it, then execute deliberately</div>
+  <div class="divider"></div>
+  <div id="statusRow"><span id="state">준비하는 중이에요</span><span class="dot" id="dot"></span></div>
+
+  <main id="motions"></main>
+
+  <!-- (2026-08-18) 옛 talk 자리의 빈칸은 01_iPad_No Selection 시안 기하를 적용해
+       카드 그리드(행 132px·행간 33px, top 234)가 흡수했다 — 별도 요소 없음. -->
+
+  <aside id="previewPanel">
+    <button id="cancelBtn" disabled>✕</button>
+    <div id="selNum"></div>
+    <div id="previewName">NO SELECTION</div>
+    <div id="previewMedia"><span class="ph">🤖</span><video id="previewVideo" muted playsinline loop></video></div>
+    <div id="previewHint">명령을 선택해주세요!</div>
+    <div class="statusline"><span class="k">STATUS</span><span id="padStatus">—</span></div>
+    <div id="progWrap"><div id="progTrack"><div id="progFill"></div></div></div>
+    <button id="goBtn" disabled>▶ 실행하기</button>
+  </aside>
+
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+// 시안 캔버스(1024×768) 스케일
+function fit(){
+  const s = Math.min(innerWidth / 1024, innerHeight / 768);
+  document.documentElement.style.setProperty('--s', s);
+}
+addEventListener('resize', fit); fit();
+
+// 주소창에서 토큰을 지운다. 관객에게 건네는 화면이라 더 중요하다.
+const q = new URLSearchParams(location.search);
+if (q.has("token")) {
+  q.delete("token");
+  const clean = q.toString();
+  history.replaceState(null, "", location.pathname + (clean ? "?" + clean : ""));
+}
+
+let catalog = [], padAllowed = new Set(), padClips = new Set(), backendName = "", gatewayState = "offline";
+let submitting = false, turnId = 0;
+let busyUntil = 0;
+
+// ── 상태 표시 ────────────────────────────────────────────────
+let stageNow = 'idle';   // 서버 무대 상태 (/conversation 1초 폴링)
+
+// 패드 전체 잠금 술어 (2026-08-18 사용자 확정: "실행되고 있을 때는 다 안 되어야").
+// 동작 실행 중(executing/진행바), 무대 중(dance), 요청 왕복 중이면 선택·실행·취소
+// 전부 잠근다. busyUntil 은 stageNow 폴링(1초)이 따라오기 전의 공백을 메운다.
+function padLocked(){
+  return submitting || stageNow === 'dance' || stageNow === 'executing'
+         || Date.now() < busyUntil;
+}
+
+function refreshState(){
+  let label = '준비하는 중이에요', cls = '';
+  if (backendName === "")               label = '준비하는 중이에요';
+  else if (stageNow === 'dance')        { label = '무대 진행 중이에요'; cls = 'busy'; }
+  else if (Date.now() < busyUntil)      { label = '하는 중이에요'; cls = 'busy'; }
+  else if (canSubmit())                 { label = '준비됐어요';    cls = 'ok';   }
+  else                                  { label = '잠깐만요';      cls = 'busy'; }
+  $('#state').textContent = label;
+  $('#dot').className = 'dot ' + cls;
+  // 실행·무대 중에는 터치 전체 잠금 (서버 409 와 이중 방어).
+  const locked = padLocked();
+  document.querySelectorAll('button.motion').forEach(b => { b.disabled = locked; });
+  refreshPreview();
+}
+function canSubmit(){ return backendName === "mock" || gatewayState === "ready"; }
+function say(msg){ $('#previewHint').textContent = msg; }
+
+// ── 버튼 그리드 (시안: 번호 + 영문 대문자 + SELECT) ──────────
+function renderMotions(){
+  const box = $('#motions');
+  const items = catalog.filter(m => padAllowed.has(m.state));
+  box.innerHTML = '';
+  items.forEach((m, i) => {
+    const b = document.createElement('button');
+    b.className = 'motion' + (selected && selected.state === m.state ? ' selected' : '');
+    b.dataset.state = m.state;
+    const num = document.createElement('span'); num.className = 'num';
+    num.textContent = String(i + 1).padStart(2, '0');
+    const name = document.createElement('b');
+    name.textContent = (m.en || m.ko || '').toUpperCase();
+    const ko = document.createElement('small'); ko.textContent = m.ko || '';
+    const sel = document.createElement('span'); sel.className = 'sel';
+    sel.textContent = 'SELECT';
+    b.append(num, name, ko, sel);
+    b.disabled = submitting;   // 미리보기는 항상 가능
+    b.onclick = () => press(m, i + 1);
+    box.appendChild(b);
+  });
+}
+
+// ── preview 흐름 (동작 불변: 탭=미리보기, 실행=그때 명령) ────
+let selected = null, selectedNum = 0;
+let execUntil = 0, execDuration = 0, progTimer = null;
+
+function postStage(stage, motion){
+  return fetch('/stage', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(motion ? {stage, motion} : {stage})}).catch(()=>{});
+}
+
+function refreshPreview(){
+  const executing = Date.now() < execUntil;
+  $('#selNum').textContent = selected ? '#' + String(selectedNum).padStart(2, '0') : '';
+  $('#previewName').textContent = selected
+    ? (selected.en || selected.ko || '').toUpperCase()
+    : (executing ? 'EXECUTING' : 'NO SELECTION');
+  $('#previewHint').textContent = selected
+    ? (selected.ko + ' — 이 모션을 실행할까요?')
+    : (executing ? '로봇이 동작 중이에요' : '명령을 선택해주세요!');
+  // 게이트(API Arm) 닫힘이 선택보다 우선이다 — READY 가 "실행 가능"을 거짓말하지 않게.
+  $('#padStatus').textContent = executing ? 'EXECUTING'
+    : (!canSubmit() ? 'WAIT' : (selected ? 'READY' : 'IDLE'));
+  $('#padStatus').style.color = executing ? 'var(--cyan)' : 'var(--ready)';
+  const v = $('#previewVideo');
+  if (selected && padClips.has(selected.state)) {
+    const src = '/clips/' + encodeURIComponent(selected.state) + '.mp4';
+    if (!v.src.includes(encodeURIComponent(selected.state))) { v.src = src; v.play().catch(()=>{}); }
+    v.style.display = 'block'; $('#previewMedia .ph').style.display = 'none';
+  } else {
+    // 클립은 "최종 렌더만" 정책 — 없는 동작은 🤖 플레이스홀더 유지 (검은 박스 금지)
+    v.pause(); v.removeAttribute('src'); v.load();
+    v.style.display = 'none'; $('#previewMedia .ph').style.display = 'block';
+  }
+  $('#progWrap').style.display = executing ? 'flex' : 'none';
+  // 실행·무대 중에는 [실행]·[취소]까지 전부 잠근다 — dance 중 실행이 눌리던 구멍.
+  $('#goBtn').disabled = !selected || padLocked() || !canSubmit();
+  $('#cancelBtn').disabled = !selected || padLocked();
+  document.querySelectorAll('button.motion').forEach(b =>
+    b.classList.toggle('selected', !!selected && b.dataset.state === selected.state));
+}
+
+function press(m, num){
+  if (padLocked()) return;   // 실행·무대 중 선택 금지 (버튼 disabled 의 이중 방어)
+  selected = m; selectedNum = num;
+  postStage('preview', m.state);
+  refreshPreview();
+}
+
+// 실행 progress — expectedDuration = 클립 길이 + 2초 (없으면 8초). 시각화일 뿐
+// 실제 완료 판정은 서버 stage 가 한다 (동작 불변).
+function startProgress(){
+  const v = $('#previewVideo');
+  execDuration = (isFinite(v.duration) && v.duration > 0 ? v.duration * 1000 : 6000) + 2000;
+  execUntil = Date.now() + execDuration;
+  busyUntil = execUntil;
+  const t0 = Date.now();
+  clearInterval(progTimer);
+  progTimer = setInterval(() => {
+    const p = Math.min(1, (Date.now() - t0) / execDuration);
+    $('#progFill').style.width = (p * 100).toFixed(1) + '%';
+    if (p >= 1) { clearInterval(progTimer); postStage('idle'); refreshPreview(); refreshState(); }
+  }, 100);
+}
+
+async function execute(){
+  if (!selected || padLocked()) return;
+  const m = selected;
+  submitting = true; refreshPreview(); refreshState();
+  const out = await sendMotion(m.state, '', 'pad');
+  submitting = false;
+  if (out.ok) { startProgress(); say((m.en || m.ko) + ' 실행!'); selected = null; }
+  else        { say('잠깐만요'); }
+  refreshPreview(); refreshState();
+}
+
+function cancelPreview(){
+  selected = null;
+  postStage('idle');
+  refreshPreview();
+}
+
+$('#goBtn').onclick = execute;
+$('#cancelBtn').onclick = cancelPreview;
+
+async function sendMotion(motion, reason, source){
+  try {
+    const r = await fetch('/motion', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({motion, reason, source, turn_id: turnId})
+    });
+    return await r.json();
+  } catch (e) {
+    return {ok:false, motion, msg:'요청 실패: ' + e.message};
+  }
+}
+
+// ── 서버 폴링 ────────────────────────────────────────────────
+async function loadCatalog(){
+  try {
+    const d = await (await fetch('/motions')).json();
+    catalog = d.all || [];
+    padAllowed = new Set(d.pad_allowed || []);
+    padClips = new Set(d.clips || []);
+    backendName = d.backend || "";
+    renderMotions(); refreshState();
+  } catch (e) {}
+}
+async function pollStatus(){
+  try {
+    const d = await (await fetch('/status')).json();
+    gatewayState = d.gateway || 'offline';
+    const cur = d.current_request;
+    if (cur && cur.motion) busyUntil = Math.max(busyUntil, Date.now() + 1500);
+  } catch (e) { gatewayState = 'offline'; }
+  try {
+    // 무대 상태는 /conversation 이 준다 (TTL 반영된 유효값).
+    stageNow = (await (await fetch('/conversation')).json()).stage || 'idle';
+  } catch (e) {}
+  refreshState();
+}
+
+// (음성 제거 2026-08-18) WebRTC·PTT·전사 배관은 여기 있었다 — archive/index_voice 참고
+
+// ── 시작 ─────────────────────────────────────────────────────
+loadCatalog(); pollStatus();
+setInterval(pollStatus, 1000);
+setInterval(loadCatalog, 30000);
+</script>
+</body>
+</html>
