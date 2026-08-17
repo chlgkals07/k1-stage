@@ -418,6 +418,10 @@ class State:
                 "credit": credit or "",
                 "media": media, "media_at": media_at,
                 "seek": seek, "volume": volume})
+        # 보정값 유실 방지: 무대를 시작할 때마다 오프셋을 세션 로그에 남긴다
+        # (2026-08-18 배드 오프셋을 저장 안 해 잃어버린 사건의 재발 방지)
+        self.session_log.write("dance_start", name=name, motion=motion, media=media,
+                               offset_ms=round(offset * 1000.0), seek=seek, volume=volume)
         return {"ok": True, "motion": motion, "media": media,
                 "motion_at": motion_at, "media_at": media_at}
 
