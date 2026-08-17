@@ -20,6 +20,23 @@ ai_sapiens_sim2real_20260818` (8/18 로봇 백업) 원본에서 확인했다.
 즉 **ReadyPose 로 가는 자동 경로는 없었다.** 유일하게 ReadyPose 를 보내던 것은
 **사람이 누르는 빨간 정지 버튼**이었고 (`stop_state: ReadyPose`), 그건 고쳤다.
 
+### 로봇이 API 권한을 잃을 때 어디로 가는가 (권한 인계)
+
+`mode_controller.cpp` `compute_api_loss_change` / `resolve_teleop_handoff_request`:
+
+- **heartbeat 상실**(PC·Wi-Fi·게이트웨이 죽음) 중 Mimic 실행 중이면 → **Velocity**
+  (`make_velocity_state_request`, `allow_mimic_target=false` 라 Mimic 타깃도 Velocity 로 치환).
+  로봇 설계 자체가 "권한을 잃으면 locomotion" 이다 — 우리 정지 변경과 방향이 같다.
+- **단, 그 순간 물리 teleop 입력이 특정 상태를 가리키면 그쪽이 우선한다.**
+  `resolve_state_request_by_level_match` 가 먼저 매칭되기 때문이다.
+  → **물리 SC 스위치가 CH7 중앙(1500 = code 2 = ReadyPose) 이면 ReadyPose 로 간다.**
+- SD(CH8)를 내려 수동 인계할 때(`ApiAuthorityReleased`)도 같다 — 그 순간의 물리 스위치
+  위치로 즉시 간다.
+
+**운영 수칙**: 대기 중 물리 스위치는 **SC 상단(CH7 2000) + SB 중앙(CH6 1500) = code 0**
+(전이 없음)에 두거나, SB 하단(code 3 = Velocity)에 둔다. **SC 중앙에 두지 않는다** —
+그 위치가 곧 "끊기면 ReadyPose" 스위치다. 우리가 코드로 막을 수 있는 부분이 아니다.
+
 `ready_pose` 는 `kind: posture` — 균형 정책 없이 관절을 3초에 걸쳐 고정 자세로 끌어당긴다.
 팔굽혀펴기·스쿼트처럼 바닥에 붙은 자세에서 이걸 누르면 가장 넘어지기 쉽다.
 `velocity_policy` 는 `kind: policy` (locomotion) 로 균형을 잡고, 로봇이 동작 사이에
@@ -127,12 +144,25 @@ locomotion 복귀가 된다. `radio/K1PC.lua` 의 `startPulse` 분기에 3줄:
 `startPulse("VEL", nil, nil, nil, T_GATE_LAG)` 를 부르고 `OK VEL` 로 답하게 한다.
 (옮긴 뒤에는 도구 EXIT → 재실행 필요.)
 
-### ③ RC 모드에서는 라디오 **SD(CH8, API arm)를 내려야** 명령이 먹는다
+### ③ RC 모드에서는 라디오 **SD(CH8, API arm)를 내려야** 명령이 먹는다 (API 를 켜는 게 아니다)
 로봇은 API 권한일 때 **teleop 전이를 무시한다** (`mode_controller.cpp`
 `resolve_authority_owned_state`: Api 면 서비스 요청만 소비). 로봇 쪽 gateway 가
 떠 있고 SD 가 올라가 있으면 우리 RC 펄스는 **조용히 무시되고**, PC 는 라디오에서
 `OK` 를 받았으므로 성공으로 보고한다 — 무대에서 가장 헷갈릴 실패 모양이다.
 → RC 모드 전환 절차에 "SD 내리기"를 넣을 것. (실기 P2 에서 확인)
+
+### ③-b 검증 범위 — RC 는 어디까지 확인됐나
+
+| 구간 | 상태 | 근거 |
+|---|---|---|
+| PC → 라디오 (USB, 프로토콜) | **실측 완료** | K1PC 왕복 avg 0.4ms, ping 50/50 손실 0 |
+| 라디오 믹서 출력 = 기존 다이얼과 동일 | **실측 완료** | `verify_sweep.py` 40/40, pct 모델 대비 오차 ≤2µs |
+| 우리 채널 조합 ↔ 로봇 teleop 규약 일치 | **코드 대조 완료** | 로봇 `radiomaster_pocket.yaml` input_code 표와 1:1 대조 (이번 리뷰) |
+| **전파 → 로봇이 실제로 동작 실행** | **미검증** | P2/P3 로봇 실기 미완 — 로봇 앞에서 한 번은 돌려야 한다 |
+| SD(CH8) 권한 상호작용 | **미검증** | 위 ③ 은 소스 근거이지 실측이 아니다 |
+
+즉 "라디오가 검증된 다이얼과 똑같은 신호를 낸다"까지는 증명됐고, 로봇이 그걸 받아
+도는 마지막 한 구간만 남았다.
 
 ### ④ 실기에서 확인할 것
 - 정지 → `request_mode_by_name("Velocity")` 가 실제로 수락되는지 (Damping 상태에서 1회)
