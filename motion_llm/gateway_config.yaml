@@ -151,7 +151,18 @@ policy:
     - MimicCartwheel
   # 운영자 정지 버튼이 요청하는 상태. allowlist 를 우회하는 별도 경로라
   # api_allowlist/llm_allowlist 에는 넣지 않는다 (넣으면 LLM 에 노출될 위험이 있다).
-  stop_state: ReadyPose
+  #
+  # 2026-08-18 사용자 확정: **정지는 locomotion(Velocity) 으로 되돌린다.**
+  # 로봇 설정 기준(k1_config.yaml) ReadyPose 는 `kind: posture` — 균형 정책이 없는
+  # 고정 자세다. 동작 중이거나 무게중심이 흔들릴 때 여기로 선점하면 넘어질 수 있다.
+  # Velocity 는 `kind: policy`(locomotion/velocity/...) 로 균형을 잡는 학습 정책이고,
+  # Mimic 도 `on_complete: Velocity` 로 스스로 여기 복귀한다 — 즉 이게 로봇의 정상
+  # 대기 상태다. 어떤 실패 경로에서도 ReadyPose 로 떨어뜨리지 않는다.
+  stop_state: Velocity
+  # 부팅 직후 진입용. 로봇 상태기계에서 Damping 을 벗어나는 유일한 전이가
+  # Damping → ReadyPose 라서, 전원 인가 후 한 번은 ReadyPose 를 거쳐야 한다.
+  # 운영자 화면의 회색 [준비 자세] 버튼이 이걸 보낸다 (빨간 정지와 분리).
+  entry_state: ReadyPose
   entry_timeout_sec: 5
   status_timeout_sec: 1
   relay_timeout_sec: 2

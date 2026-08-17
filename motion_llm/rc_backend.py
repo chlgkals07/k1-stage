@@ -14,12 +14,17 @@ k1_config 덤프)를 그대로 읽는다. 실배포와의 일치는 로봇 복�
 import re
 import threading
 import time
+from pathlib import Path
 
 import yaml
 
+import clip_len
 from rc_serial import RcSerial
 
 DEFAULT_DURATION_SEC = 30.0
+# 클립 길이로 추정할 때의 여백. 패드 진행바(클립+2.0s)와 같은 값이라
+# 로봇 busy 해제·패드 잠금 해제가 같은 시각에 온다.
+BUSY_MARGIN_SEC = 2.0
 PREP_VALID_SEC = 8.0  # 라디오 쪽 PREP 자동 해제(10s)보다 짧게
 
 
@@ -93,12 +98,24 @@ class RcBackend:
     name = "rc"
 
     def __init__(self, motions_path, gateway_config_path=None, serial=None):
+        motions_path = Path(motions_path)
         self.rc_map, self._cooldowns = load_rc_map(motions_path)
-        # 주의: api_allowlist 속성을 일부러 두지 않는다 — UI(패드 12개·운영자 목록)는
-        # primary 경로와 완전히 동일해야 한다 (2026-08-18 사용자 확정). 다이얼에 없는
-        # 동작은 submit 시점에 rc_map 조회로 거부되고, 목록 정합은 추후 로봇 다이얼
-        # 테이블을 조정해 맞춘다.
+        self._clips = motions_path.parent / "static" / "clips"
+        # 주의: api_allowlist **속성**은 일부러 두지 않는다 — 두면 State 가 패드·LLM
+        # 목록을 여기에 교집합해 버린다. UI(패드 12개·운영자 목록)는 primary 경로와
+        # 완전히 동일해야 한다 (2026-08-18 사용자 확정). 다만 운영자 화면은 목록을
+        # /status 의 api_allowlist 에서 읽으므로, 그 값만 primary 와 같게 실어 보낸다.
+        # 이게 없으면 RC 모드로 켜는 순간 수동 실행 버튼이 통째로 사라진다.
+        self._api_allowlist = []
+        if gateway_config_path:
+            try:
+                cfg = yaml.safe_load(Path(gateway_config_path).read_text(encoding="utf-8"))
+                self._api_allowlist = sorted(cfg["policy"].get("api_allowlist") or [])
+            except (OSError, ValueError, KeyError, TypeError):
+                self._api_allowlist = []
         self.serial = serial or RcSerial()
+        self._tlm_cache = ({"ok": False}, 0.0)
+        self._tlm_refresh = threading.Lock()
         self._lock = threading.Lock()
         self._busy_motion = None
         self._busy_until = 0.0
@@ -152,8 +169,9 @@ class RcBackend:
             print(f"[rc] {verdict}", flush=True)
 
             self._seq += 1
+            duration = self.motion_duration(motion) or entry["duration_sec"]
             self._busy_motion = motion
-            self._busy_until = time.monotonic() + entry["duration_sec"]
+            self._busy_until = time.monotonic() + duration
             if motion in self._cooldowns:
                 self._cooldown_until[motion] = (
                     self._busy_until + self._cooldowns[motion])
@@ -161,12 +179,26 @@ class RcBackend:
                                 "msg": f"RC 발사: {entry['ko']} — {verdict}"}
             return {"ok": True, "status": "queued", "motion": motion,
                     "request_id": f"rc-{self._seq}",
-                    "msg": f"RC로 실행 ({how}, 추정 {entry['duration_sec']:.0f}s) · {verdict}"}
+                    "msg": f"RC로 실행 ({how}, 추정 {duration:.0f}s) · {verdict}"}
 
     def motion_duration(self, motion):
-        """rc_list 에 기록된 추정 길이(초). 무대 자동 종료 fallback 이 쓴다."""
+        """추정 길이(초). 무대 자동 종료 fallback 과 busy 잠금이 쓴다.
+
+        rc_list note 에 길이가 적힌 슬롯은 40개 중 2개뿐이라 나머지는 전부 기본 30초로
+        잠겼다 — 4초짜리 손인사에도 관객 패드가 30초 멈춘다. 같은 동작으로 구운 sim
+        클립 길이가 실제 동작 길이이므로 그걸 먼저 본다 (없으면 기존 값 그대로).
+        """
         entry = self.rc_map.get(motion)
-        return entry["duration_sec"] if entry else None
+        if entry is None:
+            return None
+        if entry["duration_sec"] != DEFAULT_DURATION_SEC:
+            return entry["duration_sec"]        # note 에 명시된 값이 우선
+        length = clip_len.clip_duration(self._clips, motion)
+        if length is None:
+            return entry["duration_sec"]
+        # 여백 없이 클립 길이만 쓰면 로봇이 마무리 동작 중일 때 다음 명령이 나갈 수 있다.
+        # 패드 진행바(클립+2.0s)와 같은 여백을 둬서 셋(로봇 busy·패드·화면)이 어긋나지 않게 한다.
+        return length + BUSY_MARGIN_SEC
 
     def prepare(self, motion):
         """dance 싱크용 사전 PREP — 발사 엣지(FIRE)의 지터를 ms급으로 줄인다.
@@ -187,18 +219,33 @@ class RcBackend:
             return False
 
     def stop_motion(self, source, reason=""):
+        """정지 = locomotion(Velocity, code 3) 복귀.
+
+        ReadyPose(code 2)는 로봇에서 균형 정책이 없는 고정 자세라 동작 중에 선점하면
+        넘어질 수 있다. Mimic 도 `on_complete: Velocity` 로 스스로 여기 복귀하므로
+        Velocity 가 이 로봇의 정상 대기 상태다 (2026-08-18 사용자 확정).
+
+        라디오의 K1PC.lua 가 아직 VEL 을 모르는 버전이면 ERR 이 오므로 기존 STOP 으로
+        폴백한다 — SD 카드를 갱신하지 않아도 예전과 똑같이 동작한다.
+        """
         with self._lock:
             self._prepared = None
-            res = self.serial.stop_pulse()
+            target = "Velocity"
+            res = self.serial.vel()
+            if not res.get("ok") and "ERR" in str(res.get("msg", "")):
+                target = "ReadyPose"          # 구버전 K1PC — 예전 동작 유지
+                res = self.serial.stop_pulse()
+            if not res.get("ok"):
+                # 전송이 실패했으면 로봇은 여전히 돌고 있다. busy 를 지우면 다음 명령이
+                # 실행 중인 로봇으로 나간다 — 실패 시에는 그대로 둔다.
+                self._last_event = {"status": "error", "msg": res.get("msg", "")}
+                return {"ok": False, "status": "error", "motion": target,
+                        "request_id": None, "msg": res.get("msg", "RC 정지 실패")}
             self._busy_motion = None
             self._busy_until = 0.0
-            if not res.get("ok"):
-                self._last_event = {"status": "error", "msg": res.get("msg", "")}
-                return {"ok": False, "status": "error", "motion": "ReadyPose",
-                        "request_id": None, "msg": res.get("msg", "RC 정지 실패")}
-            self._last_event = {"status": "queued", "msg": "정지(ReadyPose) 펄스"}
-            return {"ok": True, "status": "queued", "motion": "ReadyPose",
-                    "request_id": None, "msg": "RC 정지 펄스 전송"}
+            self._last_event = {"status": "queued", "msg": f"정지({target}) 펄스"}
+            return {"ok": True, "status": "queued", "motion": target,
+                    "request_id": None, "msg": f"RC 정지 펄스 전송 ({target})"}
 
     def connect_check(self):
         """토글 ON 시의 연결 진단. (ok, 원인 메시지)를 돌려준다."""
@@ -211,8 +258,30 @@ class RcBackend:
         return False, ("RC 무응답 — 라디오에서 USB-VCP=LUA 인지, "
                        "SYS→Tools→K1PC 가 열려 있는지 확인")
 
+    def _tlm_cached(self):
+        """TLM 은 1초 캐시 + 동시에 한 번만 갱신한다.
+
+        운영자·패드·댄스 화면이 각자 1~2초마다 /status 를 부르고, TLM 은 시리얼 락을
+        잡는다. 라디오가 무응답이면 한 번에 1.5초씩 물고 있어 빨간 정지가 폴링 뒤에
+        줄을 선다 (리뷰에서 3개 폴링 기준 7초 지연 재현).
+
+        캐시만으로는 부족하다 — 만료되는 순간 폴러 셋이 동시에 실측으로 몰려간다.
+        갱신은 한 번에 하나만 하고, 나머지는 직전 값을 그대로 받아 간다.
+        """
+        cached, at = self._tlm_cache
+        if time.monotonic() - at < 1.0:
+            return cached
+        if not self._tlm_refresh.acquire(blocking=False):
+            return cached                      # 다른 폴러가 이미 갱신 중
+        try:
+            tlm = self.serial.tlm()
+            self._tlm_cache = (tlm, time.monotonic())
+            return tlm
+        finally:
+            self._tlm_refresh.release()
+
     def status(self):
-        tlm = self.serial.tlm()
+        tlm = self._tlm_cached()
         with self._lock:
             busy = self._busy_left() > 0
             current = ({"motion": self._busy_motion,
@@ -226,7 +295,10 @@ class RcBackend:
                           "lq": tlm.get("lq"), "rssi": tlm.get("rssi"),
                           "note": self.serial.last_error or "유선 RC 경로 (상태는 추정)"},
                 "current_request": current,
-                "stop_state": "ReadyPose",
+                # 운영자 화면의 수동 실행 목록은 이 값에서 나온다 — primary 경로와
+                # 같은 목록을 실어야 RC 로 전환해도 버튼이 그대로 남는다.
+                "api_allowlist": list(self._api_allowlist),
+                "stop_state": "Velocity",
                 "stop_available": True,
                 "last_event": dict(self._last_event),
             }

@@ -39,11 +39,13 @@ class Gateway:
     """Thread-safe execution policy. ROS transport is supplied by RobotBackend."""
 
     def __init__(self, api_allowlist, entry_timeout_sec=5.0, status_timeout_sec=1.0,
-                 stop_state="ReadyPose", cooldowns=None):
+                 stop_state="Velocity", entry_state="ReadyPose", cooldowns=None):
         self.api_allowlist = set(api_allowlist)
         self.entry_timeout_sec = entry_timeout_sec
         self.status_timeout_sec = status_timeout_sec
+        # 정지 = locomotion 복귀. 부팅 진입(Damping 탈출)만 entry_state 를 쓴다.
         self.stop_state = stop_state
+        self.entry_state = entry_state
         # motion -> seconds. 값이 없으면 0 이라 기존 동작과 같다.
         self.cooldowns = dict(cooldowns or {})
         self._lock = threading.RLock()
@@ -102,18 +104,24 @@ class Gateway:
         ``_ready_locked`` 과 달리 ``request_available`` 도 요구하지 않는다 — Mimic 실행 중
         이 플래그가 내려가는지 아직 실물로 확인되지 않았고, 내려간다면 정지가 거부되어
         기능 자체가 무의미해지기 때문이다.
+
+        보내는 상태는 ``stop_state``(Velocity, locomotion) 하나다. 예외는 로봇이
+        Damping 일 때뿐 — 상태기계에서 Damping 을 벗어나는 전이가 ReadyPose 밖에 없어
+        Velocity 를 보내면 아무 일도 안 일어난다. 그때만 ``entry_state`` 로 보낸다
+        (부팅 직후 "정지부터 한 번 누르기" 운용이 그대로 산다). 버튼은 그대로 하나다.
         """
         now = time.monotonic()
         with self._lock:
-            ready, message = self._stop_ready_locked()
+            target = self._stop_target_locked()
+            ready, message = self._stop_ready_locked(target)
             if not ready:
-                return self._result_locked(False, "rejected", message, self.stop_state)
+                return self._result_locked(False, "rejected", message, target)
             if self._current:
                 self._finish_locked("interrupted", "운영자가 동작을 중단했습니다")
-            self._current = MotionRequest(uuid.uuid4().hex, self.stop_state, source, reason,
+            self._current = MotionRequest(uuid.uuid4().hex, target, source, reason,
                                           now, is_stop=True)
             self._last_event = self._event_locked(self._current, "정지 요청 대기")
-            return self._result_locked(True, "queued", "정지 요청 대기", self.stop_state,
+            return self._result_locked(True, "queued", "정지 요청 대기", target,
                                        self._current.request_id)
 
     def next_dispatch(self):
@@ -158,7 +166,7 @@ class Gateway:
                 "robot": snapshot,
                 "robot_modes_loaded": bool(self._robot_modes),
                 "api_allowlist": sorted(self.api_allowlist),
-                "stop_state": self.stop_state,
+                "stop_state": self._stop_target_locked(),
                 "stop_available": self._stop_ready_locked()[0],
                 "current_request": asdict(self._current) if self._current else None,
                 "last_event": dict(self._last_event),
@@ -186,14 +194,27 @@ class Gateway:
             return False, "로봇 동작 목록을 불러오는 중입니다"
         return True, "ready"
 
-    def _stop_ready_locked(self):
+    def _stop_target_locked(self):
+        """정지가 보낼 상태. 기본은 stop_state(Velocity, locomotion).
+
+        로봇이 Damping 일 때만 entry_state(ReadyPose) 로 보낸다 — 로봇 상태기계에서
+        Damping 의 유일한 전이가 ReadyPose 라 Velocity 를 보내면 아무 일도 안 난다.
+        상태를 아직 못 받았으면(부팅 직후 흔한 경우) 진입부터 되게 entry_state 를 쓴다.
+        """
+        active = self._snapshot.active_mode if self._snapshot else ""
+        if not active or active == "Damping":
+            return self.entry_state
+        return self.stop_state
+
+    def _stop_ready_locked(self, target=None):
         ok, message = self._api_live_locked()
         if not ok:
             return ok, message
         # 목록을 아직 못 받았으면 막지 않는다. 정지는 시도할 수 있어야 하고,
         # 이름이 틀렸다면 ROS service 가 거부한다.
-        if self._robot_modes and self.stop_state not in self._robot_modes:
-            return False, f"로봇에 {self.stop_state} 상태가 없습니다"
+        target = target or self.stop_state
+        if self._robot_modes and target not in self._robot_modes:
+            return False, f"로봇에 {target} 상태가 없습니다"
         return True, "ready"
 
     def _cooldown_remaining_locked(self, motion, now):

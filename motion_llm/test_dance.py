@@ -329,11 +329,17 @@ class DanceCaptionTest(unittest.TestCase):
         self.assertEqual(sd["credit"], "서울대학교 응원단")
         state.stop_dance()
 
-    def test_title_falls_back_to_korean_name(self):
+    def test_title_never_falls_back_to_nickname(self):
+        """자막을 못 찾으면 비운다. 동작 약칭("체스트팝 v2")은 무대에 띄우지 않는다.
+
+        2026-08-18 사용자 확정 규칙. 예전에는 여기서 카탈로그 한글명으로 떨어져,
+        /dance 화면에서 음원 없이 시작하면 무대 TV 에 약칭이 그대로 떴다.
+        """
         state = State(MockBackend())
         state.start_dance(preset={"motion": "MimicWaveHand", "media": ""})
         sd = state.conversation_view()["stage_data"]
-        self.assertEqual(sd["title"], state.by_state["MimicWaveHand"]["ko"])
+        self.assertEqual(sd["title"], "")
+        self.assertNotEqual(sd["title"], state.by_state["MimicWaveHand"]["ko"])
         state.stop_dance()
 
     def test_saving_offset_does_not_wipe_caption(self):

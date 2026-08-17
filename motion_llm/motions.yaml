@@ -674,7 +674,11 @@ rc_list:
       slots:
       - {slot: 200, ch11: 1000, state: MimicBadChestpopVer2, ko: "체스트팝 v2", safety: safe}
       - {slot: 201, ch11: 1020, state: MimicGuapIntroP2, ko: "구압 인트로", safety: caution}
-      - {slot: 202, ch11: 1040, state: MimicGuap, ko: "구압", safety: caution}
+      # 2026-08-18 사용자 확정: 이 슬롯을 v1 → v2 로 교체한다. 패드 12번이 GuapVer2 라
+      # 다이얼에 없어 RC 모드에서만 죽는 버튼이었다. **로봇 쪽도 같이 바꿔야 적용된다**:
+      # ai_sapiens config/k1_config.yaml 의 selectors.mimic_selector_b.table[202]
+      # 을 MimicGuap → MimicGuapVer2 로. (화면 표기는 둘 다 "구압/GUAP" 로 같다)
+      - {slot: 202, ch11: 1040, state: MimicGuapVer2, ko: "구압", safety: caution}
       - {slot: 203, ch11: 1060, state: MimicSnuCheer, ko: "서울대 응원", safety: caution}
       - {slot: 204, ch11: 1080, state: MimicStraykidsThisAndThat, ko: "스키즈 안무", safety: caution}
       - {slot: 205, ch11: 1100, state: MimicNewMacarena001A545, ko: "마카레나", safety: safe, note: "29.5s — 신규 중 최장, 오차 누적"}

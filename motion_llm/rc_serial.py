@@ -6,7 +6,8 @@
     RUN <n> [A|B]   -> OK RUN <n>            (즉시형 펄스: 다이얼 세팅 + code 4 발사)
     PREP <n> <A|B>  -> OK PREP               (사전 준비: code 0 유지 — dance 싱크용)
     FIRE            -> OK FIRE               (PREP 상태에서 code 4 엣지, ms급)
-    STOP            -> OK STOP               (ReadyPose)
+    VEL             -> OK VEL                (Velocity = locomotion 복귀, 정지 기본값)
+    STOP            -> OK STOP               (ReadyPose — 구버전 폴백)
     DAMP            -> OK DAMP               (Damping)
     TLM             -> TLM st=.. lq=.. rssi=..
 
@@ -186,6 +187,10 @@ class RcSerial:
 
     def stop_pulse(self):
         return self._command("STOP", ("OK STOP",))
+
+    def vel(self):
+        """locomotion(Velocity, code 3) 복귀. 구버전 K1PC 는 ERR CMD 를 돌려준다."""
+        return self._command("VEL", ("OK VEL",))
 
     def damp(self):
         return self._command("DAMP", ("OK DAMP",))

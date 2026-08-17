@@ -27,8 +27,8 @@ SESSION=motion-gateway
 # server.py 가 import 하는 로컬 모듈은 전부 여기 있어야 한다. 하나 빠지면 로봇에서
 # gateway 가 아예 뜨지 않는다 (2026-08-13 relay_backend.py 로 실제로 겪었다).
 # test_server_tools.py 의 test_deploy_list_covers_imports 가 이 불변식을 지킨다.
-DEPLOY_FILES=(server.py gateway.py robot_backend.py relay_backend.py rc_backend.py rc_serial.py session_log.py
-              gateway_config.yaml motions.yaml)
+DEPLOY_FILES=(server.py gateway.py robot_backend.py relay_backend.py rc_backend.py rc_serial.py
+              clip_len.py session_log.py gateway_config.yaml motions.yaml)
 
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no)
 

@@ -32,6 +32,7 @@ from pathlib import Path
 
 import yaml
 
+import clip_len
 from robot_backend import RobotBackend
 from relay_backend import RelayBackend
 from rc_backend import RcBackend
@@ -75,12 +76,14 @@ def save_preset(name, preset):
         if preset is None:
             presets.pop(name, None)
         else:
-            # /dance 보정 화면은 숫자·파일 필드만 보낸다. 무대 화면 표기용 title/credit 이
-            # 빠져 있으면 기존 값을 유지한다 — 안 그러면 오프셋 한 번 저장에 제목·출처가
-            # 조용히 사라진다 (개소식 당일 보정 시나리오).
+            # /dance 보정 화면은 숫자·파일 필드만 보낸다. 무대 화면 표기용 title/credit 과
+            # 영상 길이 media_len_sec 이 빠져 있으면 기존 값을 유지한다 — 안 그러면
+            # 오프셋 한 번 저장에 제목·출처가 조용히 사라지고(개소식 당일 보정 시나리오),
+            # 길이가 사라지면 무대 자동 종료가 기본 60초로 떨어져 84초짜리 응원 무대가
+            # 곡 중간에 끊긴다 (2026-08-18 리뷰에서 재현).
             old = presets.get(name) or {}
             preset = dict(preset)
-            for key in ("title", "credit"):
+            for key in ("title", "credit", "media_len_sec"):
                 if not preset.get(key) and old.get(key):
                     preset[key] = old[key]
             presets[name] = preset
@@ -119,12 +122,12 @@ class MockBackend:
                 "request_id": None, "msg": "기록됨 (로봇 미연결)"}
 
     def stop_motion(self, source, reason=""):
-        return {"ok": True, "status": "recorded", "motion": "ReadyPose",
+        return {"ok": True, "status": "recorded", "motion": "Velocity",
                 "request_id": None, "msg": "정지 기록됨 (로봇 미연결)"}
 
     def status(self):
         return {"gateway": "mock", "robot": None, "current_request": None,
-                "stop_state": "ReadyPose", "stop_available": True,
+                "stop_state": "Velocity", "stop_available": True,
                 "last_event": {"status": "mock", "msg": "로봇 미연결"}}
 
     def stop(self):
@@ -178,13 +181,17 @@ class State:
         self._dance_prep_timer = None
         # display 가 없을 때의 무대 자동 종료 fallback (추정 길이 + 여유 뒤)
         self._dance_autostop_timer = None
+        # executing 화면을 동작 길이만큼 지나면 스스로 내리는 타이머
+        self._exec_idle_timer = None
         # 무대 세대 번호. Timer.cancel() 은 이미 시작된 콜백을 못 멈추므로, 콜백이
         # "내가 걸렸던 그 무대가 아직 유효한가"를 이 번호로 확인한다. stage=='dance'
         # 검사만으로는 부족하다 — A 재생 중 B 를 시작하면 A 의 늦은 콜백이 B 가 만든
         # dance 를 보고 통과해 B 음악에 A 동작이 나간다 (리뷰 지적).
         self._dance_gen = 0
         self.lock = threading.Lock()
-        protected = backend.name in {"robot", "relay"}
+        # rc 도 실제 로봇을 움직인다. 빠져 있어서 `--rc` 단독 기동 시 토큰 없이
+        # 누구나 /motion 을 쏠 수 있었다 (main() 은 --https 를 강제하면서 인증만 빠졌다).
+        protected = backend.name in {"robot", "relay", "rc"}
         self.access_token = (access_token or secrets.token_urlsafe(32)) if protected else None
 
     def clear_conversation(self):
@@ -260,8 +267,38 @@ class State:
                 if self.stage != "dance":
                     self._set_stage_locked("executing",
                                            {"motion": motion, "ko": self.current_motion})
+                    self._arm_exec_idle_locked(motion)
         self.session_log.write("motion_request", **record)
         return out
+
+    # executing 화면을 스스로 내리기까지의 여유. 클립 길이(=동작 길이) + 이만큼.
+    EXEC_IDLE_MARGIN_SEC = 3.0
+    EXEC_IDLE_DEFAULT_SEC = 12.0
+
+    def _arm_exec_idle_locked(self, motion):
+        """동작이 끝날 즈음 무대 화면을 스스로 idle 로 되돌린다.
+
+        idle 복귀를 패드만 책임지고 있어서, 운영자가 수동으로 동작을 실행하면
+        아무도 idle 을 보내지 않아 TTL(60초)까지 **관객 패드 전체가 잠기고**
+        display 는 "로봇이 동작 중입니다"에 머물렀다 (2026-08-18 리허설에서 재현).
+        패드가 보내는 idle 이 먼저 오면 stage_rev 가 달라져 이 타이머는 무시된다.
+        """
+        if self._exec_idle_timer:
+            self._exec_idle_timer.cancel()
+        length = clip_len.clip_duration(CLIPS, motion) or self.EXEC_IDLE_DEFAULT_SEC
+        rev = self.stage_rev
+        self._exec_idle_timer = threading.Timer(
+            length + self.EXEC_IDLE_MARGIN_SEC, self._exec_idle, (rev,))
+        self._exec_idle_timer.daemon = True
+        self._exec_idle_timer.start()
+
+    def _exec_idle(self, rev):
+        with self.lock:
+            # 그 사이 화면이 바뀌었으면(패드가 idle 을 보냈거나 무대가 시작됐거나)
+            # 남의 화면을 내리지 않는다.
+            if self.stage_rev != rev or self.stage != "executing":
+                return
+            self._set_stage_locked("idle")
 
     def _play(self, motion, reason, source):
         info = self.by_state.get(motion)
@@ -276,6 +313,12 @@ class State:
         if source == "pad" and motion not in self.pad_allowed:
             return self.record(ok=False, motion=motion, ko=info["ko"], reason=reason,
                                source=source, msg="관객 화면에 허용되지 않은 동작")
+        # 무대 중에는 관객 명령을 서버가 막는다. 패드도 스스로 잠그지만 그건 1초 폴링
+        # 뒤에야 반영돼, 무대 시작 직후 눌린 탭이 그 창으로 새어 들어와 안무 대신
+        # 다른 동작이 나갈 수 있다 (2026-08-18 리뷰에서 재현).
+        if source == "pad" and self.effective_stage() == "dance":
+            return self.record(ok=False, motion=motion, ko=info["ko"], reason=reason,
+                               source=source, msg="무대 진행 중입니다")
         out = self.backend.submit(motion, source, reason)
         return self.record(ok=out["ok"], motion=motion, ko=info["ko"], reason=reason,
                            source=source, safety=info.get("safety"),
@@ -283,7 +326,14 @@ class State:
                            gateway_status=out.get("status"), request_id=out.get("request_id"))
 
     def stop_motion(self, reason=""):
-        """운영자 정지. allowlist 를 거치지 않고 실행 중이든 아니든 항상 시도한다."""
+        """운영자 정지. allowlist 를 거치지 않고 실행 중이든 아니든 항상 시도한다.
+
+        무대 예약(dance)은 정지 **전에** 무력화한다. 안 그러면 빨간 정지를 누른
+        1~3.5초 뒤에 예약돼 있던 안무가 그대로 발사된다 — 운영자는 이미 멈췄다고
+        믿고 있다 (2026-08-18 리뷰에서 mock 재현). 무대 화면도 같이 내린다.
+        """
+        if self.effective_stage() == "dance":
+            self.stop_dance("운영자 정지")
         out = self.backend.stop_motion("manual", reason)
         motion = out.get("motion") or ""
         info = self.by_state.get(motion) or {}
@@ -365,12 +415,15 @@ class State:
         # 저장된 프리셋에서 같은 이름으로, 없으면 같은 음원 파일로 찾아 채운다. 이걸 안 하면
         # 무대에 동작 약칭("체스트팝 v2")이 떠서 공식 명칭 규칙이 깨진다 (2026-08-18).
         title, credit = preset.get("title"), preset.get("credit")
-        if not (title and credit):
+        media_len_sec = preset.get("media_len_sec")
+        if not (title and credit and media_len_sec):
             saved = load_presets()
             src = saved.get(name) or next(
                 (p for p in saved.values() if media and p.get("media") == media), {})
             title = title or src.get("title")
             credit = credit or src.get("credit")
+            # 길이도 같이 복구한다 — 없으면 자동 종료가 기본 60초로 떨어져 긴 무대가 끊긴다
+            media_len_sec = media_len_sec or src.get("media_len_sec")
         with self.lock:
             if self._dance_timer:
                 self._dance_timer.cancel()
@@ -399,7 +452,7 @@ class State:
                 motion_dur = self.backend.motion_duration(motion)
             media_len = None
             try:
-                media_len = float(preset.get("media_len_sec") or 0) or None
+                media_len = float(media_len_sec or 0) or None
             except (TypeError, ValueError):
                 media_len = None
             # 영상·동작 중 긴 쪽 기준 (둘 다 모르면 기본값)
@@ -413,8 +466,9 @@ class State:
             self._set_stage_locked("dance", {
                 "name": name, "motion": motion, "ko": info.get("ko", motion),
                 # 무대 화면 자막: title 은 공식 명칭(중앙 큰 글씨), credit 은 출처(하단 작게).
-                # 없으면 동작 한글명으로 떨어진다.
-                "title": title or info.get("ko", motion),
+                # 못 찾으면 **빈 값**이다 — 동작 약칭("체스트팝 v2")을 무대에 띄우지
+                # 않는다는 규칙이 폴백보다 우선한다 (2026-08-18 사용자 확정).
+                "title": title or "",
                 "credit": credit or "",
                 "media": media, "media_at": media_at,
                 "seek": seek, "volume": volume})
@@ -660,7 +714,12 @@ class Handler(BaseHTTPRequestHandler):
         if not self._authorized():
             return self._send(403, {"error": "gateway authorization required"})
         n = int(self.headers.get("Content-Length") or 0)
-        payload = json.loads(self.rfile.read(n) or b"{}")
+        try:
+            payload = json.loads(self.rfile.read(n) or b"{}")
+        except ValueError:
+            # 끊긴 Wi-Fi 로 잘린 본문이 오면 예외가 그대로 올라가 응답 없이 연결이 끊기고
+            # 운영자 터미널이 traceback 으로 덮인다. 400 으로 답하고 넘어간다.
+            return self._send(400, {"ok": False, "error": "본문이 JSON 이 아닙니다"})
 
         if path == "/motion":
             out = self.state.play(payload.get("motion", ""),

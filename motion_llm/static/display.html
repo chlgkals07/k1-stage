@@ -299,7 +299,7 @@ function renderStage(data){
     const key = sd.name + ':' + sd.media_at;
     // 공식 명칭을 중앙 큰 글씨로, 출처는 하단 작게. 우상단은 재생 표시만 남긴다
     // (동작 한글명 "스키즈 안무" 같은 약칭은 무대에 쓰지 않는다 — 2026-08-18).
-    $('#danceTitle').textContent = sd.title || sd.ko || sd.name || '';
+    $('#danceTitle').textContent = sd.title || '';   // 약칭 폴백 금지 (2026-08-18)
     $('#danceCredit').textContent = sd.credit ? '출처 · ' + sd.credit : '';
     $('#danceTop').textContent = '🎵';
     if (sd.media && key !== danceKey) {

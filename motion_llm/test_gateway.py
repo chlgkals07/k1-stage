@@ -12,8 +12,8 @@ def ready_snapshot(active="Velocity"):
 class GatewayTest(unittest.TestCase):
     def setUp(self):
         self.gateway = Gateway({"MimicWaveHand"}, entry_timeout_sec=5)
-        # ReadyPose 는 로봇에 실재하는 control state 다. allowlist 에는 넣지 않는다.
-        self.gateway.set_robot_modes({"MimicWaveHand", "ReadyPose"})
+        # Velocity/ReadyPose 는 로봇에 실재하는 control state 다. allowlist 에는 넣지 않는다.
+        self.gateway.set_robot_modes({"MimicWaveHand", "Velocity", "ReadyPose"})
 
     def test_rejects_without_api_arm(self):
         self.gateway.update_status(RobotSnapshot(authority="MANUAL"))
@@ -56,11 +56,11 @@ class GatewayTest(unittest.TestCase):
         self._start_motion()
         out = self.gateway.stop_motion("manual", "운영자 정지")
         self.assertTrue(out["ok"])
-        self.assertEqual(out["motion"], "ReadyPose")
+        self.assertEqual(out["motion"], "Velocity")
         self.assertEqual(self.gateway.status()["gateway"], "stopping")
-        # 선점된 요청은 interrupted 로 끝나고, 정지 요청이 ReadyPose 를 향한다.
+        # 선점된 요청은 interrupted 로 끝나고, 정지 요청이 locomotion 을 향한다.
         request = self.gateway.next_dispatch()
-        self.assertEqual(request.motion, "ReadyPose")
+        self.assertEqual(request.motion, "Velocity")
         self.assertTrue(request.is_stop)
 
     def test_stop_passes_when_request_unavailable(self):
@@ -81,11 +81,25 @@ class GatewayTest(unittest.TestCase):
         self.assertTrue(self.gateway.stop_motion("manual")["ok"])
 
     def test_stop_rejected_when_robot_lacks_stop_state(self):
-        self.gateway.set_robot_modes({"MimicWaveHand"})  # ReadyPose 없음
+        self.gateway.set_robot_modes({"MimicWaveHand"})  # Velocity 없음
         self.gateway.update_status(ready_snapshot())
         out = self.gateway.stop_motion("manual")
         self.assertFalse(out["ok"])
-        self.assertIn("ReadyPose", out["msg"])
+        self.assertIn("Velocity", out["msg"])
+
+    def test_stop_goes_to_locomotion_not_ready_pose(self):
+        """정지는 균형 정책(Velocity)으로 보낸다 — ReadyPose 는 균형 없는 고정 자세다."""
+        self.gateway.update_status(ready_snapshot("MimicWaveHand"))
+        self.assertEqual(self.gateway.stop_motion("manual")["motion"], "Velocity")
+        self.assertEqual(self.gateway.status()["stop_state"], "Velocity")
+
+    def test_stop_from_damping_uses_entry_state(self):
+        """Damping 에서만 예외 — 상태기계상 ReadyPose 말고는 나갈 길이 없다."""
+        self.gateway.update_status(ready_snapshot("Damping"))
+        self.assertEqual(self.gateway.stop_motion("manual")["motion"], "ReadyPose")
+        # 로봇 상태를 아직 못 받았을 때(부팅 직후)도 진입부터 되게 한다.
+        fresh = Gateway({"MimicWaveHand"})
+        self.assertEqual(fresh._stop_target_locked(), "ReadyPose")
 
     def test_stop_attempted_before_mode_list_loads(self):
         gateway = Gateway({"MimicWaveHand"})  # set_robot_modes 호출 전
@@ -95,7 +109,7 @@ class GatewayTest(unittest.TestCase):
 
     def test_cooldown_blocks_then_expires(self):
         gateway = Gateway({"MimicWaveHand"}, cooldowns={"MimicWaveHand": 0.05})
-        gateway.set_robot_modes({"MimicWaveHand", "ReadyPose"})
+        gateway.set_robot_modes({"MimicWaveHand", "Velocity", "ReadyPose"})
         gateway.update_status(ready_snapshot())
         request = gateway.submit("MimicWaveHand", "manual")
         gateway.next_dispatch()
@@ -111,7 +125,7 @@ class GatewayTest(unittest.TestCase):
 
     def test_cooldown_does_not_block_stop(self):
         gateway = Gateway({"MimicWaveHand"}, cooldowns={"MimicWaveHand": 60})
-        gateway.set_robot_modes({"MimicWaveHand", "ReadyPose"})
+        gateway.set_robot_modes({"MimicWaveHand", "Velocity", "ReadyPose"})
         gateway.update_status(ready_snapshot())
         request = gateway.submit("MimicWaveHand", "manual")
         gateway.next_dispatch()

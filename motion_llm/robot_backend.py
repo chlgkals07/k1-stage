@@ -34,7 +34,8 @@ class RobotBackend:
         policy = config["policy"]
         self.gateway = Gateway(policy["api_allowlist"], policy["entry_timeout_sec"],
                                policy.get("status_timeout_sec", 1.0),
-                               stop_state=policy.get("stop_state", "ReadyPose"),
+                               stop_state=policy.get("stop_state", "Velocity"),
+                               entry_state=policy.get("entry_state", "ReadyPose"),
                                cooldowns=_load_cooldowns(config_path.parent / "motions.yaml"))
         self._ros = None
         self._node = None

@@ -15,7 +15,8 @@ KNOWN_A = "MimicNewWelcoming001A142"   # 뱅크 A, code 200 → slot 1
 KNOWN_B = "MimicSnuCheer"              # 뱅크 B, code 203 → slot 4
 KNOWN_B_SLOT = 4
 KNOWN_NOTE_DUR = "MimicNewMacarena001A545"   # note "29.5s..." (구 rc_list에서 승계)
-NOT_ON_DIAL = "MimicGuapVer2"          # 카탈로그·패드에는 있으나 다이얼에 없음
+NOT_ON_DIAL = "MimicBillyJean"         # 카탈로그엔 있으나 다이얼에 없음
+# 패드 12개는 전부 다이얼에 있어야 한다 (2026-08-18: GuapVer2 를 뱅크B 슬롯3 으로 교체)
 
 
 class FakeSerial:
@@ -45,6 +46,10 @@ class FakeSerial:
 
     def stop_pulse(self):
         self.calls.append(("stop",))
+        return self._res()
+
+    def vel(self):
+        self.calls.append(("vel",))
         return self._res()
 
     def tlm(self):
@@ -146,9 +151,10 @@ class TestRcBackend(unittest.TestCase):
         b.submit(KNOWN_A, "manual", "")
         res = b.stop_motion("manual")
         self.assertTrue(res["ok"])
-        self.assertEqual(res["motion"], "ReadyPose")
+        # 정지는 locomotion(Velocity) 복귀다 — ReadyPose 는 균형 없는 고정 자세
+        self.assertEqual(res["motion"], "Velocity")
         self.assertEqual(b._busy_left(), 0.0)
-        self.assertIn(("stop",), b.serial.calls)
+        self.assertIn(("vel",), b.serial.calls)
 
     def test_status_shape(self):
         b = make_backend()
@@ -158,7 +164,7 @@ class TestRcBackend(unittest.TestCase):
             self.assertIn(key, st)
         # UI(canSubmit)가 아는 라벨로 보고해야 실행 버튼이 잠기지 않는다
         self.assertEqual(st["gateway"], "ready")
-        self.assertEqual(st["stop_state"], "ReadyPose")
+        self.assertEqual(st["stop_state"], "Velocity")
 
     def test_no_api_allowlist_attr(self):
         # UI 목록(패드 12개·운영자)은 primary 와 동일해야 한다 — 교집합 축소 금지

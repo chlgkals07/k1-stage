@@ -146,9 +146,16 @@ $('#volume').oninput=()=>{player.volume=Math.max(0,Math.min(100,+$('#volume').va
 
 // ── 프리셋 ────────────────────────────────────────────────────
 function currentPreset(){
+  // 불러온 프리셋의 자막(title/credit)과 영상 길이(media_len_sec)를 함께 실어 보낸다.
+  // 빠뜨리면 ① 무대 TV 자막이 비고 ② 저장 시 길이가 사라져 자동 종료가 기본 60초로
+  // 떨어져 84초짜리 무대가 곡 중간에 끊긴다 (2026-08-18 리뷰).
+  const loaded = presets[$('#preset').value] || {};
+  const same = loaded.media === $('#media').value;
   return {motion:$('#motion').value, media:$('#media').value, clip:$('#clip').value,
           seek:+$('#seek').value||0, offset_ms:+$('#offset').value||0,
-          volume:+$('#volume').value||0};
+          volume:+$('#volume').value||0,
+          title:same?loaded.title:undefined, credit:same?loaded.credit:undefined,
+          media_len_sec:same?loaded.media_len_sec:undefined};
 }
 function applyPreset(p){
   if(!p) return;
@@ -255,7 +262,8 @@ $('#startBtn').onclick=async()=>{
 $('#stopBtn').onclick=async()=>{
   clearTimers(); player.pause(); $('#robotClip').pause(); $('#startBtn').disabled=false;
   try{
-    // /dance/stop 은 무대(display) 정지 + 예약 취소 + 로봇 정지를 한 번에 한다.
+    // /dance/stop 은 무대(display) 정지 + 예약 취소만 한다 — **로봇은 안 멈춘다**.
+    // 로봇을 세우려면 운영자 화면의 빨간 정지(또는 라디오)를 써야 한다.
     const r=await fetch('/dance/stop',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({reason:'댄스 싱크 정지'})});
     const out=await r.json(); log('정지 · '+(out.msg||''));
