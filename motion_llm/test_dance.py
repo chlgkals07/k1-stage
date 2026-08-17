@@ -213,7 +213,7 @@ class DanceScheduleTest(unittest.TestCase):
             self.state._dance_timer.cancel()
 
     def test_negative_offset_means_media_first(self):
-        out = self.state.start_dance("snucheer")     # offset -1500ms (2026-08-18 실측 고정)
+        out = self.state.start_dance("snucheer-api")     # offset -1500ms (2026-08-18 실측 고정)
         self.assertTrue(out["ok"])
         self.assertAlmostEqual(out["motion_at"] - out["media_at"], 1.5, places=2)
         self.assertGreater(out["media_at"], time.time() + 1.5)   # 리드타임
@@ -222,7 +222,7 @@ class DanceScheduleTest(unittest.TestCase):
         self.assertEqual(v["stage_data"]["media"], "응원단 fade_out.mp4")
 
     def test_stop_cancels_timer_and_returns_idle(self):
-        self.state.start_dance("snucheer")
+        self.state.start_dance("snucheer-api")
         self.state.stop_dance()
         self.assertIsNone(self.state._dance_timer)
         self.assertEqual(self.state.conversation_view()["stage"], "idle")
@@ -232,7 +232,7 @@ class DanceScheduleTest(unittest.TestCase):
 
     def test_dance_motion_does_not_flip_stage_to_executing(self):
         """무대 중 동작 실행은 무대 화면을 유지해야 한다."""
-        self.state.start_dance("snucheer")
+        self.state.start_dance("snucheer-api")
         self.state.play("MimicWaveHand", source="manual")
         self.assertEqual(self.state.conversation_view()["stage"], "dance")
 
@@ -264,7 +264,7 @@ class DanceProtectionTest(unittest.TestCase):
 
     def test_stop_dance_never_touches_the_robot(self):
         """영상이 안무보다 짧아 먼저 끝나도 로봇이 관객 앞에서 끊기면 안 된다."""
-        self.state.start_dance("straykids")
+        self.state.start_dance("straykids-api")
         out = self.state.stop_dance()
         self.assertTrue(out["ok"])
         self.assertEqual(self.backend.stop_calls, [],
@@ -273,7 +273,7 @@ class DanceProtectionTest(unittest.TestCase):
         self.assertIsNone(self.state._dance_timer)
 
     def test_effective_stage_helper(self):
-        self.state.start_dance("straykids")
+        self.state.start_dance("straykids-api")
         self.assertEqual(self.state.effective_stage(), "dance")
         self.state.stop_dance()
         self.assertEqual(self.state.effective_stage(), "idle")
@@ -297,9 +297,9 @@ class DanceGenerationTest(unittest.TestCase):
             self.state._dance_timer.cancel()
 
     def test_stale_generation_callback_is_dropped(self):
-        self.state.start_dance("snucheer")          # A (gen 1)
+        self.state.start_dance("snucheer-api")          # A (gen 1)
         old_gen = self.state._dance_gen
-        self.state.start_dance("straykids")         # B (gen 2) — A 타이머는 cancel 됐지만
+        self.state.start_dance("straykids-api")         # B (gen 2) — A 타이머는 cancel 됐지만
         # cancel 을 비껴간 A 콜백이 늦게 도착했다고 가정
         self.state._fire_dance_motion("MimicNewSnuCheerHeadShort", old_gen)
         self.assertNotIn("MimicNewSnuCheerHeadShort", self.fired,
@@ -309,7 +309,7 @@ class DanceGenerationTest(unittest.TestCase):
         self.assertIn("MimicStraykidsThisAndThat", self.fired)
 
     def test_stop_invalidates_inflight_callback(self):
-        self.state.start_dance("snucheer")
+        self.state.start_dance("snucheer-api")
         gen = self.state._dance_gen
         self.state.stop_dance()
         self.state._fire_dance_motion("MimicNewSnuCheerHeadShort", gen)
