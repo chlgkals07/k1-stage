@@ -595,6 +595,11 @@ motions:
   - {state: MimicStraykidsThisAndThat, category: performance, ko: 스키즈 안무, status: ready, safety: caution, llm: false,
      desc: "Stray Kids 안무 일부. 실물 확인 전이라 동작 범위 미상",
      tags: [춤, 케이팝, 퍼포먼스], seed: straykids_this_and_that}
+  # 2026-08-21 무대 4번째. shape10 9102_newjeans_hani 학습본이 로봇에 이미 배포돼
+  # 있다 (자산 3종 완비, onnx md5 대조 일치, RC 1페이지 219).
+  - {state: MimicNewjeansHani, en: "NEWJEANS", category: performance, ko: 뉴진스 하니, status: ready, safety: caution, llm: false,
+     desc: "NewJeans 'How Sweet' 하니 파트 안무. 무대 전용",
+     tags: [춤, 케이팝, 퍼포먼스, 무대], seed: newjeans_hani}
 
   # ── 전 자산 개방 추가분 (2026-08-14, RC 2x20 + API 버튼 전면화) ──
   # 로봇 자산에 있는데 카탈로그에 없던 실동작들. 전부 운영자 버튼 전용(llm: false).
@@ -667,7 +672,7 @@ rc_list:
       - {slot: 216, ch11: 1320, state: MimicNewLookAroundEyesCoverOneHandR001A500}
       - {slot: 217, ch11: 1340, state: MimicNewIdleHandsOnBackLoopR001A029, note: "아이들 루프 20.4s"}
       - {slot: 218, ch11: 1360, state: MimicNewLook000R001A428}
-      - {slot: 219, ch11: 1380, state: MimicCrossedArms, ko: "팔짱", safety: safe}
+      - {slot: 219, ch11: 1380, state: MimicNewjeansHani, ko: "뉴진스 하니", safety: caution, note: "2026-08-21 로봇 다이얼 갱신 — 이전 팔짱(MimicCrossedArms) 대체. 로봇 재덤프로 확정 필요"}
     B:
       ch5: 2000
       input_code: 5

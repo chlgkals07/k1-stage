@@ -20,7 +20,7 @@ import sys
 import time
 
 HERE = pathlib.Path(__file__).parent
-sys.path.insert(0, str(HERE / "motion_llm_rc"))
+sys.path.insert(0, str(HERE.parent / "rc_stage"))
 
 import yaml
 from rc_serial import RcSerial
@@ -40,10 +40,21 @@ def slot_pct(slot):
 
 
 def main():
-    motions = yaml.safe_load(open(HERE / "motion_llm_rc" / "motions.yaml"))
+    # 라디오가 여러 대면 --port 로 대상을 고른다 (인자 없으면 첫 번째 Pocket).
+    port = None
+    args = sys.argv[1:]
+    if args and args[0] == "--port" and len(args) > 1:
+        port = args[1]
+    elif args and args[0] == "--list":
+        from rc_serial import BY_ID_PATTERN
+        import glob
+        for path in sorted(glob.glob(BY_ID_PATTERN)):
+            print(path)
+        return
+    motions = yaml.safe_load(open(HERE.parent / "rc_stage" / "motions.yaml"))
     banks = motions["rc_list"]["banks"]
 
-    rc = RcSerial()
+    rc = RcSerial(port_pattern=port)
     ping = rc.ping()
     if not ping.get("ok"):
         sys.exit("RC 연결 실패: " + ping.get("msg", ""))

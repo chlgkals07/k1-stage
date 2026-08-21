@@ -1,0 +1,742 @@
+local GV_INDEX = 0
+local ESTOP_GV_INDEX = 1
+local FM_INDEX = 0
+
+local ESTOP_INACTIVE = -100
+local ESTOP_ACTIVE = 100
+local ESTOP_ACTIVATE_TIME = 100
+local ESTOP_DEACTIVATE_TIME = 300
+local ESTOP_HINT_TIME = 50
+local ESTOP_RESULT_TIME = 50
+local ESTOP_TRIM_RESCAN_TIME = 100
+local ESTOP_TRIM_A_NAMES = { "Ele+", "TrimEleUp", "T2+", "TR2+" }
+local ESTOP_TRIM_B_NAMES = { "Thr+", "TrimThrUp", "T3+", "TR3+" }
+
+local modes = {
+  { name = "Mimic_squat",            pwm = 1000, pct = -100 },
+  { name = "Mimic_salute",           pwm = 1100, pct =  -80 },
+  { name = "Mimic_coin_pick",        pwm = 1200, pct =  -60 },
+  { name = "Mimic_bow",              pwm = 1300, pct =  -40 },
+  { name = "Mimic_box",              pwm = 1400, pct =  -20 },
+  { name = "Mimic_redred",           pwm = 1500, pct =    0 },
+  { name = "Mimic_handshake",        pwm = 1600, pct =   20 },
+  { name = "Mimic_jump",             pwm = 1700, pct =   40 },
+  { name = "Mimic_dance2",           pwm = 1800, pct =   60 },
+  { name = "Mimic_dance3",           pwm = 1900, pct =   80 },
+}
+
+local selected = 1
+local cursor = 1
+local fieldIds = {}
+local gvValue = nil
+local ch11Pct = nil
+local ch12Pct = nil
+local gvWrite = "INIT"
+local estopGvValue = nil
+local estopWrite = "INIT"
+local estopActive = false
+local estopInitialized = false
+local estopHoldStart = nil
+local estopHoldAction = nil
+local estopHoldLatched = false
+local estopOverlay = nil
+local estopOverlayUntil = 0
+local estopTrimAIds = nil
+local estopTrimBIds = nil
+local estopTrimScanTime = nil
+local estopTrimStatus = "--"
+local edit = false
+local lastRunTime = nil
+local exitResetDone = true
+local RESET_DELAY = 50
+
+local function clamp(v, minv, maxv)
+  if v < minv then return minv end
+  if v > maxv then return maxv end
+  return v
+end
+
+local function nowTicks()
+  if getTime ~= nil then
+    return getTime()
+  end
+  return 0
+end
+
+local function findFieldId(names)
+  for i = 1, #names do
+    local ok, field = pcall(getFieldInfo, names[i])
+    if ok and field ~= nil and field.id ~= nil then
+      return field.id
+    end
+  end
+  return nil
+end
+
+local function readSource(key, names)
+  local id = fieldIds[key]
+
+  if id == nil then
+    id = findFieldId(names)
+    fieldIds[key] = id or false
+  elseif id == false then
+    id = nil
+  end
+
+  if id ~= nil then
+    local ok, value = pcall(getValue, id)
+    if ok then
+      return value
+    end
+  end
+
+  for i = 1, #names do
+    local ok, value = pcall(getValue, names[i])
+    if ok and value ~= nil then
+      return value
+    end
+  end
+
+  return nil
+end
+
+local function readValue(name)
+  return readSource(name, { name, string.lower(name) })
+end
+
+local function asNumber(value)
+  if type(value) == "number" then
+    return value
+  elseif type(value) == "table" then
+    return value.value or value.val or nil
+  end
+  return nil
+end
+
+local function sourceToPct(value)
+  value = asNumber(value)
+  if value == nil then
+    return nil
+  end
+
+  if value < -100 or value > 100 then
+    value = value * 100 / 1024
+  end
+
+  if value >= 0 then
+    value = math.floor(value + 0.5)
+  else
+    value = math.ceil(value - 0.5)
+  end
+
+  return clamp(value, -100, 100)
+end
+
+local function nameInList(name, names)
+  for i = 1, #names do
+    if name == names[i] then
+      return true
+    end
+  end
+  return false
+end
+
+local function addSwitchId(ids, id)
+  if type(id) ~= "number" then
+    return
+  end
+
+  for i = 1, #ids do
+    if ids[i] == id then
+      return
+    end
+  end
+
+  ids[#ids + 1] = id
+end
+
+local function addSwitchByName(ids, name)
+  if getSwitchIndex == nil then
+    return
+  end
+
+  local ok, id = pcall(getSwitchIndex, name)
+  if ok then
+    addSwitchId(ids, id)
+  end
+end
+
+local function collectTrimIds(names)
+  local ids = {}
+
+  for i = 1, #names do
+    addSwitchByName(ids, names[i])
+  end
+
+  if switches ~= nil then
+    local ok, iterator, state, first = pcall(switches)
+    if ok and iterator ~= nil then
+      while true do
+        local id, name = iterator(state, first)
+        if id == nil then
+          break
+        end
+        first = id
+
+        if nameInList(name, names) then
+          addSwitchId(ids, id)
+        end
+      end
+    end
+  end
+
+  return ids
+end
+
+local function resolveEstopTrims(force)
+  local now = nowTicks()
+  if not force and estopTrimAIds ~= nil and estopTrimBIds ~= nil
+      and estopTrimScanTime ~= nil and now - estopTrimScanTime < ESTOP_TRIM_RESCAN_TIME then
+    return
+  end
+
+  estopTrimAIds = collectTrimIds(ESTOP_TRIM_A_NAMES)
+  estopTrimBIds = collectTrimIds(ESTOP_TRIM_B_NAMES)
+  estopTrimScanTime = now
+  estopTrimStatus = string.format("%d/%d", #estopTrimAIds, #estopTrimBIds)
+end
+
+local function anySwitchPressed(ids)
+  if ids == nil or getSwitchValue == nil then
+    return false
+  end
+
+  for i = 1, #ids do
+    local ok, value = pcall(getSwitchValue, ids[i])
+    if ok and value == true then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function readEstopTrims()
+  resolveEstopTrims(false)
+  return anySwitchPressed(estopTrimAIds), anySwitchPressed(estopTrimBIds)
+end
+
+local function text(value, empty)
+  if value == nil then
+    return empty or "--"
+  end
+  return tostring(value)
+end
+
+local function shortText(value, maxLen)
+  value = tostring(value)
+  if #value <= maxLen then
+    return value
+  end
+  return string.sub(value, 1, maxLen - 2) .. ".."
+end
+
+local function nearestMode(value)
+  local best = 1
+  local bestDiff = math.abs(value - modes[1].pct)
+
+  for i = 2, #modes do
+    local diff = math.abs(value - modes[i].pct)
+    if diff < bestDiff then
+      best = i
+      bestDiff = diff
+    end
+  end
+
+  return best
+end
+
+local function switchPos(name)
+  local pct = sourceToPct(readValue(name))
+  if pct == nil then
+    return 0, nil, nil
+  elseif pct < -33 then
+    return 0, pct, 1000
+  elseif pct > 33 then
+    return 2, pct, 2000
+  end
+  return 1, pct, 1500
+end
+
+local function scModeName(pos)
+  if pos == 0 then
+    return "Passive"
+  elseif pos == 1 then
+    return "Fixstand"
+  end
+  return "Demo_Mode"
+end
+
+local function maxValue(a, b)
+  if a == nil then return b end
+  if b == nil then return a end
+  if a > b then return a end
+  return b
+end
+
+local function linkStatus()
+  local rqly = asNumber(readValue("RQly"))
+  local rssi1 = asNumber(readValue("1RSS"))
+  local rssi2 = asNumber(readValue("2RSS"))
+  local rxbt = asNumber(readValue("RxBt"))
+  local rssi = maxValue(rssi1, rssi2)
+
+  if rqly ~= nil then
+    if rqly <= 0 then
+      return "FS?", rqly, rssi, rxbt
+    elseif rqly < 70 then
+      return "WARN", rqly, rssi, rxbt
+    end
+    return "OK", rqly, rssi, rxbt
+  end
+
+  if rxbt ~= nil or rssi ~= nil then
+    return "TEL", rqly, rssi, rxbt
+  end
+
+  return "FS?", rqly, rssi, rxbt
+end
+
+local function shortLink(link)
+  if link == "WARN" then
+    return "WRN"
+  end
+  return link
+end
+
+local function batteryStatus()
+  local pct = asNumber(readValue("Bat%"))
+  local volts = asNumber(readValue("RxBt"))
+
+  if pct ~= nil then
+    pct = clamp(math.floor(pct + 0.5), 0, 100)
+  end
+
+  return pct, volts
+end
+
+local function fillRect(x, y, w, h)
+  if w <= 0 or h <= 0 then
+    return
+  end
+
+  if lcd.drawFilledRectangle ~= nil then
+    lcd.drawFilledRectangle(x, y, w, h)
+  elseif lcd.drawLine ~= nil then
+    for i = 0, w - 1 do
+      lcd.drawLine(x + i, y, x + i, y + h - 1, SOLID, 0)
+    end
+  else
+    for i = 0, h - 1 do
+      lcd.drawRectangle(x, y + i, w, 1)
+    end
+  end
+end
+
+local function drawBatteryIcon(x, y, w, h, pct)
+  lcd.drawRectangle(x, y, w, h)
+  lcd.drawRectangle(x + w, y + math.floor(h / 3), 2, math.floor(h / 3) + 1)
+
+  if pct == nil then
+    lcd.drawText(x + 5, y + 1, "?", SMLSIZE)
+    return
+  end
+
+  local fill = math.floor((w - 4) * pct / 100)
+  if fill > 0 then
+    fillRect(x + 2, y + 2, fill, h - 4)
+  end
+end
+
+local function drawGauge(x, y, w, h, pct)
+  pct = clamp(pct or 0, 0, 100)
+  lcd.drawRectangle(x, y, w, h)
+
+  local fill = math.floor((w - 2) * pct / 100)
+  if fill > 0 then
+    fillRect(x + 1, y + 1, fill, h - 2)
+  end
+end
+
+local function estopGaugePct()
+  if estopHoldStart ~= nil then
+    local now = nowTicks()
+    local disarming = estopHoldAction == "deactivate"
+    local target = disarming and ESTOP_DEACTIVATE_TIME or ESTOP_ACTIVATE_TIME
+    local progress = clamp((now - estopHoldStart) * 100 / target, 0, 100)
+
+    if disarming then
+      return 100 - progress
+    end
+    return progress
+  end
+
+  if estopActive then
+    return 100
+  end
+  return 0
+end
+
+local function estopVisible()
+  if estopActive or estopHoldStart ~= nil then
+    return true
+  end
+  return estopOverlay ~= nil and nowTicks() < estopOverlayUntil
+end
+
+local function estopTitle()
+  if estopOverlay == "arming" then
+    return "ACTIVATING"
+  elseif estopOverlay == "disarming" then
+    return "DEACTIVATING"
+  elseif estopOverlay == "deactivated" then
+    return "DEACTIVATED"
+  elseif estopActive or estopOverlay == "activated" then
+    return "ACTIVATED"
+  end
+  return "HOW TO USE"
+end
+
+local function drawEstopSmall()
+  local pct = estopGaugePct()
+  local ch12 = estopGvValue or ch12Pct
+
+  lcd.clear()
+  lcd.drawText(0, 0, "E-STOP", DBLSIZE)
+  lcd.drawText(LCD_W - 1, 0, string.format("T:%s", estopTrimStatus), SMLSIZE + RIGHT)
+
+  if estopOverlay == "hint" then
+    lcd.drawText(0, 19, "UP+UP 1s: ACT", SMLSIZE)
+    lcd.drawText(0, 30, "ON UP+UP 3s: OFF", SMLSIZE)
+    drawGauge(8, 43, LCD_W - 16, 8, pct)
+  else
+    lcd.drawText(0, 20, estopTitle(), SMLSIZE + (estopActive and BLINK or 0))
+    drawGauge(8, 34, LCD_W - 16, 11, pct)
+
+    if estopOverlay == "disarming" then
+      lcd.drawText(0, 49, "Hold 3s to OFF", SMLSIZE)
+    elseif estopOverlay == "arming" then
+      lcd.drawText(0, 49, "Hold 1s to ACT", SMLSIZE)
+    elseif estopActive then
+      lcd.drawText(0, 49, "Hold UP+UP 3s OFF", SMLSIZE)
+    else
+      lcd.drawText(0, 49, "Released", SMLSIZE)
+    end
+  end
+
+  lcd.drawText(LCD_W - 1, 56, string.format("CH12:%s", text(ch12)), SMLSIZE + RIGHT)
+end
+
+local function drawEstopLarge()
+  local pct = estopGaugePct()
+  local ch12 = estopGvValue or ch12Pct
+
+  lcd.clear()
+  lcd.drawText(4, 4, "E-STOP", DBLSIZE)
+  lcd.drawText(LCD_W - 4, 6, string.format("Trim %s", estopTrimStatus), RIGHT)
+
+  if estopOverlay == "hint" then
+    lcd.drawText(4, 42, "UP+UP 1s: activate", MIDSIZE)
+    lcd.drawText(4, 70, "When active, UP+UP 3s: deactivate", 0)
+  else
+    lcd.drawText(4, 42, estopTitle(), MIDSIZE + (estopActive and BLINK or 0))
+    drawGauge(4, 78, LCD_W - 8, 18, pct)
+  end
+
+  lcd.drawText(4, 112, string.format("CH12 %s  GV2 %s", text(ch12), text(estopGvValue)), 0)
+  lcd.drawText(4, 136, string.format("Mode write %s  E-stop write %s", gvWrite, estopWrite), SMLSIZE)
+end
+
+local function syncFromGv(updateSelection)
+  if model ~= nil and model.getGlobalVariable ~= nil then
+    gvValue = model.getGlobalVariable(GV_INDEX, FM_INDEX)
+    if gvValue ~= nil and updateSelection ~= false then
+      selected = nearestMode(gvValue)
+      cursor = selected
+    end
+
+    estopGvValue = model.getGlobalVariable(ESTOP_GV_INDEX, FM_INDEX)
+    if estopGvValue ~= nil and estopInitialized then
+      estopActive = estopGvValue > 0
+    end
+  end
+
+  ch11Pct = sourceToPct(readSource("CH11", { "ch11", "CH11", "Ch11", "chan11", "Chan11" }))
+  ch12Pct = sourceToPct(readSource("CH12", { "ch12", "CH12", "Ch12", "chan12", "Chan12" }))
+end
+
+local function setMode(index, label)
+  if model ~= nil and model.setGlobalVariable ~= nil then
+    local ok = pcall(model.setGlobalVariable, GV_INDEX, FM_INDEX, modes[index].pct)
+    gvWrite = ok and label or "ERR"
+  else
+    gvWrite = "NOAPI"
+  end
+
+  syncFromGv()
+end
+
+local function setEstop(active, label)
+  estopActive = active
+  estopGvValue = active and ESTOP_ACTIVE or ESTOP_INACTIVE
+
+  if model ~= nil and model.setGlobalVariable ~= nil then
+    local ok = pcall(model.setGlobalVariable, ESTOP_GV_INDEX, FM_INDEX, estopGvValue)
+    estopWrite = ok and label or "ERR"
+  else
+    estopWrite = "NOAPI"
+  end
+
+  ch12Pct = sourceToPct(readSource("CH12", { "ch12", "CH12", "Ch12", "chan12", "Chan12" }))
+end
+
+local function ensureEstopInitialized()
+  if estopInitialized then
+    return
+  end
+
+  estopInitialized = true
+  syncFromGv(false)
+
+  if estopGvValue == nil or (estopGvValue > -50 and estopGvValue < 50) then
+    setEstop(false, "INIT")
+  else
+    estopActive = estopGvValue > 0
+  end
+end
+
+local function updateEstop()
+  ensureEstopInitialized()
+
+  local now = nowTicks()
+  local trimA, trimB = readEstopTrims()
+  local combo = trimA and trimB
+  local single = trimA ~= trimB
+
+  if combo then
+    if estopHoldStart == nil then
+      estopHoldStart = now
+      estopHoldAction = estopActive and "deactivate" or "activate"
+      estopHoldLatched = false
+    end
+
+    local disarming = estopHoldAction == "deactivate"
+    local target = disarming and ESTOP_DEACTIVATE_TIME or ESTOP_ACTIVATE_TIME
+    estopOverlay = disarming and "disarming" or "arming"
+    estopOverlayUntil = now + ESTOP_HINT_TIME
+
+    if estopHoldLatched then
+      estopOverlay = disarming and "deactivated" or "activated"
+    elseif now - estopHoldStart >= target then
+      estopHoldLatched = true
+
+      if disarming then
+        setEstop(false, "OFF")
+        estopOverlay = "deactivated"
+        estopOverlayUntil = now + ESTOP_RESULT_TIME
+      else
+        setEstop(true, "ON")
+        estopOverlay = "activated"
+        estopOverlayUntil = now + ESTOP_RESULT_TIME
+      end
+    end
+
+    return
+  end
+
+  estopHoldStart = nil
+  estopHoldAction = nil
+  estopHoldLatched = false
+
+  if single then
+    estopOverlay = estopActive and "activated" or "hint"
+    estopOverlayUntil = now + ESTOP_HINT_TIME
+  elseif estopOverlay ~= nil and now >= estopOverlayUntil then
+    estopOverlay = nil
+  end
+end
+
+local function applyMode()
+  setMode(selected, "OK")
+end
+
+local function changeCursor(delta)
+  cursor = clamp(cursor + delta, 1, #modes)
+end
+
+local function commitCursor()
+  selected = cursor
+  applyMode()
+end
+
+local function resetMode()
+  selected = 1
+  cursor = 1
+  edit = false
+  setMode(selected, "RST")
+  exitResetDone = true
+end
+
+local function isEvent(event, value)
+  return value ~= nil and event == value
+end
+
+local function isIncEvent(event)
+  return isEvent(event, EVT_ROT_RIGHT)
+end
+
+local function isDecEvent(event)
+  return isEvent(event, EVT_ROT_LEFT)
+end
+
+local function isEnterEvent(event)
+  return isEvent(event, EVT_VIRTUAL_ENTER)
+end
+
+local function isExitEvent(event)
+  return isEvent(event, EVT_VIRTUAL_EXIT)
+    or isEvent(event, EVT_EXIT_BREAK)
+    or isEvent(event, EVT_EXIT_LONG)
+end
+
+local function drawSmall()
+  local display = edit and cursor or selected
+  local mode = modes[display]
+  local maxMode = #modes - 1
+  local sbPos = switchPos("SB")
+  local scPos = switchPos("SC")
+  local link = linkStatus()
+  local batPct, batVolts = batteryStatus()
+
+  lcd.clear()
+  lcd.drawText(0, 0, "Robot", SMLSIZE)
+  lcd.drawText(36, 0, string.format("Link:%s", shortLink(link)), SMLSIZE)
+  lcd.drawText(LCD_W - 1, 0, edit and "EDIT" or "VIEW", SMLSIZE + RIGHT + (edit and BLINK or 0))
+
+  lcd.drawText(0, 12, string.format("M:%02d/%02d  PWM:%d us",
+    display - 1,
+    maxMode,
+    mode.pwm), SMLSIZE)
+
+  lcd.drawText(0, 24, mode.name, SMLSIZE)
+  lcd.drawText(0, 36, scModeName(scPos), SMLSIZE)
+
+  lcd.drawText(0, 48, "Bat", SMLSIZE)
+  drawBatteryIcon(24, 48, 26, 7, batPct)
+  lcd.drawText(56, 48, batPct and string.format("%d%%", batPct) or "--%", SMLSIZE)
+  lcd.drawText(LCD_W - 1, 48,
+    batVolts and string.format("%.1fV", batVolts) or "--.-V",
+    SMLSIZE + RIGHT)
+
+  lcd.drawText(0, 56, string.format("SB: %d", sbPos), SMLSIZE)
+  lcd.drawText(LCD_W - 1, 56, string.format("SC: %d", scPos), SMLSIZE + RIGHT)
+end
+
+local function drawLarge()
+  local display = edit and cursor or selected
+  local mode = modes[display]
+  local maxMode = #modes - 1
+  local sbPos = switchPos("SB")
+  local scPos = switchPos("SC")
+  local link, rqly, rssi, rxbt = linkStatus()
+  local batPct, batVolts = batteryStatus()
+
+  lcd.clear()
+  lcd.drawText(4, 4, "Robot Telemetry", MIDSIZE)
+  lcd.drawText(LCD_W - 4, 4, edit and "EDIT" or "VIEW", RIGHT + (edit and BLINK or 0))
+  lcd.drawText(4, 22, string.format("Link %s  RQly %s%%  RSSI %s",
+    link,
+    text(rqly),
+    text(rssi)), SMLSIZE)
+
+  lcd.drawText(4, 30, "Mode", 0)
+  lcd.drawText(80, 26, string.format("%02d / %02d", display - 1, maxMode), DBLSIZE)
+
+  lcd.drawText(4, 64, "PWM", 0)
+  lcd.drawText(80, 60, string.format("%d us", mode.pwm), MIDSIZE)
+
+  lcd.drawText(4, 92, "Name", 0)
+  lcd.drawText(80, 88, mode.name, MIDSIZE)
+
+  lcd.drawText(4, 124, "State", 0)
+  lcd.drawText(80, 120, scModeName(scPos), MIDSIZE)
+
+  lcd.drawText(4, 148, string.format("SB: %d", sbPos), 0)
+  lcd.drawText(LCD_W - 4, 148, string.format("SC: %d", scPos), RIGHT)
+
+  lcd.drawText(4, 170, "Battery", 0)
+  drawBatteryIcon(80, 168, 42, 14, batPct)
+  lcd.drawText(130, 170, string.format("%s%%  %sV",
+    batPct and string.format("%d", batPct) or "--",
+    batVolts and string.format("%.1f", batVolts) or (rxbt and string.format("%.1f", rxbt) or "--")), 0)
+end
+
+local function background()
+  updateEstop()
+
+  if exitResetDone or lastRunTime == nil or getTime == nil then
+    return
+  end
+
+  if getTime() - lastRunTime > RESET_DELAY then
+    resetMode()
+  end
+end
+
+local function run(event)
+  lastRunTime = nowTicks()
+  exitResetDone = false
+
+  if isExitEvent(event) then
+    resetMode()
+  elseif isEnterEvent(event) then
+    if edit then
+      edit = false
+    else
+      syncFromGv(true)
+      cursor = selected
+      edit = true
+    end
+  elseif edit and isIncEvent(event) then
+    changeCursor(1)
+    commitCursor()
+  elseif edit and isDecEvent(event) then
+    changeCursor(-1)
+    commitCursor()
+  else
+    syncFromGv(not edit)
+  end
+
+  updateEstop()
+
+  if estopVisible() then
+    if LCD_H <= 64 then
+      drawEstopSmall()
+    else
+      drawEstopLarge()
+    end
+  else
+    if LCD_H <= 64 then
+      drawSmall()
+    else
+      drawLarge()
+    end
+  end
+
+  return 0
+end
+
+return {
+  background = background,
+  run = run
+}
