@@ -1,0 +1,575 @@
+diff -ruN baseline/config/k1_config.yaml current/config/k1_config.yaml
+--- baseline/config/k1_config.yaml	2026-08-21 09:57:53.922728600 +0900
++++ current/config/k1_config.yaml	2026-08-21 09:57:53.921941036 +0900
+@@ -36,10 +36,12 @@
+   api_entry:
+     warmup_duration: 3.0
+     velocity_neutral_threshold: 0.05
++    allow_non_neutral_teleop: true
+     allowed_from_states:
+       - Damping
+       - ReadyPose
+       - Velocity
++  teleop_velocity_passthrough: true
+   default_velocity_state: Velocity
+ 
+ teleop_input:
+@@ -54,10 +56,16 @@
+     input_code: 2
+   VelocityRequested:
+     input_code: 3
+-  MimicRequested:
++  # Mimic banks. The dial (CH11) picks the slot; the held button picks the bank.
++  MimicRequested:      # 버튼 안 누름
+     input_code: 4
++  MimicRequestedB:     # L1 홀드
++    input_code: 5
++  MimicRequestedC:     # R1 홀드
++    input_code: 6
+ 
+ selectors:
++  # Bank A - no button held. Existing layout, unchanged.
+   mimic_selector:
+     table:
+       200: MimicSquat
+@@ -67,8 +75,33 @@
+       204: MimicOmbrinho
+       205: Mimicbad
+       206: MimicShuffleDance
++      207: MimicPara
+       208: MimicBillyJean
+       209: MimicAiming
++      210: Mimiclove
++
++  # Bank B - L1 held. Assets that shipped with the robot but were never wired up.
++  mimic_selector_b:
++    table:
++      200: MimicBoxing
++      201: MimicCoinPick
++      202: MimicDance1
++      203: MimicDance2
++      204: MimicJump
++      205: MimicRedRed
++      206: MimicSquat05
++      207: Mimicggang_1
++      208: Mimicggang_2
++      209: Mimicggang_3
++
++  # Bank C - R1 held. Alternate takes of the same motions, for A/B comparison.
++  mimic_selector_c:
++    table:
++      200: MimicBoxingK05
++      201: MimicBoxingLpfW9
++      202: MimicBoxingNewUrdf
++      203: MimicRedRedNewton
++      204: MimicRedRedWoojin
+ 
+ state_machine:
+   initial: Damping
+@@ -87,6 +120,10 @@
+           to: Velocity
+         - when: MimicRequested
+           select: mimic_selector
++        - when: MimicRequestedB
++          select: mimic_selector_b
++        - when: MimicRequestedC
++          select: mimic_selector_c
+     ZeroPose:
+       run: posture_zero_pose
+       transitions:
+@@ -98,6 +135,10 @@
+           to: Velocity
+         - when: MimicRequested
+           select: mimic_selector
++        - when: MimicRequestedB
++          select: mimic_selector_b
++        - when: MimicRequestedC
++          select: mimic_selector_c
+     Velocity:
+       run: velocity_policy
+       transitions:
+@@ -108,6 +149,12 @@
+         - when: MimicRequested
+           trigger: edge
+           select: mimic_selector
++        - when: MimicRequestedB
++          trigger: edge
++          select: mimic_selector_b
++        - when: MimicRequestedC
++          trigger: edge
++          select: mimic_selector_c
+     Mimic:
+       abstract: true
+       transitions:
+@@ -154,8 +201,46 @@
+       parent: Mimic
+       run: mimic_shuffle_dance
+     MimicAiming:
+-      parent: Mimic 
++      parent: Mimic
+       run: mimic_aiming
++    # Bank B
++    MimicBoxing:
++      parent: Mimic
++      run: mimic_boxing
++    MimicCoinPick:
++      parent: Mimic
++      run: mimic_coin_pick
++    MimicDance1:
++      parent: Mimic
++      run: mimic_dance1
++    MimicDance2:
++      parent: Mimic
++      run: mimic_dance2
++    MimicJump:
++      parent: Mimic
++      run: mimic_jump
++    MimicRedRed:
++      parent: Mimic
++      run: mimic_redred
++    MimicSquat05:
++      parent: Mimic
++      run: mimic_squat_05
++    # Bank C - alternate takes
++    MimicBoxingK05:
++      parent: Mimic
++      run: mimic_boxing_k05
++    MimicBoxingLpfW9:
++      parent: Mimic
++      run: mimic_boxing_lpf_w9
++    MimicBoxingNewUrdf:
++      parent: Mimic
++      run: mimic_boxing_new_urdf
++    MimicRedRedNewton:
++      parent: Mimic
++      run: mimic_redred_newton
++    MimicRedRedWoojin:
++      parent: Mimic
++      run: mimic_redred_woojin
+ 
+ state_behaviors:
+   damping:
+@@ -283,4 +368,65 @@
+   mimic_aiming:
+     kind: mimic
+     asset: mimic/aiming1
+-    motion: aiming1.csv
+\ No newline at end of file
++    motion: aiming1.csv
++  # ---- Bank B: assets that were already on the robot but never wired up ----
++  mimic_boxing:
++    kind: mimic
++    asset: mimic/boxing_newton
++    motion: boxing.csv
++
++  mimic_coin_pick:
++    kind: mimic
++    asset: mimic/coin_pick
++    motion: coin_pick.csv
++
++  mimic_dance1:
++    kind: mimic
++    asset: mimic/dance1
++    motion: dance1.csv
++
++  mimic_dance2:
++    kind: mimic
++    asset: mimic/dance2
++    motion: dance2.csv
++
++  mimic_jump:
++    kind: mimic
++    asset: mimic/jump
++    motion: jump.csv
++
++  mimic_redred:
++    kind: mimic
++    asset: mimic/redred
++    motion: redred_k1.csv
++
++  mimic_squat_05:
++    kind: mimic
++    asset: mimic/squat_05
++    motion: kimodo_squat_k0_5_mimic.csv
++
++  # ---- Bank C: alternate takes, for picking the best one before the demo ----
++  mimic_boxing_k05:
++    kind: mimic
++    asset: mimic/boxing_k05_motion
++    motion: kimodo_box_k0_5_mimic_converted.csv
++
++  mimic_boxing_lpf_w9:
++    kind: mimic
++    asset: mimic/boxing_lpf_w9
++    motion: boxing_lpf_w9.csv
++
++  mimic_boxing_new_urdf:
++    kind: mimic
++    asset: mimic/boxing_new_urdf
++    motion: boxing.csv
++
++  mimic_redred_newton:
++    kind: mimic
++    asset: mimic/redred_newton
++    motion: redred.csv
++
++  mimic_redred_woojin:
++    kind: mimic
++    asset: mimic/redred_woojin_k1_first
++    motion: redred_k1_23dof_50hz.csv
+diff -ruN baseline/config/teleop/radiomaster_pocket.yaml current/config/teleop/radiomaster_pocket.yaml
+--- baseline/config/teleop/radiomaster_pocket.yaml	2026-08-21 09:57:53.926805982 +0900
++++ current/config/teleop/radiomaster_pocket.yaml	2026-08-21 09:57:53.925947764 +0900
+@@ -12,6 +12,11 @@
+   when:
+     CH8: 2000
+ 
++# !!! 로봇에서 아래 두 채널 번호를 실측값으로 바꿀 것 !!!
++#   ros2 topic echo /ai_sapiens_rc/status --field channels
++#   L1/R1 을 누르면서 rc_us 가 움직이는 채널 번호를 확인한 뒤
++#   CH9(L1), CH10(R1) 자리를 그 번호로 교체한다.
++#   모멘터리 버튼은 보통 안 누름=1000, 누름=2000 이다.
+ input_code:
+   channels:
+     CH7:
+@@ -21,12 +26,21 @@
+         CH6:
+           1000: 3
+           1500: 0
+-          2000: 4
++          2000:            # Mimic 요청 - 여기서 버튼으로 뱅크 분기
++            CH9:           # L1  <-- 실측 채널로 교체
++              1000:
++                CH10:      # R1  <-- 실측 채널로 교체
++                  1000: 4  # 아무것도 안 누름 -> 뱅크 A
++                  2000: 6  # R1 만          -> 뱅크 C
++              2000:
++                CH10:
++                  1000: 5  # L1 만          -> 뱅크 B
++                  2000: 5  # L1+R1 - 아직 미사용, 뱅크 B 로 흡수
+ 
+ selector_code:
+   channel: CH11
+   tolerance: 30
+-  required_for_input_codes: [4]
++  required_for_input_codes: [4, 5, 6]
+   table:
+     1000: 200
+     1100: 201
+@@ -38,3 +52,4 @@
+     1700: 207
+     1800: 208
+     1900: 209
++    2000: 210
+diff -ruN baseline/include/ai_sapiens_sim2real/config/authority_config.hpp current/include/ai_sapiens_sim2real/config/authority_config.hpp
+--- baseline/include/ai_sapiens_sim2real/config/authority_config.hpp	2026-08-21 09:57:53.930602718 +0900
++++ current/include/ai_sapiens_sim2real/config/authority_config.hpp	2026-08-21 09:57:53.929717739 +0900
+@@ -28,7 +28,9 @@
+ {
+   std::optional<double> api_entry_warmup_duration;
+   std::optional<float> api_entry_velocity_neutral_threshold;
++  bool api_entry_allow_non_neutral_teleop{false};
+   std::vector<std::string> api_entry_allowed_from_states;
++  bool api_teleop_velocity_passthrough{false};
+   std::string default_velocity_state;
+ };
+ 
+diff -ruN baseline/include/ai_sapiens_sim2real/mode_runtime/authority_runtime.hpp current/include/ai_sapiens_sim2real/mode_runtime/authority_runtime.hpp
+--- baseline/include/ai_sapiens_sim2real/mode_runtime/authority_runtime.hpp	2026-08-21 09:57:53.934809232 +0900
++++ current/include/ai_sapiens_sim2real/mode_runtime/authority_runtime.hpp	2026-08-21 09:57:53.933965770 +0900
+@@ -34,6 +34,7 @@
+ public:
+   void set_warmup_duration(double seconds);
+   void set_switch_velocity_threshold(float threshold);
++  void set_allow_non_neutral_teleop(bool allow);
+   std::chrono::duration<double> warmup_duration() const;
+ 
+   // Pure policy checks; no mutable runtime state.
+@@ -55,6 +56,7 @@
+ 
+   std::chrono::duration<double> warmup_duration_{3.0};
+   float switch_velocity_threshold_{0.05f};
++  bool allow_non_neutral_teleop_{false};
+ };
+ 
+ class AuthorityRuntime
+@@ -62,6 +64,7 @@
+ public:
+   void set_warmup_duration(double seconds);
+   void set_switch_velocity_threshold(float threshold);
++  void set_allow_non_neutral_teleop(bool allow);
+ 
+   Authority current() const
+   {
+diff -ruN baseline/src/config/root_config.cpp current/src/config/root_config.cpp
+--- baseline/src/config/root_config.cpp	2026-08-21 09:57:53.938994919 +0900
++++ current/src/config/root_config.cpp	2026-08-21 09:57:53.938218179 +0900
+@@ -74,10 +74,18 @@
+     config.api_entry_velocity_neutral_threshold =
+       api_entry["velocity_neutral_threshold"].as<float>();
+   }
++  if (api_entry["allow_non_neutral_teleop"]) {
++    config.api_entry_allow_non_neutral_teleop =
++      api_entry["allow_non_neutral_teleop"].as<bool>();
++  }
+ 
+   config.api_entry_allowed_from_states = read_required_yaml_string_sequence(
+     api_entry["allowed_from_states"],
+     "authority.api_entry.allowed_from_states");
++  if (authority["teleop_velocity_passthrough"]) {
++    config.api_teleop_velocity_passthrough =
++      authority["teleop_velocity_passthrough"].as<bool>();
++  }
+   config.default_velocity_state = read_required_yaml_string(
+     authority["default_velocity_state"],
+     "authority.default_velocity_state");
+diff -ruN baseline/src/controllers/mode_controller.cpp current/src/controllers/mode_controller.cpp
+--- baseline/src/controllers/mode_controller.cpp	2026-08-21 09:57:53.942249167 +0900
++++ current/src/controllers/mode_controller.cpp	2026-08-21 09:57:53.941700667 +0900
+@@ -367,13 +367,24 @@
+   service_request_gate_.discard();
+ }
+ 
+-// Select the velocity command owner for this tick. Manual uses teleop, full API
+-// uses /cmd_vel, and API warmup holds zero. zero_velocity suppresses the
+-// operator stick for one tick when API control is lost.
++// Select the velocity command owner for this tick. The default behavior keeps
++// API warmup at zero and gives full API authority to /cmd_vel. K1 can opt into
++// teleop passthrough so locomotion remains under the physical RC while API
++// authority is used only for service-selected behaviors such as Mimic.
+ VelocitySource ModeController::select_velocity_source(
+   Authority authority, bool zero_velocity) const
+ {
+-  if (zero_velocity || authority == Authority::ApiWarmup) {
++  if (zero_velocity) {
++    return VelocitySource::Zero;
++  }
++
++  if (authority_config_.api_teleop_velocity_passthrough &&
++    (authority == Authority::ApiWarmup || authority == Authority::Api))
++  {
++    return VelocitySource::Teleop;
++  }
++
++  if (authority == Authority::ApiWarmup) {
+     return VelocitySource::Zero;
+   }
+ 
+@@ -477,6 +488,9 @@
+   if (const auto threshold = authority_config_.api_entry_velocity_neutral_threshold) {
+     authority_.set_switch_velocity_threshold(*threshold);
+   }
++
++  authority_.set_allow_non_neutral_teleop(
++    authority_config_.api_entry_allow_non_neutral_teleop);
+ }
+ 
+ void ModeController::enter_initial_state()
+diff -ruN baseline/src/mode_runtime/authority_runtime.cpp current/src/mode_runtime/authority_runtime.cpp
+--- baseline/src/mode_runtime/authority_runtime.cpp	2026-08-21 09:57:53.945222907 +0900
++++ current/src/mode_runtime/authority_runtime.cpp	2026-08-21 09:57:53.944671874 +0900
+@@ -29,6 +29,11 @@
+   switch_velocity_threshold_ = threshold;
+ }
+ 
++void AuthorityPolicy::set_allow_non_neutral_teleop(bool allow)
++{
++  allow_non_neutral_teleop_ = allow;
++}
++
+ std::chrono::duration<double> AuthorityPolicy::warmup_duration() const
+ {
+   return warmup_duration_;
+@@ -55,7 +60,9 @@
+   if (!current_state_can_enter_api) {
+     return "active mode cannot enter API authority";
+   }
+-  if (!is_command_below_switch_threshold(shared_data.teleop.velocity_commands)) {
++  if (!allow_non_neutral_teleop_ &&
++    !is_command_below_switch_threshold(shared_data.teleop.velocity_commands))
++  {
+     return "teleop velocity command is not neutral";
+   }
+   if (!is_command_below_switch_threshold(shared_data.api.velocity_commands)) {
+@@ -82,6 +89,11 @@
+   policy_.set_switch_velocity_threshold(threshold);
+ }
+ 
++void AuthorityRuntime::set_allow_non_neutral_teleop(bool allow)
++{
++  policy_.set_allow_non_neutral_teleop(allow);
++}
++
+ Authority AuthorityRuntime::read_snapshot() const
+ {
+   return static_cast<Authority>(snapshot_.load(std::memory_order_acquire));
+diff -ruN baseline/test/test_mode_controller.cpp current/test/test_mode_controller.cpp
+--- baseline/test/test_mode_controller.cpp	2026-08-21 09:57:53.948430803 +0900
++++ current/test/test_mode_controller.cpp	2026-08-21 09:57:53.947632807 +0900
+@@ -45,14 +45,16 @@
+     });
+ }
+ 
+-std::filesystem::path write_root_config()
++std::filesystem::path write_root_config(
++  bool allow_non_neutral_teleop = false,
++  bool teleop_velocity_passthrough = false)
+ {
+   static int index = 0;
+   const auto path = std::filesystem::temp_directory_path() /
+     ("ai_sapiens_sim2real_mode_controller_test_" + std::to_string(++index) + ".yaml");
+ 
+   std::ofstream file(path);
+-  file <<
++  file                           <<
+     R"(
+ robot_joint_order: [joint]
+ teleop_input:
+@@ -75,7 +77,12 @@
+   api_entry:
+     warmup_duration: 0.0
+     velocity_neutral_threshold: 0.05
++    allow_non_neutral_teleop: )"
++                                 << (allow_non_neutral_teleop ? "true" : "false") <<
++    R"(
+     allowed_from_states: [Damping, ReadyPose, Velocity]
++  teleop_velocity_passthrough: )" << (teleop_velocity_passthrough ? "true" : "false") <<
++    R"(
+   default_velocity_state: Velocity
+ state_machine:
+   initial: Damping
+@@ -143,11 +150,14 @@
+ class ModeControllerFixture
+ {
+ public:
+-  ModeControllerFixture()
++  ModeControllerFixture(
++    bool allow_non_neutral_teleop = false,
++    bool teleop_velocity_passthrough = false)
+   {
+     ensure_rclcpp_initialized();
+ 
+-    root_config_ = std::make_unique<ai_sapiens_sim2real::RootConfig>(write_root_config());
++    root_config_ = std::make_unique<ai_sapiens_sim2real::RootConfig>(
++      write_root_config(allow_non_neutral_teleop, teleop_velocity_passthrough));
+ 
+     shared_data_.joint_map.controller_joint_names = {"joint"};
+     shared_data_.resize(1U, 1U);
+@@ -302,6 +312,92 @@
+   EXPECT_STREQ(fixture.controller_->status_snapshot().authority, "MANUAL");
+ }
+ 
++TEST(ModeController, ApiTeleopPassthroughPreservesLocomotionAcrossAuthorityChange)
++{
++  ModeControllerFixture fixture(true, true);
++  fixture.release_startup_gate();
++  fixture.shared_data_.teleop.input_code = kVelocityInputCode;
++  fixture.shared_data_.teleop.velocity_commands.x() = 0.25F;
++  fixture.update_controller();
++  ASSERT_EQ(fixture.controller_->status_snapshot().active_state, "Velocity");
++  EXPECT_FLOAT_EQ(fixture.shared_data_.mode.velocity_commands.x(), 0.25F);
++
++  fixture.set_api_heartbeat_valid(true);
++  fixture.shared_data_.teleop.api_mode_requested = true;
++  fixture.update_controller();
++  EXPECT_STREQ(fixture.controller_->status_snapshot().authority, "API_WARMUP");
++  EXPECT_EQ(fixture.controller_->status_snapshot().active_state, "Velocity");
++  EXPECT_FLOAT_EQ(fixture.shared_data_.mode.velocity_commands.x(), 0.25F);
++
++  fixture.shared_data_.teleop.velocity_commands.x() = 0.15F;
++  fixture.shared_data_.api.velocity_commands.x() = 0.9F;
++  fixture.update_controller();
++  EXPECT_STREQ(fixture.controller_->status_snapshot().authority, "API");
++  EXPECT_EQ(fixture.controller_->status_snapshot().active_state, "Velocity");
++  EXPECT_FLOAT_EQ(fixture.shared_data_.mode.velocity_commands.x(), 0.15F);
++}
++
++TEST(ModeController, ApiTeleopPassthroughKeepsReadyPoseAcrossAuthorityChange)
++{
++  ModeControllerFixture fixture(true, true);
++  fixture.release_startup_gate();
++  fixture.set_api_heartbeat_valid(true);
++  fixture.shared_data_.teleop.api_mode_requested = true;
++
++  fixture.update_controller();
++  EXPECT_STREQ(fixture.controller_->status_snapshot().authority, "API_WARMUP");
++  EXPECT_EQ(fixture.controller_->status_snapshot().active_state, "ReadyPose");
++
++  fixture.update_controller();
++  EXPECT_STREQ(fixture.controller_->status_snapshot().authority, "API");
++  EXPECT_EQ(fixture.controller_->status_snapshot().active_state, "ReadyPose");
++}
++
++TEST(ModeController, ApiMimicCompletionReturnsToCurrentTeleopVelocity)
++{
++  ModeControllerFixture fixture(true, true);
++  fixture.release_startup_gate();
++  fixture.shared_data_.teleop.input_code = kVelocityInputCode;
++  fixture.shared_data_.teleop.velocity_commands.x() = 0.2F;
++  fixture.update_controller();
++
++  fixture.set_api_heartbeat_valid(true);
++  fixture.shared_data_.teleop.api_mode_requested = true;
++  fixture.update_controller();
++  fixture.update_controller();
++  ASSERT_STREQ(fixture.controller_->status_snapshot().authority, "API");
++
++  const auto request_result = fixture.controller_->request_mode_by_name("MimicRun");
++  ASSERT_TRUE(request_result.success);
++  fixture.update_controller();
++  ASSERT_EQ(fixture.controller_->status_snapshot().active_state, "MimicRun");
++
++  fixture.shared_data_.teleop.velocity_commands.x() = 0.1F;
++  fixture.shared_data_.requests.state_name = "Velocity";
++  fixture.update_controller();
++  EXPECT_EQ(fixture.controller_->status_snapshot().active_state, "Velocity");
++  EXPECT_FLOAT_EQ(fixture.shared_data_.mode.velocity_commands.x(), 0.1F);
++}
++
++TEST(ModeController, ApiHeartbeatLossStillZerosPassthroughVelocityBeforeManualHandoff)
++{
++  ModeControllerFixture fixture(true, true);
++  fixture.release_startup_gate();
++  fixture.shared_data_.teleop.input_code = kVelocityInputCode;
++  fixture.shared_data_.teleop.velocity_commands.x() = 0.2F;
++  fixture.update_controller();
++  fixture.set_api_heartbeat_valid(true);
++  fixture.shared_data_.teleop.api_mode_requested = true;
++  fixture.update_controller();
++  fixture.update_controller();
++  ASSERT_STREQ(fixture.controller_->status_snapshot().authority, "API");
++
++  fixture.set_api_heartbeat_valid(false);
++  fixture.update_controller();
++  EXPECT_STREQ(fixture.controller_->status_snapshot().authority, "MANUAL");
++  EXPECT_TRUE(fixture.shared_data_.mode.velocity_commands.isZero());
++}
++
+ TEST(ModeController, ApiAcceptsMimicServiceRequest)
+ {
+   ModeControllerFixture fixture;
+diff -ruN baseline/test/test_state_machine_config.cpp current/test/test_state_machine_config.cpp
+--- baseline/test/test_state_machine_config.cpp	2026-08-21 09:57:53.951298521 +0900
++++ current/test/test_state_machine_config.cpp	2026-08-21 09:57:53.950766734 +0900
+@@ -147,7 +147,9 @@
+   api_entry:
+     warmup_duration: 2.5
+     velocity_neutral_threshold: 0.2
++    allow_non_neutral_teleop: true
+     allowed_from_states: [Damping, Velocity]
++  teleop_velocity_passthrough: true
+   default_velocity_state: Velocity
+ state_machine:
+   initial: Damping
+@@ -175,9 +177,11 @@
+   ASSERT_TRUE(authority_config.api_entry_velocity_neutral_threshold);
+   EXPECT_DOUBLE_EQ(*authority_config.api_entry_warmup_duration, 2.5);
+   EXPECT_FLOAT_EQ(*authority_config.api_entry_velocity_neutral_threshold, 0.2f);
++  EXPECT_TRUE(authority_config.api_entry_allow_non_neutral_teleop);
+   EXPECT_EQ(
+     authority_config.api_entry_allowed_from_states,
+     std::vector<std::string>({"Damping", "Velocity"}));
++  EXPECT_TRUE(authority_config.api_teleop_velocity_passthrough);
+   EXPECT_EQ(authority_config.default_velocity_state, "Velocity");
+ }
+ 

@@ -1,0 +1,55 @@
+topic: /ai_sapiens_rc/status
+axis_deadzone: 0.0
+switch_match_tolerance: 50
+
+velocity_command:
+  channels:
+    linear_x: {channel: CH2, invert: false}
+    linear_y: {channel: CH4, invert: true}
+    angular_z: {channel: CH1, invert: true}
+
+api_mode:
+  when:
+    CH8: 2000
+
+# !!! 로봇에서 아래 두 채널 번호를 실측값으로 바꿀 것 !!!
+#   ros2 topic echo /ai_sapiens_rc/status --field channels
+#   L1/R1 을 누르면서 rc_us 가 움직이는 채널 번호를 확인한 뒤
+#   CH9(L1), CH10(R1) 자리를 그 번호로 교체한다.
+#   모멘터리 버튼은 보통 안 누름=1000, 누름=2000 이다.
+input_code:
+  channels:
+    CH7:
+      1000: 1
+      1500: 2
+      2000:
+        CH6:
+          1000: 3
+          1500: 0
+          2000:            # Mimic 요청 - 여기서 버튼으로 뱅크 분기
+            CH9:           # L1  <-- 실측 채널로 교체
+              1000:
+                CH10:      # R1  <-- 실측 채널로 교체
+                  1000: 4  # 아무것도 안 누름 -> 뱅크 A
+                  2000: 6  # R1 만          -> 뱅크 C
+              2000:
+                CH10:
+                  1000: 5  # L1 만          -> 뱅크 B
+                  2000: 5  # L1+R1 - 아직 미사용, 뱅크 B 로 흡수
+
+selector_code:
+  channel: CH11
+  tolerance: 30
+  required_for_input_codes: [4, 5, 6]
+  table:
+    1000: 200
+    1100: 201
+    1200: 202
+    1300: 203
+    1400: 204
+    1500: 205
+    1600: 206
+    1700: 207
+    1800: 208
+    1900: 209
+    2000: 210

@@ -1,0 +1,8 @@
+# 저장소 전역. 각 앱 디렉터리에도 자체 .gitignore 가 있다.
+#
+# 주의: gitignore 는 줄 끝 주석을 지원하지 않는다. 주석은 반드시 별도 줄로.
+
+__pycache__/
+*.pyc
+.claude/
+.DS_Store
