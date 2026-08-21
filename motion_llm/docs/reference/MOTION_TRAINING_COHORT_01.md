@@ -7,7 +7,7 @@
 - 전체 backlog: [MOTION_TRAINING_BACKLOG.md](MOTION_TRAINING_BACKLOG.md)
 - 전체 worklist: [MOTION_TRAINING_WORKLIST.csv](MOTION_TRAINING_WORKLIST.csv)
 - 이 cohort CSV: [MOTION_TRAINING_COHORT_01.csv](MOTION_TRAINING_COHORT_01.csv)
-- runtime catalog: [../motions.yaml](../motions.yaml)
+- runtime catalog: [../motions.yaml](../../motions.yaml)
 
 ## Cohort
 

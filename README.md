@@ -40,8 +40,9 @@ cd rc_stage && python3 server.py            # 실기
 cd rc_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 ```
 
-행사 당일 절차는 [motion_llm/docs/OPENING_RUNBOOK.md](motion_llm/docs/OPENING_RUNBOOK.md)
-하나로 끝난다. 셋업 → 검증 시퀀스 → 장애 대응까지 현장 실측값 기준이다.
+행사 당일 절차는 [motion_llm/docs/RUNBOOK.md](motion_llm/docs/RUNBOOK.md) 하나로 끝난다.
+셋업 → 검증 시퀀스 → 장애 대응까지 현장 실측값 기준이다. 지금 무엇이 참인지는
+[motion_llm/docs/STATUS.md](motion_llm/docs/STATUS.md)를 본다.
 
 ## 안전 경계
 
@@ -49,8 +50,9 @@ cd rc_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 2. RC의 SD(CH8)가 API 권한의 물리 허가다. 내리면 PC가 무슨 말을 해도 안 움직인다.
    반대로 **RC 모드에서는 SD를 내려야** 명령이 먹는다 — API 권한일 때 로봇은 teleop
    전이를 무시하기 때문이다.
-3. 허용목록이 둘이고 서로 다르다. `api_allowlist`는 운영자 수동 버튼이 부를 수 있는
-   전부, 그 부분집합만 관객 패드에 연다. 새 동작은 수동으로 먼저 실물 검증한다.
+3. 허용목록이 셋이고 서로 다르다. `api_allowlist` 78개가 운영자 수동 버튼이 부를 수 있는
+   전부이고, 그 부분집합인 `pad_allowlist` 12개만 관객 패드에 연다(`llm_allowlist` 21개는
+   모델 경로용). 새 동작은 수동으로 먼저 실물 검증한 뒤 승격한다.
 4. 대기 중 물리 스위치는 SC 상단 + SB 중앙에 둔다. **SC 중앙에 두지 않는다** —
    그 위치가 곧 "권한을 잃으면 ReadyPose"이고, 균형 정책 없는 자세라 가장 넘어지기 쉽다.
 

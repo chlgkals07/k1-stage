@@ -1,152 +1,125 @@
-# K1 모션 LLM — PC relay + Robot gateway
+# motion_llm — Wi-Fi 단일 로봇 운영 서버
 
-**현재 상태**: 아이폰 음성 대화 → Omen PC relay → 로봇 gateway → 검증된 K1 Mimic policy 실행까지 연결됐다. 무선 relay, 음성 응답, 인사 동작을 실물로 확인했다. 최신 인수인계와 로봇 적용 내용은 docs/STATUS_AND_HANDOVER.md를 기준으로 한다.
+K1 한 대를 Wi-Fi로 운영하는 정본 앱이다. 관객이 아이패드에서 동작을 고르면 미리보기가 TV에
+뜨고, [실행]을 누르면 로봇이 움직인다. 운영자는 폰으로 상태를 보고 정지를 쥔다.
 
 ```
-브라우저 ──WebRTC(음성)──> OpenAI Realtime API
-    │  function call: play_motion(motion, reason)
-    ↓ fetch POST /motion
- server.py ──> MotionBackend
-                ├─ MockBackend   로봇 없이 UI/LLM 검증
-                ├─ RelayBackend  PC → HTTPS → robot gateway (운영 경로)
-                └─ RobotBackend  (2단계) gateway → rclpy → request_mode_by_name
+아이패드 /pad ─┐
+폰 /operator ─┼─ 장소 랜 ── PC relay ──Wi-Fi──> 로봇 gateway ──> ROS 2
+메인컴 /dance ─┘                │                 request_mode_by_name
+                                └── HDMI ── TV /display
 ```
 
-오디오는 **브라우저와 OpenAI 사이에서만** 흐른다. 서버는 작은 JSON만 받는다.
+여러 대를 동시에 움직이거나 Wi-Fi가 죽었을 때는 옆의 [`rc_stage`](../rc_stage/)가 라디오
+전파로 직접 쏜다. 라디오 준비는 [`rc_link`](../rc_link/)에 있다.
+
+> **2026-08-18에 음성 대화(OpenAI Realtime)를 전면 제거했다.** 지금은 버튼과 무대로만
+> 운영한다. 무엇이었고 왜 뺐는지는
+> [docs/STATUS.md §8](docs/STATUS.md#8-음성-대화-2026-08-18-제거).
 
 ## 실행
 
 로봇과 함께 쓸 때는 `run.sh` 하나면 된다. 로봇에서 `go`(ROS bringup)만 사람이 띄운다.
 
 ```bash
-./run.sh            # 점검 → gateway 확인/기동 → relay 실행 → 폰 URL 출력
+./run.sh            # 점검 → gateway 확인/기동 → relay 실행 → 접속 URL 출력
 ./run.sh --status   # 상태만 확인
 ./run.sh --deploy   # PC→로봇 파일 동기화까지
 ./run.sh --stop     # 정리
+~/k1links 18444     # 화면 4개 접속 링크
 ```
 
-토큰이 고정이라 폰 URL이 매번 같다 — 한 번 북마크하면 끝이다.
-비밀값은 `~/.k1/secrets.env`(chmod 600, 리포지토리 밖)에 있고 첫 실행 때 만들어진다.
+토큰이 고정이라 접속 URL이 매번 같다 — 한 번 북마크하면 끝이다.
+비밀값은 `~/.k1/secrets.env`(chmod 600, 저장소 밖)에 있고 첫 실행 때 만들어진다.
 
-로봇 없이 UI/LLM만 보려면:
+로봇 없이 UI만 보려면:
 
 ```bash
-export OPENAI_API_KEY=sk-...
-
-# PC 에서 테스트 (localhost 는 HTTP 로도 마이크가 열린다)
-python3 server.py
-
-# 폰에서 테스트 (마이크는 HTTPS 필수, 자체 서명 인증서 자동 생성)
-python3 server.py --https
+python3 server.py --https          # 자체 서명 인증서 자동 생성
 ```
 
-`pyyaml` 외 의존성 없음. OpenAI SDK 불필요.
+`pyyaml` 외 의존성이 없다.
 
-선택된 동작은 터미널과 웹 화면에 동시에 찍힌다.
+현장 절차 전체는 [docs/RUNBOOK.md](docs/RUNBOOK.md) 하나로 끝난다.
+
+## 화면
+
+| 경로 | 기기 | 역할 |
+|---|---|---|
+| `/pad` | 아이패드 | 관객: 동작 선택 → **미리보기 → [실행]** |
+| `/display` | TV | 무대: 대기 / 미리보기 / 실행중 / 무대영상 |
+| `/operator` | 폰·메인컴 | 정지 · 상태 · 수동 버튼 · 무대 시작/정지 · RC 모드 토글 |
+| `/dance` | 메인컴 | 음악 싱크 오프셋 보정 |
+
+`/`로 들어오면 `/pad`로 리다이렉트된다(옛 음성 화면 북마크 대응).
+
+`/operator` 상단의 빨간 **정지**는 실행 중인 동작을 중단하고 로봇을 `Velocity`(보행·균형)로
+되돌린다. 수동 버튼과 달리 실행 중에도 잠기지 않는다. **즉시 탈출이 필요하면 RC Damping /
+E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
+
+## `motions.yaml`이 핵심이다
+
+이 파일 하나가 여러 곳에 쓰인다. 동작을 추가·제외하려면 **이 파일부터** 고친다.
+
+| 쓰임 | 무엇을 보나 |
+|---|---|
+| 웹 UI | `page`별 탭, `ko`로 버튼 이름, `desc`로 설명 |
+| 안전 게이트 | `safety: restricted`는 관객·모델 경로에서 거부 |
+| RC 매핑 | `rc_list` — 로봇 다이얼 2뱅크 × 20슬롯의 실배포 덤프 |
+
+현재 카탈로그는 **136개**, 그중 `restricted`가 17개다.
+
+### 허용목록이 세 개인 이유
+
+카탈로그에 있다고 실행되지는 않는다. `gateway_config.yaml`이 최종 게이트다.
+
+| 목록 | 뜻 | 현재 |
+|---|---|---|
+| `api_allowlist` | gateway가 실행을 허용하는 전부. **운영자 수동 버튼**이 여기서 나온다 | **78개** |
+| `pad_allowlist` | 그중 **관객 아이패드에 여는 것** | **12개** |
+| `llm_allowlist` | 그중 **모델이 스스로 고를 수 있는 것** | **21개** |
+
+사람이 E-stop을 두고 버튼으로 부르는 것, 관객이 아무거나 누르는 것, 모델이 대화 중 고르는
+것은 위험도가 다르다. 새 동작은 **수동으로 먼저 실물 검증한 뒤** 패드·모델에 승격한다.
+
+허용목록에 있어도 `motions.yaml`에 카탈로그 항목이 없으면 버튼이 뜨지 않고 요청도 거부된다.
+로봇에 policy 자체가 없어도 거부된다 — 실제 로드 목록은
+[docs/reference/ROBOT_MODES_20260812.md](docs/reference/ROBOT_MODES_20260812.md), 대조는
+`tools/check_modes.sh`.
+
+## 잠금 타이밍
+
+기준은 **sim 클립 길이 = 그 동작이 도는 시간**이다(`clip_len.py`가 mp4 헤더에서 읽는다).
+동작이 끝나고 2초 뒤 패드가 풀리고, 3초 뒤 서버가 화면을 되돌린다(안전망).
+
+현장에서 조절하려면 세 값이 같은 뜻이므로 함께 움직인다:
+`static/pad.html`의 `+2000` · `server.py`의 `EXEC_IDLE_MARGIN_SEC` ·
+`rc_backend.py`의 `BUSY_MARGIN_SEC`. 근거는
+[docs/STATUS.md §4](docs/STATUS.md#잠금-타이밍-구조).
 
 ## 파일
 
 | 파일 | 역할 |
 |---|---|
-| `motions.yaml` | **모든 것의 입력.** 동작 목록 + 한국어 이름/설명/태그/안전등급 |
-| `server.py` | 토큰 발급, 동작 검증·기록, UI 서빙 |
-| `static/index.html` | WebRTC 클라이언트 + 수동 버튼 UI |
+| `motions.yaml` | 동작 카탈로그 + RC 매핑 |
+| `gateway_config.yaml` | 허용목록 3종, 정지 목표 상태, ROS 엔드포인트 |
+| `server.py` | 화면 서빙, stage 상태기계, 무대 스케줄, 백엔드 선택 |
+| `relay_backend.py` | PC → 로봇 HTTPS relay |
+| `robot_backend.py` · `gateway.py` | 로봇 쪽 ROS 게이트웨이와 실행 정책 |
+| `rc_backend.py` · `rc_serial.py` | 유선 RC 경로 |
+| `clip_len.py` | sim 클립 길이 측정 |
+| `run.sh` | 실행 진입점. 점검·배포·기동·정리 |
+| `test_*.py` | 단위 테스트 **135개** |
 
-## motions.yaml 이 핵심이다
+로봇과 동기화가 필요한 파일은 6개다(`server.py` `gateway.py` `robot_backend.py`
+`relay_backend.py` `gateway_config.yaml` `motions.yaml`). `run.sh`가 md5로 대조한다.
 
-이 파일 하나가 세 곳에 쓰인다:
+## 문서
 
-1. **LLM 도구 정의** — `llm: true` 인 항목만 `play_motion` 의 enum 과 설명에 들어간다
-2. **안전 게이트** — `safety: restricted` 는 LLM 경로에서 무조건 거부
-3. **웹 UI** — `page` 별 탭, `ko` 로 버튼 이름
+[docs/](docs/)에 있다. [RUNBOOK](docs/RUNBOOK.md) 절차 · [STATUS](docs/STATUS.md) 현재 상태 ·
+[ARCHITECTURE](docs/ARCHITECTURE.md) 설계 — 이 셋이면 대개 끝난다.
 
-동작을 추가·제외하려면 **이 파일만** 고치면 된다. 서버 재시작으로 반영된다.
+## 저장소에 없는 것
 
-### 안전 규칙
-
-| 경로 | 허용 범위 |
-|---|---|
-| LLM (`source: llm`) | `llm: true` **그리고** `safety != restricted` |
-| 수동 버튼 (`source: manual`) | 카탈로그의 전부 |
-
-복싱·섀도우복싱처럼 격한 동작은 사람이 버튼으로만 부를 수 있다.
-`slap`(뺨 때리기) 류는 **카탈로그에 아예 넣지 않는다.**
-
-## 튜닝할 곳
-
-- **`PERSONA`** (`server.py`) — 로봇 말투와 "말만 하지 말고 반드시 움직여라" 규칙.
-  대화가 밋밋하면 여기부터 손본다.
-- **`desc` / `tags`** (`motions.yaml`) — LLM 이 동작을 고르는 유일한 근거.
-  엉뚱한 걸 고르면 설명이 부족한 것이다.
-- **`REALTIME_MODEL` / `REALTIME_VOICE`** — 환경변수로 교체 가능.
-
-### 대화 감각 조절 (환경변수)
-
-행사장에서 코드 수정 없이 바꿀 수 있다. relay 재시작으로 반영된다.
-
-| 변수 | 기본값 | 역할 |
-|---|---|---|
-| `REALTIME_MAX_TOKENS` | `200` | 응답 길이 하드캡. 문장 중간에서 잘리므로 폭주 방지용이고, 실제 길이는 PERSONA가 잡는다 |
-| `REALTIME_VAD_TYPE` | `server_vad` | `semantic_vad`로 바꾸면 의미로 발화 종료를 판단한다 |
-| `REALTIME_VAD_THRESHOLD` | `0.5` | 감지 민감도. 시끄러우면 올린다 |
-| `REALTIME_VAD_SILENCE_MS` | `400` | **턴 전환 느낌을 잡는 주 손잡이.** 300~700 사이에서 맞춘다 |
-| `REALTIME_VAD_PREFIX_MS` | `300` | 감지 직전 오디오를 얼마나 포함할지 |
-| `REALTIME_VAD_EAGERNESS` | `auto` | `semantic_vad`일 때만 쓴다 |
-
-말과 동작을 맞추려고 `play_motion`은 응답이 끝나길(`response.done`) 기다리지 않고
-`response.function_call_arguments.done` 시점에 바로 발사한다. 모델에 결과를 돌려주는 일은
-`call_id`가 필요하므로 여전히 `response.done`에서 한다. 대화 화면 로그에 찍히는 `ms`는
-요청 왕복 시간이다.
-
-## allowlist 가 두 개인 이유
-
-`gateway_config.yaml` 에 목록이 둘 있고 서로 다르다.
-
-| 목록 | 뜻 | 현재 |
-|---|---|---|
-| `api_allowlist` | gateway 가 실행을 허용하는 전부. **운영자 수동 버튼**이 여기서 나온다 | 16개 |
-| `llm_allowlist` | 그중 **모델이 스스로 고를 수 있는** 것 | 3개 |
-
-사람이 E-stop 을 두고 버튼으로 부르는 것과, 모델이 대화 중 알아서 고르는 것은 위험도가 다르다.
-새 동작은 수동으로 먼저 실물 검증한 뒤 `llm_allowlist` 로 승격한다.
-
-`api_allowlist` 에 넣으려면 `motions.yaml` 에 카탈로그 항목도 있어야 한다 —
-없으면 버튼이 뜨지 않고 요청도 거부된다. 로봇에 실제로 로드된 모드 목록은
-docs/ROBOT_MODES_20260812.md 를 본다.
-
-## 현재 운영 allowlist
-
-- LLM 이 고를 수 있는 동작은 MimicWaveHand, MimicBowNavel, MimicBadChestpopVer2 셋뿐이다.
-- 운영자 수동 버튼은 `api_allowlist` 16개를 부를 수 있다. 이 중 실물 검증된 것은 위 3개뿐이므로 나머지는 공간과 E-stop 을 확보하고 눌러야 한다.
-- motions.yaml의 카탈로그 항목이 많더라도 gateway_config.yaml allowlist에 없으면 운영 API로는 실행되지 않는다.
-- MimicShadowBoxing 같은 restricted 동작과 없는 동작은 거부한다.
-- OPENAI_API_KEY가 없으면 음성 기능은 비활성화되지만 수동 UI는 계속 동작한다.
-
-## Robot Gateway 및 실기 검증
-
-`--robot --https`는 gateway를 시작한다. gateway는 증가하는 sequence의 heartbeat를 **10Hz**로 발행하고,
-`mode_status`와 `list_modes`를 읽어 준비된 경우에만 `request_mode_by_name`을 호출한다.
-
-- 첫 API 허용 동작: `MimicWaveHand`, `MimicBowNavel`, `MimicBadChestpopVer2`
-- 위 세 동작은 LLM 대화에서도 노출하며, 새 사용자 발화에서는 같은 동작을 다시 실행할 수 있다.
-- 모션 실행 중 새 요청은 거부한다. 위험한 동작은 RC 전용이다.
-- 시작 시 출력되는 일회용 HTTPS token URL로만 폰을 연결한다.
-- `api_arm_probe.py`는 실제 RC를 흉내 내지 않고 heartbeat와 API Arm 전환만 확인한다.
-
-```bash
-# ai_sapiens ROS 환경에서
-python3 api_arm_probe.py
-python3 server.py --robot --https --ready-only
-```
-
-**실기 전제**: SD(CH8) API Arm을 ON으로 유지해야 하고, `mode_status`에서
-`authority: API`, `api_mode_heartbeat_valid: true`, `api_request_available: true`를 확인한다.
-상세 실행법은 docs/CEREMONY_RUNBOOK.md, 구조는 docs/WIRELESS_LLM_ROBOT_ARCHITECTURE.md, 다음 개선 순서는 docs/INTERACTION_EXPANSION_ROADMAP.md를 참고한다.
-
-
-## 화면
-
-- `/`: 관람객용 음성 대화 화면. 상단 `운영자`로 운영 화면에 이동한다.
-- `/operator`: gateway 상태, 정지 버튼, 수동 실행, 다음 세션의 음성·말투 선택. MockBackend에서는 LLM 허용 동작을 실제 실행 없이 로그에 기록한다.
-- `/operator` 상단의 빨간 **정지** 버튼은 실행 중인 동작을 중단하고 `ReadyPose`로 되돌린다. 수동 버튼과 달리 실행 중에도 잠기지 않는다. 즉시 탈출이 필요하면 RC Damping/E-stop을 쓴다. 정지는 LLM에 노출하지 않는다 — 음성 왕복이 1.5~3초라 정지 수단으로 부적합하다.
-- voice 또는 말투 변경은 연결을 끊고 운영자 화면에서 다시 대화 세션을 시작해야 적용된다.
+`media/`(음원·안무 영상 417MB, 저작권물) · `static/clips/`(동작 sim 렌더 39MB) ·
+`logs/`(관객 발화 원문) · TLS 개인키 · `archive/`. 전부 로컬에만 둔다.

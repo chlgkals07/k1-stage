@@ -1,5 +1,9 @@
 # 데모 영상용 추천 다이얼로그 (2026-08-13)
 
+> **음성 대화용 데모 시나리오다. 그 기능은 2026-08-18에 제거됐다** —
+> [STATUS.md §8](../STATUS.md#8-음성-대화-2026-08-18-제거).
+> 4막 구성과 동작 배치는 지금의 패드·무대 시연 순서를 짤 때도 그대로 쓸 수 있다.
+
 카메라 앞에서 그대로 따라 하는 시나리오다. LLM 개방 21개 기준.
 **진행 원칙**: 동작이 끝나고 로봇이 준비 자세로 돌아온 뒤 다음 발화. 위험 동작 전에 공간 확보 멘트를 카메라에 담으면 안전 운영도 함께 보여줄 수 있다.
 
@@ -67,7 +71,7 @@ go                            # ← 신규 17 states + RC 2페이지 + 카트휠
 
 # 2. PC 에서 — 죽은 gateway 도 자동으로 올려준다. 파일 동기화까지 --deploy 로
 pkill -f "server.py --relay" 2>/dev/null
-cd /home/robotis-ai/Projects/shape3/motion_llm
+cd /home/robotis-ai/Projects/shape3/k1-stage/motion_llm
 ./run.sh --deploy
 
 # 3. 확인

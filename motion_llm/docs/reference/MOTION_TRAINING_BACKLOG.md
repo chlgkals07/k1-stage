@@ -4,15 +4,15 @@
 
 ## 현재 결론
 
-- 사용자 제공 A-H 목록은 [../motions.yaml](../motions.yaml)에 `status: planned` 카탈로그로 이미 반영되어 있다.
+- 사용자 제공 A-H 목록은 [../motions.yaml](../../motions.yaml)에 `status: planned` 카탈로그로 이미 반영되어 있다.
 - `slap_R_001__A457`와 `Kozakiewicz_gesture_stadium_002__A044`는 운영/학습 대상에서 제외한다.
-- 운영 제외 2개를 뺀 59개는 모두 [../../seed/metadata/seed_metadata_v004.csv](../../seed/metadata/seed_metadata_v004.csv)에 metadata가 있다.
-- 59개 모두 BVH 원본 파일이 [../../seed/soma_uniform/bvh](../../seed/soma_uniform/bvh) 아래에 존재한다.
+- 운영 제외 2개를 뺀 59개는 모두 [../../seed/metadata/seed_metadata_v004.csv](~/Projects/datasets/seed/metadata/seed_metadata_v004.csv)에 metadata가 있다.
+- 59개 모두 BVH 원본 파일이 [../../seed/soma_uniform/bvh](~/Projects/datasets/seed/soma_uniform/bvh) 아래에 존재한다.
 - metadata의 `move_g1_path`는 있지만 현재 workspace의 `seed/g1/csv` 파일은 확인되지 않았다. 학습 전처리에서 G1 CSV를 새로 만들거나 기존 변환 산출 위치를 찾아야 한다.
-- 현재 실 로봇 LLM/API allowlist는 [../gateway_config.yaml](../gateway_config.yaml)의 3개 검증 동작만 유지한다.
+- 현재 실 로봇 LLM/API allowlist는 [../gateway_config.yaml](../../gateway_config.yaml)의 3개 검증 동작만 유지한다.
 - 전체 59개 worklist CSV: [MOTION_TRAINING_WORKLIST.csv](MOTION_TRAINING_WORKLIST.csv)
 - 1차 학습 cohort: [MOTION_TRAINING_COHORT_01.md](MOTION_TRAINING_COHORT_01.md), [MOTION_TRAINING_COHORT_01.csv](MOTION_TRAINING_COHORT_01.csv)
-- runtime catalog의 `training_backlog`: [../motions.yaml](../motions.yaml)
+- runtime catalog의 `training_backlog`: [../motions.yaml](../../motions.yaml)
 
 현재 runtime allowlist:
 
@@ -31,11 +31,11 @@ llm_allowlist:
 
 | 대상 | 파일 | 역할 |
 |---|---|---|
-| LLM 동작 카탈로그 | [../motions.yaml](../motions.yaml) | state 이름, 한국어 이름, 설명, tag, safety, planned 여부 |
-| 로봇/PC allowlist | [../gateway_config.yaml](../gateway_config.yaml) | 실제 호출 허용 동작 |
-| seed metadata | [../../seed/metadata/seed_metadata_v004.csv](../../seed/metadata/seed_metadata_v004.csv) | `move_name`에서 실제 BVH 경로로 가는 원본 매핑 |
-| BVH 원본 | [../../seed/soma_uniform/bvh](../../seed/soma_uniform/bvh) | BONES-SEED 원본 모션 |
-| ceremony subset | [../../seed/ceremony_pack/manifest.csv](../../seed/ceremony_pack/manifest.csv) | 일부 선별 모션만 들어 있는 작은 pack |
+| LLM 동작 카탈로그 | [../motions.yaml](../../motions.yaml) | state 이름, 한국어 이름, 설명, tag, safety, planned 여부 |
+| 로봇/PC allowlist | [../gateway_config.yaml](../../gateway_config.yaml) | 실제 호출 허용 동작 |
+| seed metadata | [../../seed/metadata/seed_metadata_v004.csv](~/Projects/datasets/seed/metadata/seed_metadata_v004.csv) | `move_name`에서 실제 BVH 경로로 가는 원본 매핑 |
+| BVH 원본 | [../../seed/soma_uniform/bvh](~/Projects/datasets/seed/soma_uniform/bvh) | BONES-SEED 원본 모션 |
+| ceremony subset | [../../seed/ceremony_pack/manifest.csv](~/Projects/datasets/seed/ceremony_pack/manifest.csv) | 일부 선별 모션만 들어 있는 작은 pack |
 
 중요한 기준은 metadata의 `move_soma_uniform_path`다. 일부 동작은 사용자가 준 `move_name`과 실제 BVH 파일 stem이 다르므로 파일명 stem만으로 찾으면 누락처럼 보인다.
 
@@ -125,4 +125,4 @@ Slot은 RC/UI 배치 메모다. 실 로봇에 올릴 때는 학습 완료, offli
 3. 1차 10개 cohort를 retarget/train 대상으로 고정한다.
 4. offline 평가에서 tracking, foot contact, joint limit, 종료 pose, recovery를 본다.
 5. 실 로봇 단독 검증 후 `status: trained` 또는 `robot_verified`로 승격한다.
-6. 승격된 동작만 [../gateway_config.yaml](../gateway_config.yaml)의 API/LLM allowlist에 추가한다.
+6. 승격된 동작만 [../gateway_config.yaml](../../gateway_config.yaml)의 API/LLM allowlist에 추가한다.

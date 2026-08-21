@@ -15,7 +15,7 @@ python3 server.py --mock     # 라디오 없이 UI/무대 흐름 확인
 
 ## 라디오 준비 (대당 ~10분, 1호기와 동일 절차)
 
-1. Storage 모드: `../rc_link/gen_model_p1.py` 로 model00.yml 패치(L1+pc5/6/7 믹스),
+1. Storage 모드: `../rc_link/radio/gen_model_p1.py` 로 model00.yml 패치(L1+pc5/6/7 믹스),
    `../rc_link/radio/K1PC.lua`(v2.3+) 를 SCRIPTS/TOOLS/ 에 복사
 2. USB-VCP=LUA (부팅마다 리셋되니 사용 전 확인) · Serial 모드 연결
 3. SYS→Tools→K1PC 실행 (화면 v2.3 확인)

@@ -2,7 +2,7 @@
 
 작성 2026-08-17. 상태: **P0 진행 중** (준비 완료, 실기 검증 대기)
 
-**작업 위치**: 개발은 `~/Projects/shape3/rc_link/`에서 진행한다 (행사 스택과 격리,
+**작업 위치**: 개발은 `~/Projects/shape3/k1-stage/rc_link/`에서 진행한다 (행사 스택과 격리,
 shape17→shape3 dance 병합 선례를 따름). motion_llm에는 P3(백엔드 통합)에서만
 `rc_serial.py`/`rc_backend.py`/`rc_slots.yaml`을 가산 병합하고 `server.py`에 토글
 분기를 넣는다. 그 전까지 motion_llm 코드는 무접촉 (이 문서 제외).
@@ -35,7 +35,7 @@ shape17→shape3 dance 병합 선례를 따름). motion_llm에는 P3(백엔드 �
   올려두고, code 4 진입만 GV4로 트리거.
 
 **P3a 결과 (2026-08-18, 코드 완성 — 로봇 불가 기간의 선행 구현)**:
-- **사본** `~/Projects/shape3/rc_link/motion_llm_rc/` (정본 무접촉). `--rc` 플래그로
+- **사본** `~/Projects/shape3/k1-stage/rc_link/motion_llm_rc/` (정본 무접촉). `--rc` 플래그로
   `RcBackend` 선택: `rc_serial.py`(keepalive 스레드 포함 시리얼 클라이언트) +
   `rc_backend.py`(busy/cooldown/완료타이머 PC측 구현, 기존 백엔드 계약 준수).
 - 매핑은 **motions.yaml `rc_list`**(2026-08-15 로봇 k1_config 덤프, 뱅크 A/B×20)

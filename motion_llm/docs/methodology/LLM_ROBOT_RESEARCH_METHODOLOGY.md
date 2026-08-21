@@ -1,5 +1,10 @@
 # LLM 기반 휴머노이드 상호작용 연구 방법론
 
+> **음성 대화 시절(2026-08-05 ~ 08-17)의 연구 설계 문서다.** 그 기능은 2026-08-18에
+> 제거됐다 — 경위는 [STATUS.md §8](../STATUS.md#8-음성-대화-2026-08-18-제거).
+> 연구 질문·비교 실험 설계·평가 지표·참고 논문 목록은 그대로 남긴다. 음성을 다시 붙이거나
+> 논문을 쓸 때의 출발점이다.
+
 작성일: 2026-08-11
 
 ## 1. 문서 목적
@@ -12,8 +17,8 @@
 
 - [INTERACTION_METHODOLOGY.md](INTERACTION_METHODOLOGY.md): motion library 중심 설계
 - [INTERACTION_EXPANSION_ROADMAP.md](INTERACTION_EXPANSION_ROADMAP.md): 기능·실물 검증 순서
-- [WIRELESS_LLM_ROBOT_ARCHITECTURE.md](WIRELESS_LLM_ROBOT_ARCHITECTURE.md): relay, gateway, ROS 계약
-- [STATUS_AND_HANDOVER.md](STATUS_AND_HANDOVER.md): 현재 적용과 검증 상태
+- [WIRELESS_LLM_ROBOT_ARCHITECTURE.md](../ARCHITECTURE.md): relay, gateway, ROS 계약
+- [STATUS_AND_HANDOVER.md](../STATUS.md): 현재 적용과 검증 상태
 
 ---
 

@@ -1,61 +1,56 @@
-# motion_llm 문서 안내
+# motion_llm 문서
 
-루트는 실행 코드와 설정만 두고, 설계·운영·상태 문서는 이 폴더에서 관리한다.
+루트는 실행 코드와 설정만 두고, 운영·상태·설계 문서는 여기서 관리한다.
 
-### 지금 작업을 이어갈 때 (이 순서로)
+## 세 문서면 대개 끝난다
 
-| 문서 | 용도 |
+| 문서 | 언제 보나 |
 |---|---|
-| [STATUS_AND_HANDOVER.md](STATUS_AND_HANDOVER.md) | **첫 문서.** 지금 무엇이 참인가 — 검증된 것과 아닌 것 |
-| [NEXT_SESSION_CHECKLIST.md](NEXT_SESSION_CHECKLIST.md) | **로봇 앞에서 볼 한 장.** Phase B 절차 + 검증 순서 |
-| [TEST_DIALOGUES.md](TEST_DIALOGUES.md) | 음성 세션용 추천 발화와 세션 후 로그 분석법 |
-| [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | 데모 영상용 4막 다이얼로그 + 재시작 방법 |
-| [CEREMONY_RUNBOOK.md](CEREMONY_RUNBOOK.md) | 현장 시작·종료 절차 (`./run.sh` 빠른 경로 + 수동 폴백) |
-| [WORK_LOG_2026-08-14.md](WORK_LOG_2026-08-14.md) | **실기 로그 분석 + 안정화·UI** — 빈 motion 버그, 무선 링크, 카테고리, PTT, 자막 |
-| [FIELD_SETUP.md](FIELD_SETUP.md) | 새 장소 셋업 (무선 전제) — 라우터·배치·끊겼을 때 |
-| [WORK_LOG_2026-08-13.md](WORK_LOG_2026-08-13.md) | shape10 탐색 / 로깅 / PERSONA 개편 / check_modes — Phase A |
-| [WORK_LOG_2026-08-12.md](WORK_LOG_2026-08-12.md) | 정지 경로 / 응답·VAD·발사시점 / allowlist 16개 / `run.sh` |
+| **[RUNBOOK.md](RUNBOOK.md)** | 로봇을 돌릴 때. 셋업 → 검증 → 장애 대응 → 종료 |
+| **[STATUS.md](STATUS.md)** | "지금 무엇이 참인가". 허용목록 실제 값, 최종 리뷰 결과, 남은 검증 |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | 왜 이렇게 생겼나. 네트워크·gateway·ROS 계약·보안 |
 
-### 사실 확인용
+## 그 밖
 
-| 문서 | 용도 |
+| 문서 | 내용 |
 |---|---|
-| [ROBOT_MODES_20260812.md](ROBOT_MODES_20260812.md) | **로봇 실측 모드 24개.** 관리본 `k1_config.yaml`은 신뢰 불가 |
-| [WIRELESS_LLM_ROBOT_ARCHITECTURE.md](WIRELESS_LLM_ROBOT_ARCHITECTURE.md) | 네트워크, gateway, ROS 계약, 로봇 배포 상세 |
-
-### 방향을 정할 때
-
-| 문서 | 용도 |
-|---|---|
-| [INTERACTION_EXPANSION_ROADMAP.md](INTERACTION_EXPANSION_ROADMAP.md) | UI·안전·동작 확장 우선순위 |
-| [INTERACTION_METHODOLOGY.md](INTERACTION_METHODOLOGY.md) | LLM과 모션 라이브러리의 역할 분리 원칙 |
-| [LLM_ROBOT_RESEARCH_METHODOLOGY.md](LLM_ROBOT_RESEARCH_METHODOLOGY.md) | 연구 질문, 실험 설계, 지표, 참고 논문 |
-| [MOTION_TRAINING_BACKLOG.md](MOTION_TRAINING_BACKLOG.md) | BONES-SEED 학습 후보와 metadata 매칭 |
-| [MOTION_TRAINING_COHORT_01.md](MOTION_TRAINING_COHORT_01.md) | 1차 학습 후보 10개와 검증 gate |
+| [RC_WIRED_COMMAND_PLAN.md](RC_WIRED_COMMAND_PLAN.md) | 유선 RC 명령 경로(PC→라디오→ELRS→K1) 설계와 단계별 계획 |
+| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | 폴더 역할과 로봇 동기화 대상 6파일 |
+| [worklog/](worklog/) | 날짜별 작업 기록 5편. 결론이 아니라 경위 |
+| [reference/](reference/) | 실측 데이터 — 로봇 모드 목록, 학습 후보, 발화 시나리오 |
+| [methodology/](methodology/) | 설계 원칙과 연구 방법론. 음성 시절 문서지만 원칙은 유효하다 |
 
 ## 코드에서 시작할 때
 
 ```text
 실행 진입점:            ../run.sh
-PC/아이폰 요청:         server.py → relay_backend.py
+관객·운영자 화면 요청:   server.py → relay_backend.py
 로봇 HTTPS/ROS gateway: server.py --robot → robot_backend.py → gateway.py
-로봇 상태머신 관리본:    ../ai_sapiens_private/ai_sapiens_sim2real/
+RC(유선 라디오) 경로:    server.py --rc → rc_backend.py → rc_serial.py
 동작·안전 메타데이터:    ../motions.yaml, ../gateway_config.yaml
+로봇 상태머신 변경분:    ../../robot/
 ```
 
 ## 새 동작을 여는 순서
 
-카탈로그만 고쳐서는 아무 일도 일어나지 않는다. **셋이 모두 맞아야 한다.**
+카탈로그만 고쳐서는 아무 일도 일어나지 않는다. **넷이 모두 맞아야 한다.**
 
 ```text
-1. motions.yaml 에 카탈로그 항목    ← 없으면 버튼이 안 뜨고 요청도 거부된다
-2. gateway_config.yaml api_allowlist ← 운영자 수동 버튼으로 실행 가능해짐
+1. motions.yaml 에 카탈로그 항목      ← 없으면 버튼이 안 뜨고 요청도 거부된다
+2. gateway_config.yaml api_allowlist  ← 운영자 수동 버튼으로 실행 가능해짐
 3. 실물 단독 검증 (공간 + E-stop)
-4. gateway_config.yaml llm_allowlist ← 그 뒤에야 모델이 고를 수 있다
+4. pad_allowlist 또는 llm_allowlist   ← 그 뒤에야 관객·모델에게 연다
 ```
 
 로봇에 policy 자체가 없으면 gateway가 "현재 로봇에 배포되지 않은 동작입니다"로 거부한다.
-실제 로드 목록은 [ROBOT_MODES_20260812.md](ROBOT_MODES_20260812.md)를 본다.
+실제 로드 목록은 [reference/ROBOT_MODES_20260812.md](reference/ROBOT_MODES_20260812.md),
+대조 도구는 `tools/check_modes.sh`다.
 
-로봇 실행본은 **호스트가 아니라 `ai_sapiens` 도커 컨테이너 안** `/root/motion_llm/`에 있다.
-`../run.sh`가 PC↔로봇 파일 md5를 대조하므로 배포 누락은 자동으로 잡힌다.
+## 2026-08-18에 음성을 제거했다
+
+이 앱의 주 경로였던 아이폰 음성 대화(OpenAI Realtime)를 뺐다. 지금은 버튼과 무대로만
+운영한다. 무엇이었고 왜 뺐는지, 원본이 어디 있는지는
+[STATUS.md §8](STATUS.md#8-음성-대화-2026-08-18-제거)에 있다.
+
+`ARCHITECTURE.md`와 `methodology/`, `reference/`의 발화 문서들은 그 시절 기준으로 쓰여
+있고, 각 문서 첫머리에 그렇다고 표시해 두었다.

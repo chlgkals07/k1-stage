@@ -1,5 +1,10 @@
 # K1 무선 대화·모션 시스템 상세 문서
 
+> **이 문서의 음성 대화 부분은 2026-08-18에 제거된 기능이다.** 네트워크 구성, gateway,
+> ROS 계약, 보안·안전 정책, Locomotion→API→Mimic 설계는 그대로 유효하다.
+> 현재 운영 절차는 [RUNBOOK.md](RUNBOOK.md), 현재 상태는 [STATUS.md](STATUS.md)를 본다.
+> 음성이 무엇이었고 왜 뺐는지는 [STATUS.md §8](STATUS.md#8-음성-대화-2026-08-18-제거).
+
 ## 1. 목표
 
 개소식 방문객이 아이폰을 향해 말하면 OpenAI Realtime API가 짧게 대답하고, 대화 의미에 맞는 K1 Mimic policy를 실행한다.
@@ -275,7 +280,7 @@ token 없이 실행했을 때 `403`이면 정상이다.
 Omen PC의 같은 터미널에서:
 
 ```bash
-cd /home/robotis-ai/Projects/shape3/motion_llm
+cd /home/robotis-ai/Projects/shape3/k1-stage/motion_llm
 
 read -rsp "OpenAI API key: " OPENAI_API_KEY
 echo
@@ -352,7 +357,7 @@ MANUAL
 ### 테스트
 
 ```bash
-cd /home/robotis-ai/Projects/shape3/motion_llm
+cd /home/robotis-ai/Projects/shape3/k1-stage/motion_llm
 
 python3 -m py_compile \
   server.py gateway.py robot_backend.py relay_backend.py
