@@ -5,7 +5,7 @@
     "clip": "",
     "seek": 0,
     "offset_ms": -1500,
-    "volume": 10,
+    "volume": 100,
     "title": "관악을 보아라",
     "credit": "서울대학교 응원단",
     "media_len_sec": 84.5
@@ -35,13 +35,13 @@
   "straykids-rc": {
     "motion": "MimicStraykidsThisAndThat",
     "media": "straykids.mp4",
-    "clip": "MimicStraykidsThisAndThat",
+    "clip": "",
     "seek": 0,
-    "offset_ms": 0,
+    "offset_ms": 500,
     "volume": 100,
     "title": "Stray Kids - This and That",
     "credit": "Stray Kids 'This and That' 안무 영상",
-    "media_len_sec": 22.0
+    "media_len_sec": 22
   },
   "badchestpopv2-api": {
     "motion": "MimicBadChestpopVer2",
@@ -60,7 +60,7 @@
     "media": "bad.mp4",
     "clip": "",
     "seek": 0,
-    "offset_ms": 0,
+    "offset_ms": 1200,
     "volume": 100,
     "title": "ATEEZ - Bad",
     "credit": "ATEEZ 'Bad' 안무 영상",
