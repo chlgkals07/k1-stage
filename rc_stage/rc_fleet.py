@@ -10,19 +10,59 @@
 """
 
 import glob
+import os
 import re
+import subprocess
 import threading
 
 from rc_backend import RcBackend
 from rc_serial import RcSerial, BY_ID_PATTERN
 
 
+BY_PATH_DIR = "/dev/serial/by-path"
+
+
 def discover_ports():
-    """연결된 Pocket 들의 by-id 경로 목록 (시리얼 번호가 경로에 박혀 있다)."""
+    """연결된 Pocket 들의 안정 경로 목록.
+
+    **by-id 를 쓰면 안 된다**: 같은 EdgeTX 빌드를 올린 라디오들이 USB 시리얼 번호를
+    똑같이(00000000001B) 보고해 by-id 심볼릭 링크가 하나만 생긴다 — 2대를 꽂아도
+    1대만 발견된다 (2026-08-21 실측). 대신 **by-path**(물리 USB 포트 기준)로 열거하고,
+    같은 tty 를 가리키는 중복 링크(usb-/usbv2- 두 판)는 하나로 접는다.
+    """
+    seen, ports = set(), []
+    for path in sorted(glob.glob(f"{BY_PATH_DIR}/*")):
+        try:
+            target = os.path.realpath(path)
+        except OSError:
+            continue
+        if not re.search(r"/ttyACM\d+$", target) or target in seen:
+            continue
+        if not _is_pocket(target):
+            continue
+        seen.add(target)
+        ports.append(path)
+    if ports:
+        return ports
+    # by-path 가 없는 환경(가상 pty 등)에서는 기존 by-id 방식으로 떨어진다
     return sorted(glob.glob(BY_ID_PATTERN))
 
 
+def _is_pocket(tty_path):
+    """해당 tty 가 RadioMaster Pocket 인지 (VID:PID 0483:5740)."""
+    try:
+        out = subprocess.run(["udevadm", "info", "-q", "property", "-n", tty_path],
+                             capture_output=True, text=True, timeout=2).stdout
+    except Exception:
+        return True   # udevadm 이 없으면 걸러내지 않는다
+    return "ID_MODEL_ID=5740" in out and "ID_VENDOR_ID=0483" in out
+
+
 def _short_name(port):
+    """표시 이름. 시리얼이 겹치므로 물리 포트(by-path) 꼬리를 쓴다."""
+    m = re.search(r"usb-0:([0-9.]+):", port)
+    if m:
+        return f"rc-p{m.group(1)}"
     m = re.search(r"Serial_Port_0*([0-9A-Fa-f]+)-", port)
     return f"rc-{m.group(1)}" if m else port.rsplit("/", 1)[-1]
 
