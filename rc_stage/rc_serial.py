@@ -195,7 +195,7 @@ class RcSerial:
     def damp(self):
         return self._command("DAMP", ("OK DAMP",))
 
-    def _keyvalue_command(self, cmd, prefix, timeout_s=1.5):
+    def _keyvalue_command(self, cmd, prefix, timeout_s=0.6):
         res = self._command(cmd, (prefix,), timeout_s=timeout_s)
         if not res.get("ok"):
             return {"ok": False, "msg": res.get("msg", "")}
