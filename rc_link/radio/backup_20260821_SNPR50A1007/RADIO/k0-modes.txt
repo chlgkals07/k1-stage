@@ -1,0 +1,12 @@
+# Cyclo K0 main screen mode table
+# name,pwm,pct
+Mimic_squat,1000,-100
+Mimic_salute,1100,-80
+Mimic_coin_pick,1200,-60
+Mimic_bow,1300,-40
+Mimic_box,1400,-20
+Mimic_redred,1500,0
+Mimic_handshake,1600,20
+Mimic_jump,1700,40
+Mimic_dance2,1800,60
+Mimic_dance3,1900,80

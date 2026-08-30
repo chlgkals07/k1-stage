@@ -1,0 +1,22 @@
+# Cyclo RadioMaster main screen mode table
+# name,pwm,pct
+Mimic_squat,1000,-100
+Mimic_dance1,1020,-96
+Mimic_dance2,1040,-92
+Mimic_custom1,1060,-88
+Mimic_custom2,1080,-84
+Mimic_custom3,1100,-80
+Mimic_custom4,1120,-76
+Mimic_custom5,1140,-72
+Mimic_custom6,1160,-68
+Mimic_custom7,1180,-64
+Mimic_custom8,1200,-60
+Mimic_custom9,1220,-56
+Mimic_custom10,1240,-52
+Mimic_custom11,1260,-48
+Mimic_custom12,1280,-44
+Mimic_custom13,1300,-40
+Mimic_custom14,1320,-36
+Mimic_custom15,1340,-32
+Mimic_custom16,1360,-28
+Mimic_custom17,1380,-24

@@ -672,7 +672,7 @@ rc_list:
       - {slot: 216, ch11: 1320, state: MimicNewLookAroundEyesCoverOneHandR001A500}
       - {slot: 217, ch11: 1340, state: MimicNewIdleHandsOnBackLoopR001A029, note: "아이들 루프 20.4s"}
       - {slot: 218, ch11: 1360, state: MimicNewLook000R001A428}
-      - {slot: 219, ch11: 1380, state: MimicNewjeansHani, ko: "뉴진스 하니", safety: caution, note: "2026-08-21 로봇 다이얼 갱신 — 이전 팔짱(MimicCrossedArms) 대체. 로봇 재덤프로 확정 필요"}
+      - {slot: 219, ch11: 1380, state: MimicNewjeansHani, ko: "뉴진스 하니", safety: caution, note: "32.2s — 안무 실측(1612프레임/50fps). 2026-08-21 로봇 다이얼 갱신, 이전 팔짱(MimicCrossedArms) 대체"}
     B:
       ch5: 2000
       input_code: 5
