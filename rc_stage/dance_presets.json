@@ -82,10 +82,10 @@
     "media": "Newjeans_How_Sweet.mp4",
     "clip": "",
     "seek": 0,
+    "offset_ms": 750,
     "volume": 100,
     "title": "NewJeans - How Sweet",
     "credit": "NewJeans 'How Sweet' 안무 영상 (하니 파트)",
-    "media_len_sec": 30.3,
-    "offset_ms": 500
+    "media_len_sec": 30.3
   }
 }

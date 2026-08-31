@@ -116,7 +116,7 @@ async function loadMotions(){
   fill($('#clip'), [['','없음'], ...(d.clips||[]).map(s=>[s,s])]);
 }
 // 댄스 모드에는 무대 3종만 보인다 (2026-08-17 사용자 확정). 다른 동작은 /pad·/operator 로.
-const DANCE_STATES=['MimicNewSnuCheerHeadShort','MimicStraykidsThisAndThat','MimicBadChestpopVer2'];
+const DANCE_STATES=['MimicNewSnuCheerHeadShort','MimicStraykidsThisAndThat','MimicBadChestpopVer2','MimicNewjeansHani'];
 function renderMotions(){
   const sel=$('#motion'), keep=sel.value;
   const list=catalog.filter(m=>DANCE_STATES.includes(m.state));
