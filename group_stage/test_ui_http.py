@@ -1,10 +1,13 @@
 import json
+import tempfile
 import threading
 import unittest
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 
+import server
 from server import HERE, Handler, MockBackend, State
 
 
@@ -14,6 +17,10 @@ TOKEN = "ui-test-token"
 class UiHttpTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.clips_tmpdir = tempfile.TemporaryDirectory()
+        cls.orig_clips = server.CLIPS
+        server.CLIPS = Path(cls.clips_tmpdir.name)
+        (server.CLIPS / "MimicWaveHand.mp4").write_bytes(bytes(range(256)))
         state = State(MockBackend())
         state.access_token = TOKEN
         Handler.state = state
@@ -24,6 +31,8 @@ class UiHttpTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        server.CLIPS = cls.orig_clips
+        cls.clips_tmpdir.cleanup()
         cls.httpd.shutdown()
         cls.httpd.server_close()
         cls.thread.join(timeout=2)

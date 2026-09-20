@@ -18,13 +18,13 @@ class FakeRadio(threading.Thread):
         self.prepared = False
         self.silent = False   # True 면 PING 외 무응답 (타임아웃 테스트)
         self._buf = b""
-        self._stop = False
+        self.stopped = False
 
     def _reply(self, text):
         os.write(self.fd, (text + "\n").encode())
 
     def run(self):
-        while not self._stop:
+        while not self.stopped:
             try:
                 chunk = os.read(self.fd, 256)
             except OSError:
@@ -89,12 +89,18 @@ class TestRcSerial(unittest.TestCase):
 
     def tearDown(self):
         self.rc.close()
-        self.radio._stop = True
-        for fd in (self.master, self.slave_keeper):
-            try:
-                os.close(fd)
-            except OSError:
-                pass
+        self.radio.stopped = True
+        # macOS에서는 다른 스레드가 read 중인 master를 먼저 닫으면 close가 멈출 수 있다.
+        # 마지막 slave를 닫아 read를 깨운 뒤 스레드 종료를 확인하고 master를 닫는다.
+        try:
+            os.close(self.slave_keeper)
+        except OSError:
+            pass
+        self.radio.join(timeout=1)
+        try:
+            os.close(self.master)
+        except OSError:
+            pass
 
     def test_ping(self):
         self.assertTrue(self.rc.ping()["ok"])
