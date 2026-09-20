@@ -52,4 +52,5 @@ main 에는 음성이 없다 (2026-08-18 제거). 이 브랜치만 [voice/](voic
 거기서 음성·LLM 경로를 다시 붙이는 작업을 한다. **코드는 저장소에 없다** — 이유와
 복원 방법은 [voice/README.md](voice/README.md)를 먼저 본다.
 
-`ARCHITECTURE.md`의 음성 관련 서술도 그 시절 기준이다. 첫머리에 표시해 두었다.
+main 쪽 코드에는 `llm_allowlist`·`pad_llm_exclude`·`source == "llm"` 검사가 그대로
+살아 있다. 재개할 때 그 구조를 쓴다.

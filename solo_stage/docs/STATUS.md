@@ -12,12 +12,12 @@
 
 | 항목 | 현재 값 |
 |---|---|
-| 운영 경로 | **버튼(preview→실행)과 무대(dance)뿐.** 음성은 2026-08-18 제거 |
+| 운영 경로 | **버튼(preview→실행)과 무대(dance).** 경로는 Wi-Fi(기본)와 RC 둘 다 |
 | 화면 | `/pad`(관객) · `/display`(TV) · `/operator`(운영자) · `/dance`(싱크 보정) |
 | 동작 카탈로그 (`motions.yaml`) | **136개** (그중 `restricted` 17개) |
 | gateway `api_allowlist` | **78개** — 운영자 수동 버튼이 부를 수 있는 전부 |
 | gateway `pad_allowlist` | **12개** — 관객 패드에 뜨는 것 |
-| gateway `llm_allowlist` | **21개** — 모델 경로용. **현재 이 경로로 들어오는 요청은 없다** |
+| gateway `llm_allowlist` | **21개** — 코드에 살아 있으나 **이 경로로 들어오는 요청은 없다** (`voice-llm-dev` 브랜치용) |
 | 정지 목표 상태 | **`Velocity`** (Damping일 때만 `ReadyPose`) |
 | RC 다이얼 | 2뱅크 × 20슬롯 = **40**. CH5로 뱅크, CH11로 슬롯 |
 | 테스트 | `solo_stage` 135 · `group_stage` 94 |
@@ -238,70 +238,7 @@ PC 쪽 `motions.yaml`의 rc_list는 이미 v2로 바꿔 뒀다.
 
 ---
 
-## 8. 음성 대화 (2026-08-18 제거)
-
-**지금은 없는 기능이다.** 아래는 무엇이었고 왜 뺐는지의 기록이다.
-
-2026-08-05부터 8-17까지 이 앱의 주 경로는 **아이폰 음성 대화**였다. 관객이 폰에 말을 걸면
-OpenAI Realtime API가 짧게 답하고, 대화 의미에 맞는 K1 Mimic policy를 실행했다.
-
-```text
-브라우저 ──WebRTC(음성)──> OpenAI Realtime API
-    │  function call: play_motion(motion, reason)
-    ↓ fetch POST /motion
- server.py → MotionBackend → relay → gateway → request_mode_by_name
-```
-
-오디오는 **브라우저와 OpenAI 사이에서만** 흘렀다. 서버는 작은 JSON만 받았다.
-
-### 설계에서 나온 것들 (지금도 살아 있는 것)
-
-- **`llm_allowlist`** — 모델이 스스로 고를 수 있는 것을 `api_allowlist`의 부분집합으로
-  제한하는 게이트. `source=llm` 검사는 `server.py`에 그대로 있고, 지금은 이 경로로 들어오는
-  요청이 없을 뿐이다. `pad_allowlist`가 같은 발상의 후속이다
-- **`safety: restricted`** — 복싱·섀도우복싱처럼 격한 동작은 사람이 버튼으로만 부른다.
-  뺨 때리기 류는 **카탈로그에 아예 넣지 않는다**. 현재 17개가 restricted다
-- **정지를 모델에 노출하지 않는 규칙** — 음성 왕복이 1.5~3초라 정지 수단으로 부적합했다.
-  즉시 탈출은 RC Damping / E-stop이 담당한다는 원칙이 여기서 나왔다
-- **발사 시점을 `response.done`이 아니라 `response.function_call_arguments.done`으로**
-  당긴 것 — 말과 동작을 맞추기 위해서였고, 같은 "예약을 먼저 무력화한다"는 발상이
-  현재 무대 정지 로직(§4-2)에 남아 있다
-
-### 튜닝 손잡이였던 것
-
-`PERSONA`(`server.py`)와 `motions.yaml`의 `desc`/`tags`가 모델이 동작을 고르는 유일한
-근거였다. 그 밖에 환경변수로 대화 감각을 조절했다.
-
-| 변수 | 기본값 | 역할 |
-|---|---|---|
-| `REALTIME_MODEL` / `REALTIME_VOICE` | `gpt-realtime-2.1` / `marin` | 모델·목소리 |
-| `REALTIME_MAX_TOKENS` | 350 | 응답 길이 하드캡 (폭주 방지용) |
-| `REALTIME_VAD_TYPE` | `server_vad` | `semantic_vad`로 바꾸면 의미로 발화 종료를 판단 |
-| `REALTIME_VAD_SILENCE_MS` | 400 | **턴 전환 느낌의 주 손잡이.** 300~700에서 맞춘다 |
-| `REALTIME_VAD_THRESHOLD` / `_PREFIX_MS` | 0.5 / 300 | 감지 민감도 / 감지 직전 오디오 포함량 |
-
-### 왜 뺐나
-
-개소식 운영 형태가 **관객이 아이패드에서 고르고 TV로 보는 쇼**로 바뀌면서, 음성은 경로가
-길고(왕복 1.5~3초) 시끄러운 현장에서 인식이 불안정해 쇼의 리듬을 끊었다. 버튼 preview→실행이
-같은 일을 더 확실하게 했다.
-
-### 원본은 어디에
-
-```text
-archive/server_voice_20260818.py            제거 직전 server.py 전체
-archive/index_voice_20260818.html           음성 폰 화면
-archive/test_ui_dispatch_voice_20260818.py  해당 테스트
-```
-
-`/`로 들어오는 옛 북마크는 `/pad`로 리다이렉트된다(`server.py:658`).
-당시의 연구 설계와 평가 지표는
-[voice/LLM_ROBOT_RESEARCH_METHODOLOGY.md](voice/LLM_ROBOT_RESEARCH_METHODOLOGY.md)와
-[voice/INTERACTION_METHODOLOGY.md](voice/INTERACTION_METHODOLOGY.md)에 남아 있다.
-
----
-
-## 9. 저장소와 배포 위치
+## 8. 저장소와 배포 위치
 
 | 구분 | 위치 | 내용 |
 |---|---|---|
