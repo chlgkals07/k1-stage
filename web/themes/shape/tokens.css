@@ -1,3 +1,7 @@
+/* 글꼴은 테마가 가진다 — 페이지 HTML 에 박아 두면 테마를 바꿔도 안 따라온다.
+   shape 는 Inter 를 구글에서 받는다. 현장 네트워크가 없으면 대체 글꼴로 떨어진다. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap");
+
 /* SHAPE 화이트 톤 — Figma export 에서 뽑은 값.
  * Monitor(TV)와 iPad 가 같은 값을 다른 이름으로 부르는 구간이 있다(ink/fg, steel/dim).
  * 이번 분리는 "픽셀 변화 0" 이 원칙이라 이름을 통일하지 않았다. 통일은 새 디자인 때다.

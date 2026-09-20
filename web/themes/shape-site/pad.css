@@ -1,0 +1,84 @@
+@import url("/web/themes/shape-site/tokens.css");
+
+/* 아이패드(4:3) 관객 화면 — SHAPE 공식 디자인.
+   버튼과 태그는 예외 없이 알약, 카드는 radius-xl, 그림자는 파란 기 도는 남색. */
+:root{ --canvas-w:1024px; --canvas-h:768px }
+
+*{-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);font-family:var(--font);color:var(--fg);
+  font-variant-numeric:tabular-nums}
+#cv{background:var(--bg)}
+
+/* 헤더 */
+#cv h1{position:absolute;top:50px;left:36px;font-size:40px;font-weight:900;
+  letter-spacing:-.05em;color:var(--navy)}
+.tagline{position:absolute;top:114px;left:36px;font-size:13px;line-height:18px;
+  font-weight:400;color:var(--steel);word-break:keep-all}
+.divider{position:absolute;top:156px;left:36px;width:952px;height:1px;background:var(--line-faint)}
+#statusRow{position:absolute;top:54px;right:36px;display:flex;align-items:center;gap:10px}
+#state{font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--steel)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--bad)}
+.dot.ok{background:var(--ok)} .dot.busy{background:var(--warn)} .dot.hear{background:var(--blue)}
+
+/* ── 좌측: 4×3 커맨드 그리드. 기하는 그대로 둔다 — 관객 손가락에 맞춰 이미 잡힌 값이다 ── */
+#motions{position:absolute;top:234px;left:34px;width:580px;height:462px;
+  display:grid;grid-template-columns:repeat(4,130px);grid-auto-rows:132px;
+  column-gap:20px;row-gap:33px;align-content:start}
+button.motion{
+  border-radius:var(--radius-xl);background:var(--bg);border:1px solid var(--line-soft);
+  color:var(--steel);text-align:left;padding:14px;cursor:pointer;
+  box-shadow:var(--shadow-raise);
+  display:flex;flex-direction:column;gap:6px;font-family:inherit;
+  transition:background 200ms cubic-bezier(.2,.8,.2,1),
+             border-color 200ms cubic-bezier(.2,.8,.2,1)}
+/* 번호는 강조 숫자 — 파랑 */
+button.motion .num{font-size:11px;font-weight:900;line-height:15px;color:var(--blue)}
+button.motion b{font-size:15px;font-weight:800;line-height:19px;color:var(--fg);
+  letter-spacing:-.04em;white-space:normal;word-break:keep-all}
+button.motion small{font-size:10px;line-height:13px;font-weight:400;color:var(--ink-400)}
+/* 선택 상태 라벨은 영문 대문자 eyebrow */
+button.motion .sel{margin-top:auto;font-size:10px;line-height:14px;font-weight:900;
+  letter-spacing:.14em;text-transform:uppercase}
+button.motion.selected{background:var(--surface-blue-strong);border-color:var(--blue);
+  color:var(--fg);box-shadow:var(--shadow-brand)}
+button.motion.selected .sel{color:var(--blue-label)}
+button.motion:active{transform:scale(.97);background:var(--surface-blue)}
+button.motion:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+/* ── 우측 패널 ── */
+#previewPanel{position:absolute;top:186px;right:36px;width:348px;bottom:36px;
+  border-radius:var(--radius-xl);background:var(--bg);border:1px solid var(--line-soft);
+  box-shadow:var(--shadow-card);
+  padding:24px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+/* 닫기는 둘째 버튼이라 알약 + 흰 바탕 + 회색 테두리로 내린다 */
+#cancelBtn{position:absolute;top:16px;right:16px;width:34px;height:34px;
+  border-radius:var(--radius-pill);border:1px solid var(--line-strong);background:var(--bg);
+  color:var(--steel);font:800 15px/1 var(--font);cursor:pointer}
+#cancelBtn:disabled{opacity:0;pointer-events:none}
+#selNum{font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--blue);min-height:18px}
+#previewName{font-size:26px;font-weight:900;letter-spacing:-.05em;min-height:32px;
+  word-break:keep-all}
+#previewMedia{border-radius:var(--radius-media);background:var(--navy);
+  border:1px solid var(--line-soft);
+  height:170px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#previewMedia video{width:100%;height:100%;object-fit:cover;display:none}
+#previewMedia .ph{font-size:44px;opacity:.5}
+#previewHint{font-size:13px;line-height:1.6;font-weight:400;color:var(--steel);
+  word-break:keep-all}
+.statusline{display:flex;align-items:baseline;gap:10px;margin-top:auto}
+.statusline .k{font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-400)}
+#padStatus{font-size:15px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ok)}
+/* 한 화면에 파란 버튼은 하나 — 이것이다 */
+#goBtn{height:64px;border-radius:var(--radius-pill);border:0;background:var(--blue);
+  color:#fff;font:900 20px/1 var(--font);letter-spacing:-.02em;cursor:pointer;
+  box-shadow:var(--shadow-brand)}
+#goBtn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
+/* 실행 progress */
+#progWrap{display:none;flex-direction:column;gap:8px}
+#progTrack{height:10px;border-radius:var(--radius-pill);background:var(--surface-blue-strong);
+  overflow:hidden}
+#progFill{height:100%;width:0%;border-radius:var(--radius-pill);background:var(--blue)}

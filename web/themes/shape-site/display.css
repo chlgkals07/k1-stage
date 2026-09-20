@@ -1,0 +1,101 @@
+@import url("/web/themes/shape-site/tokens.css");
+
+/* TV(16:9) 관객 화면 — SHAPE 공식 디자인.
+   캔버스 치수는 앞 테마와 같다. 1440×810 은 16:9 라 TV 에 정확히 맞고,
+   바꾸면 Figma 좌표를 그대로 쓰는 이득이 사라진다. */
+:root{ --canvas-w:1440px; --canvas-h:810px }
+
+body{background:var(--bg);font-family:var(--font);color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.canvas,.full{background:var(--bg)}
+
+/* 공통 헤더. 글자 상표는 Pretendard 900 · 자간 -.03em 이다 (assets/README 규칙). */
+.brand{position:absolute;top:70px;left:58px}
+.brand h1{font-size:60px;font-weight:900;letter-spacing:-.03em;color:var(--navy);
+  line-height:1;white-space:nowrap}
+/* eyebrow: 영문 대문자 라벨은 짧게, 자간 +.14em, 900 */
+.brand p{margin-top:20px;font-size:13px;font-weight:900;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue);line-height:1.2;white-space:nowrap}
+
+/* ── 대기화면 ──
+   테마 기본은 SHAPE 심볼 한 장이다. 행사 아트워크가 있으면 idle.png 를 갈아 끼운다
+   — 페이지는 늘 /theme/idle 로만 부르므로 HTML 은 안 고친다. */
+#layer-idle{display:flex;align-items:center;justify-content:center;background:var(--bg)}
+#idleBg{display:none}
+/* 심볼 원본이 256px 이라 크게 키우면 뭉갠다. 1.6배까지만 올린다.
+   심볼 주위 빈 자리는 심볼 높이의 절반 — 가운데 정렬로 자연히 확보된다. */
+#idleImg{position:relative;max-width:min(22vw,420px);max-height:60vh;
+  object-fit:contain;display:block}
+
+/* ── preview: 전체화면 sim 영상 ── */
+#clipVideo{width:100vw;height:100vh;object-fit:contain;background:var(--navy);display:block}
+#clipName{position:fixed;left:4vw;bottom:4vh;font-size:2.2vw;font-weight:900;
+  letter-spacing:-.04em;color:#fff;text-shadow:0 2px 14px rgba(12,36,94,.55)}
+/* 클립 없는 동작: 이름을 화면 중앙에 크게 */
+#clipName.noclip{left:0;right:0;bottom:auto;top:50%;transform:translateY(-50%);
+  text-align:center;font-size:6vw;letter-spacing:-.07em}
+#clipTagEl{position:fixed;top:4vh;right:4vw;font-size:1.2vw;font-weight:900;
+  letter-spacing:.14em;color:var(--sky);text-shadow:0 2px 10px rgba(12,36,94,.5)}
+
+/* ── 02 Robot_Running ── */
+#layer-executing .glow{position:absolute;top:55px;left:260px;width:920px;height:720px;
+  background:var(--surface-blue);border-radius:460px/360px;filter:blur(55px)}
+#layer-executing .msg{position:absolute;top:320px;left:0;width:var(--canvas-w);
+  text-align:center;font-size:96px;font-weight:900;letter-spacing:-.07em;color:var(--navy);
+  word-break:keep-all}
+#layer-executing .sub{position:absolute;top:478px;left:0;width:var(--canvas-w);
+  text-align:center;font-size:28px;font-weight:700;color:var(--steel)}
+
+/* ── 04 Listening / Thinking ── */
+#layer-listening .blob{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%);
+  border-radius:50%;filter:blur(110px)}
+#layer-listening .b1{width:500px;height:500px;background:#2855f326}
+#layer-listening .b2{width:370px;height:370px;background:#2855f333}
+#layer-listening .b3{width:240px;height:240px;background:#163c9140}
+#layer-listening .ring{position:absolute;left:50%;top:352px;transform:translateX(-50%);
+  width:220px;height:220px;border-radius:50%;border:3px solid #2855f359;
+  animation:breath 1.8s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes breath{0%,100%{transform:translateX(-50%) scale(1);opacity:.9}
+                  50%{transform:translateX(-50%) scale(1.14);opacity:.5}}
+#layer-listening .word{position:absolute;top:410px;left:0;width:var(--canvas-w);
+  text-align:center;font-size:55px;font-weight:900;letter-spacing:-.05em;color:var(--ink)}
+#layer-listening .h2{position:absolute;top:620px;left:0;width:var(--canvas-w);
+  text-align:center;font-size:32px;font-weight:700;color:var(--steel)}
+#layer-listening .proc{position:absolute;top:96px;right:58px;font-size:13px;font-weight:900;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
+
+/* ── 05 Response ── */
+#layer-response .glow{position:absolute;top:120px;right:60px;width:800px;height:430px;
+  filter:blur(100px);border-radius:50%;background:var(--surface-blue)}
+#layer-response .quote{position:absolute;top:240px;right:120px;width:760px;
+  font-size:60px;line-height:1.25;font-weight:800;letter-spacing:-.05em;color:var(--ink);
+  text-align:left;word-break:keep-all}
+#layer-response .complete{position:absolute;right:44px;bottom:36px;display:flex;
+  align-items:center;gap:12px;font-size:15px;font-weight:900;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--blue)}
+#layer-response .complete i{width:10px;height:10px;border-radius:50%;background:var(--blue)}
+
+/* ── 03 Dance: 중앙 미디어 박스 (91,152) 1257×618 ── */
+#layer-dance .title{position:absolute;top:88px;left:0;width:var(--canvas-w);
+  text-align:center;font-size:38px;font-weight:900;letter-spacing:-.05em;color:var(--navy)}
+#danceVideo{position:absolute;top:152px;left:91px;width:1257px;height:618px;
+  object-fit:contain;background:var(--navy);border-radius:var(--radius-media);
+  box-shadow:var(--shadow-card)}
+#danceTop{position:absolute;top:96px;right:58px;font-size:13px;font-weight:900;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--steel)}
+/* 출처는 영상 아래(770px) 여백에 작게. 캔버스 810px 안에 들어가야 잘리지 않는다. */
+#danceCredit{position:absolute;top:780px;left:0;width:var(--canvas-w);text-align:center;
+  font-size:17px;font-weight:400;color:var(--ink-400)}
+
+/* ── 오디오 잠금. 뜨고 안 뜨고는 base.css 가 정한다 ── */
+#layer-unlock{background:var(--bg);text-align:center}
+#layer-unlock .big{position:absolute;top:44%;left:0;width:100%;
+  font-size:3.4vw;font-weight:900;letter-spacing:-.05em;color:var(--navy)}
+#layer-unlock .sub{position:absolute;top:56%;left:0;width:100%;
+  font-size:1.5vw;font-weight:700;color:var(--steel)}
+
+footer{left:20px;bottom:12px;display:flex;align-items:center;gap:10px;
+  color:var(--ink-400);font-size:12px;font-weight:800}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bad);transition:background .2s}
+.dot.on{background:var(--ok)}
+#audioState{color:var(--warn)}
