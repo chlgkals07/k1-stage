@@ -1,0 +1,412 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   SHAPE UI Kit — 구성 요소
+   이 파일은 원본입니다. 배포되는 것은 kit/shape-kit.css 이고, build-tokens.mjs
+   가 tokens.css 를 앞에 붙여 한 파일로 만들어 냅니다. 한 파일이어야 슬라이드나
+   포스터 HTML 에 그대로 <style> 로 넣을 수 있습니다.
+
+   클래스 이름은 www.snu-shape.com 과 일부러 같게 두었습니다. 여기서 만든 조각을
+   shape_web/frontend 에 그대로 옮겨 붙일 수 있어야 하기 때문입니다.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── 바탕 ────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: var(--sh-color-ink-900);
+  background: var(--sh-color-surface-page);
+  font-family: var(--sh-font-family-base);
+  font-size: var(--sh-font-size-body);
+  line-height: var(--sh-font-leading-normal);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+a { color: inherit; text-decoration: none; }
+button, input, textarea, select { font: inherit; color: inherit; }
+img, svg, video { max-width: 100%; }
+
+/* 한글은 단어 중간에서 끊으면 읽기 나쁩니다. 문단에는 전부 걸어 둡니다. */
+p, li, dd, blockquote, figcaption { word-break: keep-all; overflow-wrap: anywhere; }
+
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--sh-color-brand-blue);
+  outline-offset: 2px;
+}
+
+/* ── 뼈대 ────────────────────────────────────────────────────────────── */
+
+.sh-section { padding: var(--sh-space-18) var(--sh-layout-gutter); }
+.sh-section.tint { background: var(--sh-color-surface-blue-page); border-radius: var(--sh-radius-3xl) var(--sh-radius-3xl) 0 0; }
+.sh-wrap { width: 100%; max-width: var(--sh-layout-content-max); margin-inline: auto; }
+.sh-reading { max-width: var(--sh-layout-reading-max); }
+.sh-grid { display: grid; gap: var(--sh-space-9); grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.sh-row { display: flex; align-items: center; gap: var(--sh-space-5); }
+.sh-stack { display: grid; gap: var(--sh-space-6); }
+.sh-spread { display: flex; align-items: center; justify-content: space-between; gap: var(--sh-space-6); }
+
+/* ── 글자 ────────────────────────────────────────────────────────────── */
+
+.sh-eyebrow {
+  margin: 0 0 var(--sh-space-11);
+  color: var(--sh-color-brand-blue);
+  font-size: var(--sh-font-size-body-sm);
+  font-weight: var(--sh-font-weight-black);
+  letter-spacing: var(--sh-font-tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.sh-hero-title { margin: 0; font-size: var(--sh-font-size-hero); font-weight: var(--sh-font-weight-black); line-height: var(--sh-font-leading-tight); letter-spacing: var(--sh-font-tracking-hero); }
+.sh-display    { margin: 0; font-size: var(--sh-font-size-display); font-weight: var(--sh-font-weight-black); line-height: var(--sh-font-leading-tight); letter-spacing: var(--sh-font-tracking-display); }
+.sh-heading    { margin: 0; font-size: var(--sh-font-size-heading); font-weight: var(--sh-font-weight-black); line-height: var(--sh-font-leading-snug); letter-spacing: var(--sh-font-tracking-title); }
+.sh-title      { margin: 0; font-size: var(--sh-font-size-title); font-weight: var(--sh-font-weight-black); line-height: var(--sh-font-leading-snug); letter-spacing: var(--sh-font-tracking-card); }
+.sh-lead       { margin: 0; color: var(--sh-color-ink-500); font-size: var(--sh-font-size-lead); line-height: var(--sh-font-leading-loose); }
+.sh-body       { margin: 0; color: var(--sh-color-ink-500); line-height: var(--sh-font-leading-normal); }
+.sh-meta, .meta { color: var(--sh-color-brand-blue); font-size: var(--sh-font-size-small); font-weight: var(--sh-font-weight-black); }
+.sh-muted      { color: var(--sh-color-ink-400); font-size: var(--sh-font-size-small); }
+
+/* ── 버튼 ────────────────────────────────────────────────────────────── */
+
+.button {
+  width: max-content;
+  padding: 13px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sh-space-4);
+  color: #fff;
+  background: var(--sh-color-brand-blue);
+  border: 1px solid var(--sh-color-brand-blue);
+  border-radius: var(--sh-radius-pill);
+  font-size: var(--sh-font-size-body);
+  font-weight: var(--sh-font-weight-heavy);
+  cursor: pointer;
+  transition: background var(--sh-motion-duration-fast) var(--sh-motion-easing-standard),
+              border-color var(--sh-motion-duration-fast) var(--sh-motion-easing-standard),
+              box-shadow var(--sh-motion-duration-fast) var(--sh-motion-easing-standard),
+              transform var(--sh-motion-duration-fast) var(--sh-motion-easing-standard);
+}
+.button:hover { box-shadow: var(--sh-shadow-brand); transform: translateY(-1px); }
+.button:active { transform: none; box-shadow: none; }
+
+.button.secondary { color: var(--sh-color-ink-900); background: #fff; border-color: var(--sh-color-line-strong); }
+.button.secondary:hover { border-color: var(--sh-color-brand-blue); box-shadow: none; }
+
+.button.ghost { color: var(--sh-color-brand-blue); background: transparent; border-color: transparent; }
+.button.ghost:hover { background: var(--sh-color-surface-blue); box-shadow: none; }
+
+.button.danger { background: var(--sh-color-status-danger-fg); border-color: var(--sh-color-status-danger-fg); }
+.button.danger:hover { box-shadow: 0 5px 12px rgba(182, 36, 70, .3); }
+
+.button.small { padding: var(--sh-space-4) var(--sh-space-6); font-size: var(--sh-font-size-small); }
+.button.block { width: 100%; }
+
+.button:disabled, .button[aria-disabled="true"] {
+  color: var(--sh-color-ink-300);
+  background: var(--sh-color-surface-subtle);
+  border-color: var(--sh-color-line-soft);
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.text-button {
+  padding: 0;
+  color: var(--sh-color-brand-blue);
+  background: none;
+  border: 0;
+  font-weight: var(--sh-font-weight-black);
+  font-size: var(--sh-font-size-body-sm);
+  cursor: pointer;
+}
+.text-button:hover { text-decoration: underline; text-underline-offset: 3px; }
+.text-button.danger { color: var(--sh-color-status-danger-fg); }
+
+/* ── 카드 ────────────────────────────────────────────────────────────── */
+
+.card {
+  padding: var(--sh-space-13);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--sh-color-line-soft);
+  border-radius: var(--sh-radius-xl);
+  transition: border-color var(--sh-motion-duration-fast) var(--sh-motion-easing-standard),
+              transform var(--sh-motion-duration-fast) var(--sh-motion-easing-standard),
+              box-shadow var(--sh-motion-duration-fast) var(--sh-motion-easing-standard);
+}
+.card:hover { border-color: var(--sh-color-brand-blue); transform: translateY(-6px); box-shadow: var(--sh-shadow-card); }
+.card h3 { margin: var(--sh-space-10) 0 var(--sh-space-5); font-size: var(--sh-font-size-title-lg); font-weight: var(--sh-font-weight-black); letter-spacing: var(--sh-font-tracking-card); }
+.card p { margin: 0; color: var(--sh-color-ink-500); line-height: var(--sh-font-leading-loose); }
+.card-action { margin-top: auto; padding-top: var(--sh-space-9); display: inline-flex; align-items: center; gap: var(--sh-space-3); color: var(--sh-color-brand-blue); font-size: var(--sh-font-size-body); font-weight: var(--sh-font-weight-black); }
+.card-action::after { content: "→"; transition: transform var(--sh-motion-duration-fast) var(--sh-motion-easing-standard); }
+.card:hover .card-action::after { transform: translateX(4px); }
+
+/* 짙은 카드. 홈의 프로그램 칸처럼 세 장을 나란히 둘 때 가운데만 파랑으로 둡니다. */
+.card.solid { color: #fff; background: var(--sh-color-brand-navy-mid); border-color: transparent; }
+.card.solid.blue { background: var(--sh-color-brand-blue); }
+.card.solid p { color: rgba(255, 255, 255, .72); }
+.card.solid .card-action { color: #fff; }
+
+/* ── 배지·칩 ────────────────────────────────────────────────────────── */
+
+.badge {
+  padding: 3px var(--sh-space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sh-space-2);
+  border-radius: var(--sh-radius-pill);
+  font-size: var(--sh-font-size-micro);
+  font-weight: var(--sh-font-weight-black);
+  white-space: nowrap;
+}
+.badge.info    { color: var(--sh-color-status-info-fg);    background: var(--sh-color-status-info-bg); }
+.badge.success { color: var(--sh-color-status-success-fg); background: var(--sh-color-status-success-bg); }
+.badge.warn    { color: var(--sh-color-status-warn-fg);    background: var(--sh-color-status-warn-bg); }
+.badge.danger  { color: var(--sh-color-status-danger-fg);  background: var(--sh-color-status-danger-bg); }
+.badge.staff   { color: var(--sh-color-status-staff-fg);   background: var(--sh-color-status-staff-bg); }
+
+.chip {
+  padding: var(--sh-space-3) var(--sh-space-6);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sh-space-3);
+  color: var(--sh-color-ink-600);
+  background: #fff;
+  border: 1px solid var(--sh-color-line-base);
+  border-radius: var(--sh-radius-pill);
+  font-size: var(--sh-font-size-small);
+  font-weight: var(--sh-font-weight-heavy);
+  cursor: pointer;
+  transition: border-color var(--sh-motion-duration-fast), background var(--sh-motion-duration-fast), color var(--sh-motion-duration-fast);
+}
+.chip:hover { border-color: var(--sh-color-line-strong); background: var(--sh-color-surface-blue); }
+.chip[aria-pressed="true"], .chip.active { color: #fff; background: var(--sh-color-brand-navy-solid); border-color: var(--sh-color-brand-navy-solid); }
+
+/* ── 입력 ────────────────────────────────────────────────────────────── */
+
+.field { display: grid; gap: var(--sh-space-3); }
+.field > label { color: var(--sh-color-ink-700); font-size: var(--sh-font-size-body-sm); font-weight: var(--sh-font-weight-heavy); }
+
+.field input, .field textarea, .field select, .input {
+  padding: var(--sh-space-5) var(--sh-space-6);
+  width: 100%;
+  color: var(--sh-color-ink-900);
+  background: #fff;
+  border: 1px solid var(--sh-color-line-base);
+  border-radius: var(--sh-radius-sm);
+  font-size: var(--sh-font-size-body);
+  transition: border-color var(--sh-motion-duration-fast), box-shadow var(--sh-motion-duration-fast);
+}
+.field textarea { min-height: 120px; resize: vertical; line-height: var(--sh-font-leading-normal); }
+.field input::placeholder, .field textarea::placeholder { color: var(--sh-color-ink-300); }
+.field input:focus, .field textarea:focus, .field select:focus, .input:focus {
+  outline: 0;
+  border-color: var(--sh-color-brand-blue);
+  box-shadow: 0 0 0 3px rgba(40, 85, 243, .11);
+}
+.field input:disabled, .field textarea:disabled { color: var(--sh-color-ink-300); background: var(--sh-color-surface-subtle); }
+.form-note { margin: 0; color: var(--sh-color-ink-400); font-size: var(--sh-font-size-small); }
+.form-note.error { color: var(--sh-color-status-danger-fg); }
+
+/* ── 안내 상자 ──────────────────────────────────────────────────────── */
+
+.note {
+  padding: var(--sh-space-7) var(--sh-space-8);
+  color: var(--sh-color-ink-600);
+  background: var(--sh-color-surface-subtle);
+  border: 1px solid var(--sh-color-line-soft);
+  border-radius: var(--sh-radius-md);
+  font-size: var(--sh-font-size-body-sm);
+  line-height: var(--sh-font-leading-normal);
+}
+.note.info   { color: var(--sh-color-status-info-fg);   background: var(--sh-color-status-info-bg);   border-color: transparent; }
+.note.warn   { color: var(--sh-color-status-warn-fg);   background: var(--sh-color-status-warn-bg);   border-color: transparent; }
+.note.danger { color: var(--sh-color-status-danger-quiet); background: var(--sh-color-status-danger-bg); border-color: var(--sh-color-status-danger-border); }
+
+/* ── 표 ──────────────────────────────────────────────────────────────── */
+
+.sh-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sh-table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: var(--sh-font-size-body-sm); }
+.sh-table th, .sh-table td { padding: var(--sh-space-6) var(--sh-space-7); text-align: left; border-bottom: 1px solid var(--sh-color-line-soft); }
+.sh-table thead th { color: var(--sh-color-ink-500); background: var(--sh-color-surface-subtle); font-weight: var(--sh-font-weight-black); white-space: nowrap; }
+.sh-table tbody tr:hover { background: var(--sh-color-surface-blue); }
+.sh-table .num { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ── 빈 상태 ────────────────────────────────────────────────────────── */
+
+.empty-state { padding: var(--sh-space-17) var(--sh-space-11); color: var(--sh-color-ink-400); text-align: center; }
+.empty-state > svg { color: var(--sh-color-brand-blue); }
+.empty-state h2 { margin: var(--sh-space-9) 0 var(--sh-space-4); color: var(--sh-color-ink-900); font-size: var(--sh-font-size-title); font-weight: var(--sh-font-weight-black); }
+.empty-state p { margin: 0; font-size: var(--sh-font-size-body-sm); }
+.empty-state .button { margin: var(--sh-space-10) auto 0; }
+
+/* ── 사진 ────────────────────────────────────────────────────────────── */
+
+.media { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--sh-color-surface-sunken); border-radius: var(--sh-radius-media); }
+.media.cover { aspect-ratio: 16 / 9; }
+.media.portrait { aspect-ratio: 4 / 5; }
+.media.square { aspect-ratio: 1 / 1; }
+
+/* ── 머리글과 내비 ──────────────────────────────────────────────────── */
+
+.site-header { position: fixed; z-index: 80; inset: 0 0 auto; height: var(--sh-layout-header); display: grid; align-items: center; transition: height var(--sh-motion-duration-base), background var(--sh-motion-duration-base), box-shadow var(--sh-motion-duration-base); }
+.site-header.is-scrolled { height: var(--sh-layout-header-small); background: rgba(255, 255, 255, .9); box-shadow: var(--sh-shadow-header); backdrop-filter: blur(18px); }
+.header-inner { width: calc(100% - 88px); max-width: var(--sh-layout-content-max); margin-inline: auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+
+.desktop-nav {
+  padding: 7px var(--sh-space-9);
+  display: flex;
+  justify-content: center;
+  gap: var(--sh-space-2);
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid rgba(20, 30, 55, .06);
+  border-radius: var(--sh-radius-pill);
+  box-shadow: 0 6px 24px rgba(15, 30, 60, .1);
+}
+.nav-item > a { min-width: 112px; height: 46px; padding: 0 var(--sh-space-9); display: flex; align-items: center; justify-content: center; border-radius: var(--sh-radius-pill); font-size: var(--sh-font-size-body); font-weight: var(--sh-font-weight-heavy); white-space: nowrap; transition: background var(--sh-motion-duration-fast), color var(--sh-motion-duration-fast); }
+.nav-item:hover > a, .nav-item.active > a { color: var(--sh-color-brand-navy-deep); background: var(--sh-color-surface-blue); }
+
+/* X축으로 굴러 넘어가는 라벨.
+   같은 글자를 두 벌 겹쳐 두고, 위 칸은 위로 넘어가며 사라지고 아래 칸은
+   아래에서 굴러 올라옵니다. 글자가 상자 밖으로 나가면 안 되므로 부모에
+   overflow:hidden 과 고정 높이(1.35em)가 반드시 필요합니다. */
+.nav-label { position: relative; display: inline-grid; height: 1.35em; place-items: center; overflow: hidden; perspective: var(--sh-motion-perspective-label); transform-style: preserve-3d; }
+.nav-label-current, .nav-label-next { grid-area: 1 / 1; transition: transform var(--sh-motion-duration-long) var(--sh-motion-easing-soft), opacity var(--sh-motion-duration-long) var(--sh-motion-easing-soft); }
+.nav-label-current { transform: rotateX(0deg) translateY(0); transform-origin: 50% 100%; }
+.nav-label-next    { opacity: 0; transform: rotateX(-90deg) translateY(8px); transform-origin: 50% 0; }
+.nav-item:hover .nav-label-current, .nav-item:focus-within .nav-label-current { opacity: 0; transform: rotateX(90deg) translateY(-8px); }
+.nav-item:hover .nav-label-next,    .nav-item:focus-within .nav-label-next    { opacity: 1; transform: rotateX(0deg) translateY(0); }
+
+/* ── 히어로 ──────────────────────────────────────────────────────────── */
+
+/* 모눈 배경이 SHAPE 첫 화면의 정체성입니다. 24px 격자에 아주 옅은 남색 선. */
+.hero {
+  position: relative;
+  margin: var(--sh-space-7);
+  padding: var(--sh-space-18) var(--sh-space-11);
+  min-height: 70svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  text-align: center;
+  background-color: #fff;
+  background-image: linear-gradient(var(--sh-color-overlay-grid) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--sh-color-overlay-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border-radius: var(--sh-radius-3xl);
+}
+
+/* ── 대화상자 ───────────────────────────────────────────────────────── */
+
+.dialog { width: min(560px, calc(100vw - 32px)); padding: var(--sh-space-13); border: 0; border-radius: var(--sh-radius-2xl); box-shadow: var(--sh-shadow-dialog); }
+.dialog::backdrop { background: var(--sh-color-overlay-backdrop); }
+.dialog h2 { margin: 0 0 var(--sh-space-6); font-size: var(--sh-font-size-title); font-weight: var(--sh-font-weight-black); letter-spacing: var(--sh-font-tracking-card); }
+
+/* ── 푸터 ────────────────────────────────────────────────────────────── */
+
+.site-footer { padding: var(--sh-space-16) var(--sh-layout-gutter) var(--sh-space-15); color: #c6d1e8; background: var(--sh-color-brand-navy); }
+.site-footer a { color: #fff; }
+.site-footer small { color: #93a6cf; font-size: var(--sh-font-size-small); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   움직임
+   SHAPE 의 움직임은 네 가지뿐입니다. 새로 지어내지 말고 이 중에서 고르세요.
+     1. 나타나기(reveal) — 아래에서 살짝 올라오며 흐려짐이 걷힌다
+     2. 굴리기(rotateX)  — 라벨·숫자가 축을 돌아 다음 것으로 넘어간다
+     3. 기울이기(tilt)   — 포인터를 따라 카드가 3D 로 기운다
+     4. 떠다니기(float)  — 배경 요소가 아주 느리게 오르내린다
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes sh-rise  { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes sh-float { 50% { transform: translateY(-12px); } }
+@keyframes sh-spin  { to { transform: rotate(360deg); } }
+@keyframes sh-roll-in { from { opacity: 0; transform: rotateX(-88deg) translateY(9px); } to { opacity: 1; transform: none; } }
+
+/* 1. 나타나기 — 두 가지 방식을 겹쳐 둡니다.
+   최신 크로뮴은 `animation-timeline: view()` 로 스크롤 진행률에 직접 물려
+   자바스크립트 없이 그립니다. 파이어폭스·사파리에는 그 기능이 없으므로
+   kit/motion.js 의 IntersectionObserver 가 .is-visible 을 붙여 줍니다.
+   둘 중 하나만 넣으면 브라우저 절반에서 글이 영영 안 보이거나(관찰자만),
+   전혀 안 움직입니다(타임라인만). 반드시 짝으로 쓰세요. */
+.sh-reveal { opacity: 0; transform: translateY(22px); transition: opacity var(--sh-motion-duration-reveal) var(--sh-motion-easing-standard), transform var(--sh-motion-duration-reveal) var(--sh-motion-easing-standard); }
+.sh-reveal.is-visible { opacity: 1; transform: none; }
+
+@supports (animation-timeline: view()) {
+  .sh-reveal:not(.is-visible) {
+    animation: sh-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 35%;
+    opacity: 1;
+  }
+}
+
+/* 목록을 하나씩 — 항목마다 --sh-order 를 0,1,2,3 으로 돌려 붙입니다.
+   4 를 넘기지 않는 이유는, 스무 번째 항목이 0.9초를 기다리면 고장 난 것처럼
+   보이기 때문입니다. motion.js 가 index % 4 로 넣어 줍니다. */
+.sh-stagger > * { transition-delay: calc(var(--sh-order, 0) * var(--sh-motion-stagger)); }
+
+/* 3. 기울이기 — 포인터를 따라가는 3D.
+   각도는 motion.js 가 --sh-rx/--sh-ry 에 넣습니다. transition 이 아주 짧아야
+   (140ms) 손을 따라오는 느낌이 나고, 길면 미끄러지는 느낌이 납니다. */
+.sh-tilt {
+  --sh-rx: 0deg;
+  --sh-ry: 0deg;
+  transform: perspective(var(--sh-motion-perspective-card)) rotateX(var(--sh-rx)) rotateY(var(--sh-ry));
+  transition: transform var(--sh-motion-duration-instant) ease-out;
+  will-change: transform;
+}
+/* 무대 시차는 각도를 훨씬 작게 씁니다. 큰 물체가 크게 기울면 배경이 흔들려 보입니다. */
+.sh-tilt.stage { transform: perspective(var(--sh-motion-perspective-stage)) rotateX(var(--sh-rx)) rotateY(var(--sh-ry)); transition-duration: var(--sh-motion-duration-slow); }
+
+/* 4. 떠다니기 — 배경 장식 전용. 글자나 버튼에 걸지 마세요. */
+.sh-float { animation: sh-float 7s var(--sh-motion-easing-inout) infinite; }
+.sh-float:nth-child(2n) { animation-delay: -2s; }
+.sh-float:nth-child(3n) { animation-delay: -4s; }
+.sh-spin { animation: sh-spin 12s linear infinite; }
+
+/* 가로로 흘려 보내는 스크롤 스냅 줄. 프로그램 카드처럼 좁은 화면에서 넘길 때. */
+.sh-track { display: flex; gap: var(--sh-space-9); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.sh-track::-webkit-scrollbar { display: none; }
+.sh-track > * { flex: 0 0 min(390px, 78vw); scroll-snap-align: start; }
+
+/* 움직임을 줄여 달라고 설정한 사람에게는 전부 끕니다. 나타나기는 "이미 나타난"
+   상태로 두어야 하지, 감추면 안 됩니다. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .sh-reveal { opacity: 1; transform: none; }
+  .sh-tilt { transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   좁은 화면
+   680px 이 가장 중요한 분기입니다. 여기서 데스크톱 배치를 접습니다.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .sh-section { padding: var(--sh-space-16) var(--sh-space-11); }
+  .header-inner { width: calc(100% - 32px); }
+  .desktop-nav { display: none; }
+}
+
+@media (max-width: 680px) {
+  body { font-size: var(--sh-font-size-body-sm); }
+  .sh-section { padding: var(--sh-space-15) var(--sh-layout-gutter-mobile); }
+  .sh-grid { grid-template-columns: 1fr; gap: var(--sh-space-6); }
+  .sh-spread { flex-direction: column; align-items: stretch; }
+  .card { padding: var(--sh-space-10); }
+  .card h3 { font-size: var(--sh-font-size-title-sm); }
+  /* 손가락으로 누를 것은 최소 44px 입니다. 폭까지 늘리지는 않습니다 —
+     한 줄에 버튼이 여럿일 때 전부 한 줄씩 차지하면 더 나빠집니다.
+     화면 폭을 채워야 하는 버튼에는 쓰는 쪽에서 .block 을 붙이세요. */
+  .button { min-height: 44px; }
+  .chip, .text-button { min-height: 40px; }
+  .hero { margin: var(--sh-space-4); padding: var(--sh-space-16) var(--sh-space-10); min-height: 62svh; }
+  .dialog { width: 100%; margin: auto auto 0; border-radius: var(--sh-radius-2xl) var(--sh-radius-2xl) 0 0; }
+  .empty-state { padding: var(--sh-space-15) var(--sh-space-10); }
+}
+
+@media (max-width: 430px) {
+  .sh-section { padding: var(--sh-space-14) var(--sh-space-8); }
+}

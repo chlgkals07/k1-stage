@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHAPE 발표자료 템플릿</title>
+<!-- Pretendard. 사이트는 글꼴 파일을 직접 실어 보내지만(첫 방문 속도 때문에),
+     이 템플릿들은 어디서 열어도 되도록 CDN 을 씁니다. 인터넷이 없는 자리에서
+     쓸 일이 있으면 이 줄을 지우고 컴퓨터에 깔린 Pretendard 를 쓰세요. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="shape-kit.css">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   SHAPE 슬라이드 — 16:9
+   웹과 같은 토큰을 쓰므로 발표자료가 사이트와 같은 얼굴이 됩니다.
+
+   ## PDF 로 뽑기
+   브라우저에서 인쇄 → 대상 "PDF 로 저장" → 용지 가로, 여백 없음,
+   "배경 그래픽" 켜기. 아래 @page 규칙이 나머지를 맞춥니다.
+   명령으로 뽑으려면:
+     npx playwright-core screenshot --full-page ... (또는 page.pdf)
+
+   ## 장마다 지켜야 할 것
+   - 한 장에 메시지 하나. 글머리는 다섯 줄을 넘기지 않습니다.
+   - 본문 24px 아래로 내려가면 뒷자리에서 안 보입니다.
+   - 색은 파랑·남색·먹 세 가지로 충분합니다. 상태색은 표에만 씁니다.
+   ───────────────────────────────────────────────────────────────────────── */
+
+body { background: #e9edf4; }
+
+.slide {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  margin: 24px auto;
+  padding: 68px 80px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--sh-shadow-card);
+}
+
+/* 슬라이드 안의 글자는 웹보다 한참 큽니다. 뒷자리 기준입니다. */
+.slide h1 { margin: 0; font-size: 76px; font-weight: 900; line-height: 1.1; letter-spacing: -.055em; }
+.slide h2 { margin: 0 0 8px; font-size: 46px; font-weight: 900; line-height: 1.15; letter-spacing: -.05em; }
+.slide h3 { margin: 0 0 10px; font-size: 27px; font-weight: 900; letter-spacing: -.03em; }
+.slide p, .slide li { font-size: 24px; line-height: 1.55; color: var(--sh-color-ink-600); }
+.slide .sh-eyebrow { font-size: 18px; margin-bottom: 18px; }
+
+.slide-body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+.slide-foot { display: flex; align-items: center; justify-content: space-between; color: var(--sh-color-ink-300); font-size: 15px; font-weight: 800; }
+.slide-foot .mark { display: flex; align-items: center; gap: 9px; color: var(--sh-color-brand-navy); letter-spacing: -.02em; }
+
+.bullets { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; }
+.bullets li { padding-left: 34px; position: relative; }
+.bullets li::before { content: ""; position: absolute; left: 0; top: .62em; width: 14px; height: 14px; border-radius: 50%; background: var(--sh-color-brand-blue); }
+.bullets li b { color: var(--sh-color-ink-900); font-weight: 900; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; align-items: stretch; }
+.panel > :last-child { margin-bottom: 0; }
+.panel { padding: 34px; background: var(--sh-color-surface-subtle); border-radius: var(--sh-radius-2xl); }
+.panel.blue { color: #fff; background: var(--sh-color-brand-blue); }
+.panel.blue p { color: rgba(255,255,255,.8); }
+.panel.navy { color: #fff; background: var(--sh-color-brand-navy); }
+.panel.navy p { color: rgba(255,255,255,.72); }
+
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+.stat { padding: 34px 30px; background: var(--sh-color-surface-blue); border-radius: var(--sh-radius-2xl); }
+.stat b { display: block; color: var(--sh-color-brand-blue); font-size: 68px; font-weight: 900; line-height: 1; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+.stat span { display: block; margin-top: 12px; color: var(--sh-color-ink-600); font-size: 20px; font-weight: 800; }
+
+/* 표지는 웹 히어로와 같은 모눈 배경을 씁니다 — 한눈에 SHAPE 로 읽힙니다. */
+.slide.cover {
+  background-image: linear-gradient(var(--sh-color-overlay-grid) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--sh-color-overlay-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.slide.dark { color: #fff; background: var(--sh-color-brand-navy); }
+.slide.dark p { color: #c6d1e8; }
+.slide.dark .slide-foot { color: rgba(255,255,255,.45); }
+.slide.dark .slide-foot .mark { color: #fff; }
+
+.slide .sh-table { min-width: 0; font-size: 20px; }
+.slide .sh-table th, .slide .sh-table td { padding: 15px 18px; }
+.slide .badge { font-size: 15px; padding: 5px 12px; }
+
+
+/* 좁은 화면에서는 장 전체를 줄여 화면에 맞춥니다. 고정 크기(1280×720, A4)를
+   그대로 두면 휴대전화에서 페이지가 가로로 밀립니다. 배율은 아래 script 가
+   --sh-fit 에 넣고, 줄어든 만큼 아래 여백을 음수로 당겨 빈 자리를 없앱니다.
+   인쇄할 때는 이 규칙이 걸리지 않습니다(screen 한정). */
+@media screen and (max-width: 1340px) {
+  .slide { transform: scale(var(--sh-fit, 1)); transform-origin: top left; margin-left: 0; margin-bottom: calc((var(--sh-fit, 1) - 1) * 720px + 20px); }
+}
+
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  body { background: #fff; }
+  .slide { margin: 0; box-shadow: none; break-after: page; }
+  .note-for-editor { display: none; }
+}
+</style>
+</head>
+<body>
+
+<p class="note-for-editor" style="max-width:1280px;margin:20px auto;color:#5b6472;font-size:13px">
+  이 파일을 복사해 장을 늘리거나 지우세요. 인쇄 → PDF 로 저장 → 가로·여백 없음·배경 그래픽 켜기.
+</p>
+
+<!-- ① 표지 -->
+<section class="slide cover">
+  <div class="slide-body" style="align-items:flex-start;gap:20px">
+    <p class="sh-eyebrow" style="margin:0">SHAPE · 2026 SPRING</p>
+    <h1>사람을 위한<br>로봇을 만듭니다</h1>
+    <p style="font-size:27px;max-width:760px">서울대학교 로봇 동아리 SHAPE 신입 부원 모집 설명회</p>
+  </div>
+  <div class="slide-foot">
+    <span class="mark">SHAPE</span>
+    <span>2026. 3. 4.</span>
+  </div>
+</section>
+
+<!-- ② 목차 -->
+<section class="slide">
+  <p class="sh-eyebrow">CONTENTS</p>
+  <div class="slide-body">
+    <ol class="bullets" style="counter-reset:c">
+      <li><b>우리는 무엇을 하는 사람들인가</b></li>
+      <li><b>한 학기 동안 벌어지는 일</b></li>
+      <li><b>동아리방과 장비</b></li>
+      <li><b>들어오는 방법</b></li>
+    </ol>
+  </div>
+  <div class="slide-foot"><span class="mark">SHAPE</span><span>02</span></div>
+</section>
+
+<!-- ③ 본문 — 제목 + 글머리 -->
+<section class="slide">
+  <p class="sh-eyebrow">01. ABOUT</p>
+  <h2>직접 만들고, 직접 굴려 봅니다</h2>
+  <div class="slide-body">
+    <ul class="bullets">
+      <li><b>매주 목요일 세미나</b> — 부원이 돌아가며 자기 작업을 발표합니다.</li>
+      <li><b>학기 프로젝트</b> — 팀을 꾸려 한 학기에 하나를 끝까지 만듭니다.</li>
+      <li><b>공개 시연</b> — 학기 말에 만든 것을 학교 안에서 굴려 봅니다.</li>
+    </ul>
+  </div>
+  <div class="slide-foot"><span class="mark">SHAPE</span><span>03</span></div>
+</section>
+
+<!-- ④ 두 단 비교 -->
+<section class="slide">
+  <p class="sh-eyebrow">02. PROGRAM</p>
+  <h2>두 갈래로 나뉩니다</h2>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="panel">
+        <h3>스터디</h3>
+        <p>처음 오는 사람을 위한 길입니다. 제어와 기구를 기초부터 함께 봅니다.</p>
+      </div>
+      <div class="panel blue">
+        <h3>프로젝트</h3>
+        <p>이미 만들어 본 사람을 위한 길입니다. 팀을 꾸려 바로 시작합니다.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot"><span class="mark">SHAPE</span><span>04</span></div>
+</section>
+
+<!-- ⑤ 숫자 -->
+<section class="slide">
+  <p class="sh-eyebrow">03. NUMBERS</p>
+  <h2>지금의 SHAPE</h2>
+  <div class="slide-body">
+    <div class="stat-row">
+      <div class="stat"><b>98</b><span>활동 부원</span></div>
+      <div class="stat"><b>12</b><span>학기 프로젝트</span></div>
+      <div class="stat"><b>7</b><span>공용 장비</span></div>
+    </div>
+  </div>
+  <div class="slide-foot"><span class="mark">SHAPE</span><span>05</span></div>
+</section>
+
+<!-- ⑥ 표 -->
+<section class="slide">
+  <p class="sh-eyebrow">04. SCHEDULE</p>
+  <h2>학기 일정</h2>
+  <div class="slide-body">
+    <table class="sh-table">
+      <thead><tr><th>주차</th><th>내용</th><th>장소</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>1주</td><td>오리엔테이션</td><td>301동 109호</td><td><span class="badge success">확정</span></td></tr>
+        <tr><td>3주</td><td>팀 구성</td><td>301동 109호</td><td><span class="badge info">예정</span></td></tr>
+        <tr><td>8주</td><td>중간 발표</td><td>미정</td><td><span class="badge warn">조율 중</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="slide-foot"><span class="mark">SHAPE</span><span>06</span></div>
+</section>
+
+<!-- ⑦ 마무리 -->
+<section class="slide dark">
+  <div class="slide-body" style="justify-content:center">
+    <h1 style="font-size:64px">함께 만들 사람을<br>기다립니다</h1>
+    <p style="font-size:26px">www.snu-shape.com · 301동 109호</p>
+  </div>
+  <div class="slide-foot"><span class="mark">SHAPE</span><span>07</span></div>
+</section>
+
+
+<script>
+  /* 화면 폭에 맞춘 배율. 인쇄에는 영향을 주지 않습니다. */
+  (function () {
+    var NATURAL = 1280;
+    function fit() {
+      var room = document.documentElement.clientWidth - 40;
+      document.documentElement.style.setProperty("--sh-fit", String(Math.min(1, room / NATURAL)));
+    }
+    fit();
+    window.addEventListener("resize", fit);
+  })();
+</script>
+</body>
+</html>

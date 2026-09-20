@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHAPE UI Kit — 미리보기</title>
+
+<!-- Pretendard. 사이트는 글꼴 파일을 직접 실어 보내지만(첫 방문 속도 때문에),
+     이 템플릿들은 어디서 열어도 되도록 CDN 을 씁니다. 인터넷이 없는 자리에서
+     쓸 일이 있으면 이 줄을 지우고 컴퓨터에 깔린 Pretendard 를 쓰세요. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="shape-kit.css">
+<style>
+  body { background: #fbfcfe; }
+  .demo { padding: 56px max(6vw, 24px); border-bottom: 1px solid var(--sh-color-line-faint); }
+  .demo > h2 { margin: 0 0 6px; font-size: 26px; font-weight: 900; letter-spacing: -.04em; }
+  .demo > h2 + p { margin: 0 0 28px; color: var(--sh-color-ink-400); font-size: 13px; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .swatch { padding: 10px; background: #fff; border: 1px solid var(--sh-color-line-faint); border-radius: 12px; font-size: 11px; }
+  .swatch i { display: block; height: 46px; margin-bottom: 8px; border-radius: 8px; border: 1px solid rgba(20,30,55,.08); }
+  .swatch b { display: block; font-weight: 800; }
+  .swatch code { color: var(--sh-color-ink-400); }
+  .bits { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .type-row { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: baseline; padding: 10px 0; border-bottom: 1px dashed var(--sh-color-line-faint); }
+  .type-row code { color: var(--sh-color-ink-400); font-size: 11px; }
+  @media (max-width: 680px) { .type-row { grid-template-columns: 1fr; gap: 4px; } }
+</style>
+</head>
+<body>
+
+<section class="demo">
+  <h2>1. 색</h2>
+  <p>화면에서 실제로 쓰이는 색만 있습니다. 여기 없는 색은 쓰지 마세요.</p>
+  <div class="swatches" id="swatches"></div>
+</section>
+
+<section class="demo">
+  <h2>2. 글자</h2>
+  <p>Pretendard 한 벌. 큰 제목일수록 자간을 더 좁힙니다.</p>
+  <div class="type-row"><code>hero</code><span class="sh-hero-title">사람을 위한 로봇</span></div>
+  <div class="type-row"><code>display</code><span class="sh-display">함께 만드는 기계</span></div>
+  <div class="type-row"><code>heading</code><span class="sh-heading">이번 학기 활동</span></div>
+  <div class="type-row"><code>title</code><span class="sh-title">장비 예약 안내</span></div>
+  <div class="type-row"><code>eyebrow</code><span class="sh-eyebrow" style="margin:0">PROGRAM</span></div>
+  <div class="type-row"><code>lead</code><p class="sh-lead">서울대학교 로봇 동아리 SHAPE 는 직접 만들고 직접 굴려 보는 사람들의 모임입니다.</p></div>
+  <div class="type-row"><code>body</code><p class="sh-body">부원이면 누구나 동아리방의 장비를 예약해 쓸 수 있습니다.</p></div>
+</section>
+
+<section class="demo">
+  <h2>3. 버튼</h2>
+  <div class="bits">
+    <button class="button">신청하기</button>
+    <button class="button secondary">자세히 보기</button>
+    <button class="button ghost">취소</button>
+    <button class="button danger">예약 취소</button>
+    <button class="button small">작은 버튼</button>
+    <button class="button" disabled>마감</button>
+    <button class="text-button">더 보기</button>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>4. 상태 표시</h2>
+  <div class="bits" style="margin-bottom:20px">
+    <span class="badge info">승인</span>
+    <span class="badge success">사용 중</span>
+    <span class="badge warn">임시 저장</span>
+    <span class="badge danger">반려</span>
+    <span class="badge staff">운영진</span>
+  </div>
+  <div class="bits">
+    <button class="chip">전체</button>
+    <button class="chip" aria-pressed="true">3D 프린터</button>
+    <button class="chip">공구</button>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>5. 카드</h2>
+  <p>마우스를 올리면 6px 뜨고 테두리가 파랑으로 바뀝니다.</p>
+  <div class="sh-grid">
+    <article class="card">
+      <span class="meta">01</span>
+      <h3>정기 세미나</h3>
+      <p>매주 목요일 저녁, 부원이 돌아가며 자기 작업을 발표합니다.</p>
+      <span class="card-action">일정 보기</span>
+    </article>
+    <article class="card solid blue">
+      <span class="meta" style="color:#fff">02</span>
+      <h3>장비 예약</h3>
+      <p>3D 프린터와 공구를 부원 누구나 직접 예약해 씁니다.</p>
+      <span class="card-action">예약하기</span>
+    </article>
+    <article class="card solid">
+      <span class="meta" style="color:#fff">03</span>
+      <h3>SHAPE UP</h3>
+      <p>한 학기 동안 팀을 꾸려 하나를 끝까지 만들어 봅니다.</p>
+      <span class="card-action">기록 보기</span>
+    </article>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>6. 입력</h2>
+  <div class="sh-grid" style="max-width:760px">
+    <div class="field">
+      <label for="p1">이름</label>
+      <input id="p1" placeholder="홍길동">
+      <p class="form-note">부원 명부에 등록된 이름을 적어 주세요.</p>
+    </div>
+    <div class="field">
+      <label for="p2">사용 목적</label>
+      <textarea id="p2" placeholder="무엇을 만드는지 한 줄로 적어 주세요"></textarea>
+    </div>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>7. 안내 상자</h2>
+  <div class="sh-stack" style="max-width:760px">
+    <p class="note">동아리방은 301동 109호입니다.</p>
+    <p class="note info">예약은 하루 전까지 신청해 주세요.</p>
+    <p class="note warn">아직 임시 저장 상태입니다. 올리지 않으면 다른 사람에게 보이지 않습니다.</p>
+    <p class="note danger">이미 다른 부원이 잡아 둔 시간입니다.</p>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>8. 표</h2>
+  <div class="sh-table-scroll">
+    <table class="sh-table">
+      <thead><tr><th>장비</th><th>신청자</th><th>시간</th><th class="num">사용 시간</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>3D 프린터 A</td><td>김서연</td><td>9/3 14:00</td><td class="num">3시간</td><td><span class="badge success">사용 중</span></td></tr>
+        <tr><td>3D 프린터 B</td><td>이준호</td><td>9/3 18:00</td><td class="num">2시간</td><td><span class="badge info">승인</span></td></tr>
+        <tr><td>납땜 스테이션</td><td>박민</td><td>9/4 10:00</td><td class="num">1시간</td><td><span class="badge warn">대기</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>9. 빈 상태</h2>
+  <div class="empty-state">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+    <h2>아직 예약이 없습니다</h2>
+    <p>장비를 고르면 빈 시간이 바로 보입니다.</p>
+    <button class="button">예약하러 가기</button>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>10. 움직임</h2>
+  <p>포인터를 카드 위에서 움직여 보세요. 내비 항목에 올리면 라벨이 X축으로 굴러 넘어갑니다.</p>
+
+  <nav class="desktop-nav" style="width:max-content;margin-bottom:32px">
+    <span class="nav-item"><a href="#"><span class="nav-label"><span class="nav-label-current">소개</span><span class="nav-label-next">ABOUT</span></span></a></span>
+    <span class="nav-item"><a href="#"><span class="nav-label"><span class="nav-label-current">활동</span><span class="nav-label-next">PROGRAM</span></span></a></span>
+    <span class="nav-item"><a href="#"><span class="nav-label"><span class="nav-label-current">장비</span><span class="nav-label-next">EQUIPMENT</span></span></a></span>
+  </nav>
+
+  <div class="sh-grid" style="max-width:900px">
+    <article class="card sh-tilt">
+      <span class="meta">TILT</span>
+      <h3>포인터를 따라 기웁니다</h3>
+      <p>최대 9°·11°. 이보다 크면 멀미가 납니다.</p>
+    </article>
+    <div class="hero" style="min-height:220px;margin:0">
+      <div>
+        <span class="sh-float" style="display:inline-block;color:var(--sh-color-brand-blue);font-weight:900;font-size:22px">떠다니기</span>
+        <p class="sh-muted" style="margin-top:8px">배경 장식에만 씁니다</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="token-names.js"></script>
+<script>
+  /* 색 견본은 shape-kit.css 가 실제로 들고 있는 값에서 뽑습니다. 손으로 적으면
+     토큰을 고쳤을 때 이 페이지만 옛날 색으로 남습니다. */
+  var root = getComputedStyle(document.documentElement);
+  document.getElementById("swatches").innerHTML = (window.SH_COLOR_TOKENS || []).map(function (name) {
+    var value = root.getPropertyValue(name).trim();
+    return '<div class="swatch"><i style="background:' + value + '"></i><b>' + name.replace("--sh-color-", "") + "</b><code>" + value + "</code></div>";
+  }).join("");
+</script>
+<script src="motion.js" defer></script>
+</body>
+</html>

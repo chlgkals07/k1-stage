@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>SHAPE 인쇄물 템플릿</title>
+<!-- Pretendard. 사이트는 글꼴 파일을 직접 실어 보내지만(첫 방문 속도 때문에),
+     이 템플릿들은 어디서 열어도 되도록 CDN 을 씁니다. 인터넷이 없는 자리에서
+     쓸 일이 있으면 이 줄을 지우고 컴퓨터에 깔린 Pretendard 를 쓰세요. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="shape-kit.css">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   SHAPE 인쇄물 — A4 포스터와 명함형 카드
+
+   ## 인쇄가 화면과 다른 점 세 가지
+   1. 배경색은 기본으로 안 찍힙니다. 인쇄 대화상자에서 "배경 그래픽" 을 켜거나,
+      아래처럼 `print-color-adjust: exact` 를 걸어야 합니다.
+   2. 종이 위의 파랑(#2855f3)은 화면보다 어둡고 탁하게 나옵니다. 옅은 회색 글자
+      (ink-300·400)는 사실상 사라지므로, 인쇄물의 본문은 ink-600 아래로
+      내리지 마세요.
+   3. 실제로 자를 때를 대비해 가장자리 10mm 안에는 글자를 두지 않습니다.
+
+   ## 뽑는 법
+   브라우저 인쇄 → PDF 로 저장 → 용지 A4 세로, 여백 없음, 배경 그래픽 켜기.
+   ───────────────────────────────────────────────────────────────────────── */
+
+body { background: #e9edf4; }
+
+.sheet {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 20px auto;
+  padding: 24mm 20mm;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--sh-shadow-card);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.sheet.poster {
+  justify-content: space-between;
+  background-image: linear-gradient(var(--sh-color-overlay-grid) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--sh-color-overlay-grid) 1px, transparent 1px);
+  background-size: 10mm 10mm;
+}
+.poster h1 { margin: 0; font-size: 62pt; font-weight: 900; line-height: 1.04; letter-spacing: -.06em; }
+.poster .sh-eyebrow { font-size: 12pt; margin-bottom: 6mm; }
+.poster .lede { max-width: 130mm; color: var(--sh-color-ink-600); font-size: 14pt; line-height: 1.6; }
+.poster .facts { display: grid; gap: 4mm; margin: 12mm 0 0; padding: 0; list-style: none; }
+.poster .facts li { display: grid; grid-template-columns: 26mm 1fr; gap: 6mm; align-items: baseline; font-size: 13pt; }
+.poster .facts b { color: var(--sh-color-brand-blue); font-weight: 900; }
+.poster .foot { display: flex; align-items: flex-end; justify-content: space-between; padding-top: 8mm; border-top: 2px solid var(--sh-color-ink-900); }
+.poster .foot strong { font-size: 20pt; font-weight: 900; letter-spacing: -.03em; }
+.poster .foot span { color: var(--sh-color-ink-600); font-size: 11pt; font-weight: 800; }
+.qr { width: 26mm; height: 26mm; display: grid; place-items: center; color: var(--sh-color-ink-300); background: var(--sh-color-surface-subtle); border-radius: 4mm; font-size: 8pt; }
+
+/* 명함형 카드 — 한 장에 열 장이 들어갑니다(90×50mm). */
+.sheet.cards { padding: 15mm 10mm; }
+.card-grid { display: grid; grid-template-columns: repeat(2, 90mm); gap: 5mm; justify-content: center; }
+.name-card {
+  width: 90mm; height: 50mm;
+  padding: 7mm;
+  display: flex; flex-direction: column; justify-content: space-between;
+  color: #fff;
+  background: var(--sh-color-brand-navy);
+  border-radius: 3mm;
+  print-color-adjust: exact;
+}
+.name-card.light { color: var(--sh-color-ink-900); background: #fff; border: 1px solid var(--sh-color-line-base); }
+.name-card b { font-size: 14pt; font-weight: 900; letter-spacing: -.03em; }
+.name-card p { margin: 0; font-size: 8.5pt; line-height: 1.5; opacity: .8; }
+.name-card.light p { color: var(--sh-color-ink-500); opacity: 1; }
+
+
+/* 좁은 화면에서는 장 전체를 줄여 화면에 맞춥니다. 고정 크기(1280×720, A4)를
+   그대로 두면 휴대전화에서 페이지가 가로로 밀립니다. 배율은 아래 script 가
+   --sh-fit 에 넣고, 줄어든 만큼 아래 여백을 음수로 당겨 빈 자리를 없앱니다.
+   인쇄할 때는 이 규칙이 걸리지 않습니다(screen 한정). */
+@media screen and (max-width: 850px) {
+  .sheet { transform: scale(var(--sh-fit, 1)); transform-origin: top left; margin-left: 0; margin-bottom: calc((var(--sh-fit, 1) - 1) * 1123px + 20px); }
+}
+
+@page { size: A4 portrait; margin: 0; }
+@media print {
+  body { background: #fff; }
+  .sheet { margin: 0; box-shadow: none; break-after: page; }
+  .note-for-editor { display: none; }
+}
+</style>
+</head>
+<body>
+
+<p class="note-for-editor" style="max-width:210mm;margin:16px auto;color:#5b6472;font-size:13px">
+  A4 세로·여백 없음·배경 그래픽 켜기로 인쇄하세요. 가장자리 10mm 안에는 글자를 두지 않습니다.
+</p>
+
+<!-- ① 모집 포스터 -->
+<section class="sheet poster">
+  <div>
+    <p class="sh-eyebrow">SNU ROBOTICS CLUB · 2026 SPRING</p>
+    <h1>같이<br>만들<br>사람</h1>
+    <p class="lede" style="margin-top:10mm">
+      SHAPE 는 서울대학교 로봇 동아리입니다. 배우고 끝내지 않고, 학기마다 하나를
+      끝까지 만들어 실제로 굴려 봅니다.
+    </p>
+    <ul class="facts">
+      <li><b>모집</b><span>3월 2일 – 3월 13일</span></li>
+      <li><b>설명회</b><span>3월 4일 오후 7시 · 301동 109호</span></li>
+      <li><b>대상</b><span>전공 무관, 만들어 보고 싶은 사람 누구나</span></li>
+    </ul>
+  </div>
+  <div class="foot">
+    <div>
+      <strong>SHAPE</strong>
+      <span style="display:block;margin-top:2mm">www.snu-shape.com · 301동 109호</span>
+    </div>
+    <div class="qr">QR</div>
+  </div>
+</section>
+
+<!-- ② 명함형 카드 -->
+<section class="sheet cards">
+  <div class="card-grid">
+    <div class="name-card">
+      <b>SHAPE</b>
+      <p>서울대학교 로봇 동아리<br>301동 109호 · www.snu-shape.com</p>
+    </div>
+    <div class="name-card light">
+      <b>SHAPE</b>
+      <p>서울대학교 로봇 동아리<br>301동 109호 · www.snu-shape.com</p>
+    </div>
+  </div>
+</section>
+
+
+<script>
+  /* 화면 폭에 맞춘 배율. 인쇄에는 영향을 주지 않습니다. */
+  (function () {
+    var NATURAL = 794;
+    function fit() {
+      var room = document.documentElement.clientWidth - 30;
+      document.documentElement.style.setProperty("--sh-fit", String(Math.min(1, room / NATURAL)));
+    }
+    fit();
+    window.addEventListener("resize", fit);
+  })();
+</script>
+</body>
+</html>
