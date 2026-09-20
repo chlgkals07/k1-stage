@@ -105,7 +105,7 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 | `rc_backend.py` · `rc_serial.py` | 유선 RC 경로 |
 | `clip_len.py` | sim 클립 길이 측정 |
 | `run.sh` | 실행 진입점. 점검·배포·기동·정리 |
-| `test_*.py` | 단위 테스트 **152개** |
+| `test_*.py` | 단위 테스트 **172개** |
 
 로봇과 동기화가 필요한 파일은 6개다(`server.py` `gateway.py` `robot_backend.py`
 `relay_backend.py` `gateway_config.yaml` `motions.yaml`). `run.sh`가 md5로 대조한다.

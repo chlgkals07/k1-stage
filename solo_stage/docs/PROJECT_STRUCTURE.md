@@ -22,7 +22,7 @@ solo_stage/
 ├── clip_len.py               # sim 클립 길이 → 잠금 타이밍 기준
 ├── session_log.py            # JSONL 세션 로그
 ├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal …)
-└── test_*.py                 # Python 단위 테스트 (152개)
+└── test_*.py                 # Python 단위 테스트 (172개)
 ```
 
 비밀값은 리포지토리에 두지 않는다 — `~/.k1/secrets.env` (chmod 600).

@@ -177,7 +177,7 @@ web/themes/shape/*.css      관객용 디자인 언어
 
 둘이 정리되면 `SHARED_PAGES` 에 넣고 `static/` 을 지우면 된다.
 
-### 3단계 — 테스트 초록화
+### ✅ 3단계 — 테스트 초록화 (완료)
 
 지금 fresh clone 에서 **solo 7건 / group 7건 실패**한다. `media/` 와 `static/clips/` 가
 gitignore 라 없어서다. 더 나쁜 건 같은 이유로 **거짓 통과가 4건** 있다는 것.
@@ -210,42 +210,53 @@ self.assertIsNone(self.state._dance_timer)   # True (애초에 없었음)
 
 **리스크**: 낮음. **얻는 것**: 4~6단계의 안전망. **이게 없으면 그다음을 검증할 수 없다.**
 
-**진행 상황:** 두 앱 다 스위트를 돌릴 수 있고 초록이다(solo 140 · group 99). 원칙("테스트는
-자기가 쓸 데이터를 스스로 만든다")은 **절반만** 지켰다.
+**한 것 (두 앱 모두):**
 
-한 것 — `main` 의 `a5a5365` 에서 픽스처만 골라 왔다(구조 변경은 안 들였다):
+- 스위트를 fresh clone 에서 돌고 **끝나게** 했다 — `main` 의 `a5a5365` 에서 픽스처만 골라 왔고,
+  이 Mac 에서 `discover` 가 끝나지 않던 진짜 원인(pty master 를 다른 스레드가 `read` 중일 때 먼저
+  닫으면 `close()` 가 커널 안에서 안 돌아온다)을 고쳤다. `self._stop` 을 `self.stopped` 로 바꾼 것도
+  같은 수정이다 — `Thread._stop` 은 threading 의 내부 메서드다
+- **프리셋을 테스트가 스스로 정의한다.** `test_dance` 가 `snucheer-api` 와 그 오프셋 `-1500` 을 운영
+  파일에서 읽던 것을 `fx-media-first` / `fx-motion-first` 로 바꿨다. 값이 테스트 안에 보인다. 운영
+  프리셋을 전부 엉뚱한 값으로 바꿔도(offset 777, media zzz.mp4) 29건이 그대로 통과한다
+- **거짓 통과를 막았다.** `start_dance()` 를 부르는 모든 자리에 `assertTrue(out["ok"])` 를 넣고,
+  `stop_dance()` 를 검사하는 테스트에는 그 전에 `assertIsNotNone(timer)` 를 넣었다 — 지울 것이 실제로
+  있었는지 확인하지 않으면 `assertIsNone` 은 애초에 없던 것을 확인할 뿐이다
+- `fake_mp4()` 로 `clip_len` 이 읽는 최소 mp4(`ftyp` + `moov/mvhd`, ~100바이트)를 코드로 만든다.
+  그걸로 지금까지 **테스트가 하나도 없던** 두 경로를 검사한다: 서버의 패드 잠금 해제 타이머
+  (`_exec_idle`, STATUS §4 수정 6)와 RC 의 `motion_duration`(수정 7). `test_clip_len.py` ·
+  `test_motion_duration.py`
 
-- `test_dance.py`: `setUpModule` 이 `server.MEDIA` 를 임시 폴더로 바꾸고 빈 파일 3개를 만든다.
-  실제 `media/` 를 더는 건드리지 않는다(예전엔 거기에 `_test_track.mp3` 를 써 넣었다)
-- `test_ui_http.py`: `server.CLIPS` 를 임시 폴더로 바꾸고 가짜 `MimicWaveHand.mp4` 를 둔다
-- `test_rc_serial.py`: **이 Mac 에서 스위트가 끝나지 않던 원인.** 아래 참고
+**검증 — 변이 테스트:** 프로덕션 코드를 일부러 망가뜨려 테스트가 빨개지는지 봤다.
+`start_dance` 를 항상 실패하게 하면 그걸 부르는 11건이 전부 빨개지고, 초록으로 남는 18건은 모두
+`start_dance` 를 호출하지 않는 테스트다. `clip_len` 변이 9개, 길이·잠금 경로 변이 8개를 전부 잡는다.
 
-결과: solo **140건 6.6초 · group 99건 7.2초 전부 통과**(전엔 각각 실패 7건 + 종료 불능).
-`group_stage` 는 `test_dance`·`test_rc_serial` 이 solo 의 옛 파일과 같아서 같은 수정이 그대로 들어갔다. 거짓 통과 4건은 픽스처가
-음원을 만들어 주면서 **진짜 통과**가 됐다 — 시작하지 않던 무대가 이제 실제로 시작하고,
-타이머가 실제로 만들어졌다 지워진다.
+**인수인계 문서의 "거짓 통과 4건" 은 실측 3건이었다.** 수정 전 커밋에 같은 변이를 걸었더니
+`start_dance` 를 부르는 10건 중 3건(`test_stop_cancels_timer…` · `test_stop_dance_never_touches_the_robot`
+· `test_stop_invalidates_inflight_callback`)이 조용히 통과했다.
 
-**macOS 에서 `discover` 가 끝나지 않던 이유**: 프로덕션 코드가 아니라 테스트의 가짜 라디오
-정리 코드였다. 다른 스레드가 `read` 중인 pty master 를 먼저 닫으면 macOS 에서 `close()` 가
-커널 안에서 영영 돌아오지 않는다(프로세스 상태 `U` — `SIGALRM` 도 `SIGKILL` 도 안 먹는다).
-slave 를 먼저 닫아 `read` 를 깨우고, 스레드가 끝나는 걸 확인한 뒤 master 를 닫는다.
-`self._stop` 을 `self.stopped` 로 바꾼 것도 같은 수정이다 — `Thread._stop` 은 threading 의
-내부 메서드라 불리언으로 덮으면 `join()` 이 깨진다.
+**같이 찾은 함정:**
 
-**못 한 것 (3단계는 아직 안 끝났다):**
+- `test_dance.py` 의 `if __name__ == "__main__": unittest.main()` 이 **파일 중간**에 있어서
+  `python3 test_dance.py` 로 직접 돌리면 뒤의 클래스 셋이 조용히 빠졌다. 끝으로 옮겼다
+- `test_inline_preset_without_caption_borrows_from_saved` 는 음원이 없으면 `skipTest` 로 빠져
+  아무것도 검사하지 못한 채 초록이었다. 이제 픽스처가 음원을 보장하고 없으면 실패한다
+- **`clip_len` 의 캐시는 프로세스 수명이고 `None` 도 캐시한다.** 클립이 없을 때 한 번 조회되면
+  나중에 구워 넣어도 서버를 재시작하기 전까지 반영되지 않는다. STATUS §4 는 "다시 구우면 자동
+  반영"이라고 적었는데 사실이 아니어서 고쳤다. 코드는 안 고쳤다(`test_clip_len` 이 지금 동작을
+  기록한다 — 요구사항이 아니라서 나중에 바뀌면 그 테스트를 고쳐도 된다)
 
-- 프리셋이 여전히 프로덕션 이름(`snucheer-api`)이다. 테스트가 프로덕션 데이터에 발목
-  잡혀 있다 — `# offset -1500ms (2026-08-18 실측 고정)` 주석이 그 증거로 남아 있다.
-  픽스처 프리셋(`fx-media-first` 등)을 테스트 안에 정의해야 한다
-- `start_dance()` 를 부르는 자리에 `assertTrue(out["ok"])` 가 없다. 지금 초록인 건 **픽스처가
-  성공시켜 주기 때문**이지 테스트가 지키고 있어서가 아니다. 나중에 시작이 조용히 실패하면
-  다시 거짓 통과가 된다
-- 클립은 `write_bytes(bytes(range(256)))` 로 만든 자리표시자다. `clip_len` 이 읽는 최소
-  mp4(`ftyp` + `moov/mvhd`)가 아니라서 길이를 읽는 테스트를 이걸로 쓸 수 없다
+**변이 테스트가 내 오류도 잡았다:** `clip_len` 의 박스 크기 검증을 처음엔 "크기 8 미만이면 `seek` 가
+뒤로 가서 무한 루프"라고 적었는데, 코드를 따라가 보니 다음 위치가 `박스 시작 + size` 라 항상
+앞으로 간다. 무한 루프는 불가능했다. 대신 그 검증이 하는 실제 일을 시험하는 입력을 만들었다 —
+크기 7 로 거짓말하는 헤더의 마지막 1바이트 자리에 진짜 `moov` 를 숨긴 파일이다. 검증이 없으면
+숨긴 `moov` 를 읽어 길이를 돌려준다.
 
-**가져오지 않은 것**: `main` 의 `test_start_dance_blocked_when_gateway_not_ready` 외 1건은
-`server.py` 의 기능(무대 시작 전 게이트웨이 준비 확인)을 검사한다 — 그 기능이 여기 없다.
-`test_rc_backend` 의 앵커 교체(리허설 동작 세트)도 동작 변경이라 뺐다.
+**못 한 것:** 프리셋 이름이 `-api` / `-rc` 로 갈라진 구조(STATUS §7-6)는 그대로다.
+
+`test_ui_http` 의 자리표시자 클립(`bytes(range(256))`)은 처음엔 "Range 테스트가 그 길이에 기대서
+못 바꾼다"고 적었는데 사실이 아니었다 — 그 테스트는 `bytes=0-99` 에 100바이트를 기대할 뿐이다.
+`fake_mp4` 로 바꿨고 그대로 통과한다.
 
 ### ✅ 4단계 — `config/` 분리 + 부팅 검증 + preflight (완료 · 계획과 달라진 곳 있음)
 

@@ -9,6 +9,7 @@ from pathlib import Path
 
 import server
 from server import HERE, Handler, MockBackend, State
+from test_clip_len import fake_mp4
 
 
 TOKEN = "ui-test-token"
@@ -20,7 +21,7 @@ class UiHttpTest(unittest.TestCase):
         cls.clips_tmpdir = tempfile.TemporaryDirectory()
         cls.orig_clips = server.CLIPS
         server.CLIPS = Path(cls.clips_tmpdir.name)
-        (server.CLIPS / "MimicWaveHand.mp4").write_bytes(bytes(range(256)))
+        (server.CLIPS / "MimicWaveHand.mp4").write_bytes(fake_mp4(4.0))
         state = State(MockBackend())
         state.access_token = TOKEN
         Handler.state = state

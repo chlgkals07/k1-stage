@@ -20,7 +20,7 @@
 | gateway `llm_allowlist` | **21개** — 코드에 살아 있으나 **이 경로로 들어오는 요청은 없다** (`voice-llm-dev` 브랜치용) |
 | 정지 목표 상태 | **`Velocity`** (Damping일 때만 `ReadyPose`) |
 | RC 다이얼 | 2뱅크 × 20슬롯 = **40**. CH5로 뱅크, CH11로 슬롯 |
-| 테스트 | `solo_stage` 152 · `group_stage` 110 · 루트 `tests/` 26 |
+| 테스트 | `solo_stage` 172 · `group_stage` 130 · 루트 `tests/` 26 |
 
 실기 검증된 인사 3종은 `MimicWaveHand`(손 흔들기) · `MimicBowNavel`(배꼽 인사) ·
 `MimicBadChestpopVer2`(체스트팝)이다. 개소식에서 패드 12개 중 10개가 정상 동작했다
@@ -121,7 +121,8 @@ SB 하단(Velocity)에 둔다. **SC 중앙에 두지 않는다.** 코드로 막�
 | 12 | 깨진 JSON이 오면 **응답 없이 연결이 끊기고** 운영자 콘솔이 traceback으로 덮임 | 400으로 응답 |
 
 새 파일은 `clip_len.py` 하나다. sim 클립 mp4 헤더에서 길이만 읽는다(표준 라이브러리, 실패하면
-조용히 None → 기본값으로 떨어짐). 클립을 다시 구우면 자동 반영된다.
+조용히 None → 기본값으로 떨어짐). 클립을 다시 구우면 **서버를 재시작해야** 반영된다 — 읽은 값은
+프로세스가 사는 동안 캐시되고, 클립이 없어서 못 읽은 `None` 도 캐시된다(`test_clip_len.py`).
 
 ### 잠금 타이밍 구조
 

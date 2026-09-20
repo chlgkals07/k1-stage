@@ -19,25 +19,45 @@ from server import Handler, MockBackend, State
 
 TOKEN = "dance-test-token"
 BLOB = bytes(range(256)) * 8      # 2048 바이트
-_MEDIA_TMPDIR = None
-_ORIG_MEDIA = None
+
+# 이 파일의 테스트가 쓰는 프리셋은 여기서 정의한다 — 프로덕션 venue 의 이름·오프셋에 기대지 않는다.
+# 예전엔 "snucheer-api" 와 그 오프셋 -1500 을 운영 파일에서 그대로 읽었고, 주석 한 줄
+# ("2026-08-18 실측 고정")이 그 의존을 지탱했다. 실측값을 재보정하면 무관한 테스트가 깨지는
+# 구조였다 — 값을 못 바꾸게 "고정" 이라고 못박아 둔 것이 증거다.
+# 동작 이름만 실제 카탈로그에서 빌린다(MimicWaveHand·MimicBowNavel 은 이 파일 곳곳에서 이미 쓴다).
+FX_MEDIA_FIRST = "fx-media-first"      # 음수 오프셋: 음원이 먼저, 로봇이 나중
+FX_MOTION_FIRST = "fx-motion-first"    # 양수 오프셋: 로봇이 먼저, 음원이 나중
+FIXTURE_PRESETS = {
+    FX_MEDIA_FIRST: {"motion": "MimicWaveHand", "media": "fx-a.mp4", "clip": "", "seek": 0,
+                     "offset_ms": -1500, "volume": 50, "media_len_sec": 12,
+                     "title": "FX 제목 A", "credit": "FX 출처 A"},
+    FX_MOTION_FIRST: {"motion": "MimicBowNavel", "media": "fx-b.mp4", "clip": "", "seek": 0,
+                      "offset_ms": 700, "volume": 50, "media_len_sec": 9,
+                      "title": "FX 제목 B", "credit": "FX 출처 B"},
+}
+_MODULE_TMP = None
+_ORIG = None
 
 
 def setUpModule():
-    """저작권 미디어 없이도 모든 dance 테스트를 실제 운영 파일과 격리해 실행한다."""
-    global _MEDIA_TMPDIR, _ORIG_MEDIA
-    _MEDIA_TMPDIR = tempfile.TemporaryDirectory()
-    _ORIG_MEDIA = server.MEDIA
-    server.MEDIA = Path(_MEDIA_TMPDIR.name)
-    for name in ("응원단 fade_out.mp4", "straykids.mp4", "bad.mp4"):
-        (server.MEDIA / name).touch()
+    """저작권 미디어도 운영 프리셋도 없이, 실제 운영 파일과 격리해 모든 dance 테스트를 돌린다."""
+    global _MODULE_TMP, _ORIG
+    _MODULE_TMP = tempfile.TemporaryDirectory()
+    _ORIG = (server.MEDIA, server.PRESETS)
+    root = Path(_MODULE_TMP.name)
+    (root / "media").mkdir()
+    server.MEDIA = root / "media"
+    for preset in FIXTURE_PRESETS.values():
+        (server.MEDIA / preset["media"]).touch()
+    server.PRESETS = root / "presets.json"
+    server.PRESETS.write_text(json.dumps(FIXTURE_PRESETS, ensure_ascii=False))
 
 
 def tearDownModule():
-    global _MEDIA_TMPDIR
-    server.MEDIA = _ORIG_MEDIA
-    _MEDIA_TMPDIR.cleanup()
-    _MEDIA_TMPDIR = None
+    global _MODULE_TMP
+    server.MEDIA, server.PRESETS = _ORIG
+    _MODULE_TMP.cleanup()
+    _MODULE_TMP = None
 
 
 class DanceTest(unittest.TestCase):
@@ -231,16 +251,28 @@ class DanceScheduleTest(unittest.TestCase):
             self.state._dance_timer.cancel()
 
     def test_negative_offset_means_media_first(self):
-        out = self.state.start_dance("snucheer-api")     # offset -1500ms (2026-08-18 실측 고정)
-        self.assertTrue(out["ok"])
-        self.assertAlmostEqual(out["motion_at"] - out["media_at"], 1.5, places=2)
+        fx = FIXTURE_PRESETS[FX_MEDIA_FIRST]
+        out = self.state.start_dance(FX_MEDIA_FIRST)
+        self.assertTrue(out["ok"], out)
+        self.assertAlmostEqual(out["motion_at"] - out["media_at"], -fx["offset_ms"] / 1000, places=2)
         self.assertGreater(out["media_at"], time.time() + 1.5)   # 리드타임
         v = self.state.conversation_view()
         self.assertEqual(v["stage"], "dance")
-        self.assertEqual(v["stage_data"]["media"], "응원단 fade_out.mp4")
+        self.assertEqual(v["stage_data"]["media"], fx["media"])
+
+    def test_positive_offset_means_motion_first(self):
+        """+ 면 로봇 먼저 / − 면 음원 먼저. 앞 테스트가 − 쪽이고 이게 + 쪽이다."""
+        fx = FIXTURE_PRESETS[FX_MOTION_FIRST]
+        out = self.state.start_dance(FX_MOTION_FIRST)
+        self.assertTrue(out["ok"], out)
+        self.assertAlmostEqual(out["media_at"] - out["motion_at"], fx["offset_ms"] / 1000, places=2)
+        self.assertGreater(out["motion_at"], time.time() + 1.5)   # 리드타임
 
     def test_stop_cancels_timer_and_returns_idle(self):
-        self.state.start_dance("snucheer-api")
+        out = self.state.start_dance(FX_MEDIA_FIRST)
+        self.assertTrue(out["ok"], out)
+        # 정지가 지울 것이 실제로 있었다 — 아니면 아래 IsNone 은 애초에 없던 것을 확인할 뿐이다.
+        self.assertIsNotNone(self.state._dance_timer)
         self.state.stop_dance()
         self.assertIsNone(self.state._dance_timer)
         self.assertEqual(self.state.conversation_view()["stage"], "idle")
@@ -250,13 +282,10 @@ class DanceScheduleTest(unittest.TestCase):
 
     def test_dance_motion_does_not_flip_stage_to_executing(self):
         """무대 중 동작 실행은 무대 화면을 유지해야 한다."""
-        self.state.start_dance("snucheer-api")
+        out = self.state.start_dance(FX_MEDIA_FIRST)
+        self.assertTrue(out["ok"], out)
         self.state.play("MimicWaveHand", source="manual")
         self.assertEqual(self.state.conversation_view()["stage"], "dance")
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class DanceProtectionTest(unittest.TestCase):
@@ -282,7 +311,8 @@ class DanceProtectionTest(unittest.TestCase):
 
     def test_stop_dance_never_touches_the_robot(self):
         """영상이 안무보다 짧아 먼저 끝나도 로봇이 관객 앞에서 끊기면 안 된다."""
-        self.state.start_dance("straykids-api")
+        started = self.state.start_dance(FX_MOTION_FIRST)
+        self.assertTrue(started["ok"], started)
         out = self.state.stop_dance()
         self.assertTrue(out["ok"])
         self.assertEqual(self.backend.stop_calls, [],
@@ -291,7 +321,8 @@ class DanceProtectionTest(unittest.TestCase):
         self.assertIsNone(self.state._dance_timer)
 
     def test_effective_stage_helper(self):
-        self.state.start_dance("straykids-api")
+        started = self.state.start_dance(FX_MOTION_FIRST)
+        self.assertTrue(started["ok"], started)
         self.assertEqual(self.state.effective_stage(), "dance")
         self.state.stop_dance()
         self.assertEqual(self.state.effective_stage(), "idle")
@@ -315,22 +346,27 @@ class DanceGenerationTest(unittest.TestCase):
             self.state._dance_timer.cancel()
 
     def test_stale_generation_callback_is_dropped(self):
-        self.state.start_dance("snucheer-api")          # A (gen 1)
+        a, b = FIXTURE_PRESETS[FX_MEDIA_FIRST]["motion"], FIXTURE_PRESETS[FX_MOTION_FIRST]["motion"]
+        self.assertNotEqual(a, b, "두 프리셋의 동작이 같으면 이 테스트는 아무것도 구분하지 못한다")
+        out = self.state.start_dance(FX_MEDIA_FIRST)         # A (gen 1)
+        self.assertTrue(out["ok"], out)
         old_gen = self.state._dance_gen
-        self.state.start_dance("straykids-api")         # B (gen 2) — A 타이머는 cancel 됐지만
+        out = self.state.start_dance(FX_MOTION_FIRST)        # B (gen 2) — A 타이머는 cancel 됐지만
+        self.assertTrue(out["ok"], out)
+        self.assertNotEqual(self.state._dance_gen, old_gen, "B 가 세대를 올리지 않았다")
         # cancel 을 비껴간 A 콜백이 늦게 도착했다고 가정
-        self.state._fire_dance_motion("MimicNewSnuCheerHeadShort", old_gen)
-        self.assertNotIn("MimicNewSnuCheerHeadShort", self.fired,
-                         "옛 세대 콜백이 B 무대에 A 동작을 쐈다")
+        self.state._fire_dance_motion(a, old_gen)
+        self.assertNotIn(a, self.fired, "옛 세대 콜백이 B 무대에 A 동작을 쐈다")
         # 현재 세대 콜백은 정상 발사된다
-        self.state._fire_dance_motion("MimicStraykidsThisAndThat", self.state._dance_gen)
-        self.assertIn("MimicStraykidsThisAndThat", self.fired)
+        self.state._fire_dance_motion(b, self.state._dance_gen)
+        self.assertIn(b, self.fired)
 
     def test_stop_invalidates_inflight_callback(self):
-        self.state.start_dance("snucheer-api")
+        out = self.state.start_dance(FX_MEDIA_FIRST)
+        self.assertTrue(out["ok"], out)
         gen = self.state._dance_gen
         self.state.stop_dance()
-        self.state._fire_dance_motion("MimicNewSnuCheerHeadShort", gen)
+        self.state._fire_dance_motion(FIXTURE_PRESETS[FX_MEDIA_FIRST]["motion"], gen)
         self.assertEqual(self.fired, [], "정지 후 늦은 콜백이 동작을 쐈다")
 
 
@@ -354,7 +390,8 @@ class DanceCaptionTest(unittest.TestCase):
         /dance 화면에서 음원 없이 시작하면 무대 TV 에 약칭이 그대로 떴다.
         """
         state = State(MockBackend())
-        state.start_dance(preset={"motion": "MimicWaveHand", "media": ""})
+        out = state.start_dance(preset={"motion": "MimicWaveHand", "media": ""})
+        self.assertTrue(out["ok"], out)
         sd = state.conversation_view()["stage_data"]
         self.assertEqual(sd["title"], "")
         self.assertNotEqual(sd["title"], state.by_state["MimicWaveHand"]["ko"])
@@ -384,9 +421,10 @@ class DanceCaptionTest(unittest.TestCase):
         동작 약칭("체스트팝 v2")이 뜬다 — 현장에서 실제로 그렇게 떴다.
         """
         import server
-        media = (server.media_files() or [None])[0]
-        if not media:
-            self.skipTest("media 파일이 없다")
+        # 조용히 건너뛰지 않는다: 예전엔 음원이 없으면 skipTest 로 빠져 아무것도 검사하지 못한 채
+        # 초록이었다. 픽스처가 이 파일을 항상 만들어 주므로, 없으면 그게 실패다.
+        media = FIXTURE_PRESETS[FX_MEDIA_FIRST]["media"]
+        self.assertIn(media, server.media_files())
         original = server.PRESETS
         with tempfile.TemporaryDirectory() as tmp:
             server.PRESETS = Path(tmp) / "p.json"
@@ -394,11 +432,15 @@ class DanceCaptionTest(unittest.TestCase):
                 server.save_preset("x", {"motion": "MimicWaveHand", "media": media,
                                          "title": "ATEEZ - Bad", "credit": "ATEEZ 'Bad' 안무 영상"})
                 state = State(MockBackend())
-                state.start_dance(preset={"motion": "MimicWaveHand", "media": media,
-                                          "offset_ms": 0})
+                out = state.start_dance(preset={"motion": "MimicWaveHand", "media": media,
+                                                "offset_ms": 0})
+                self.assertTrue(out["ok"], out)
                 sd = state.conversation_view()["stage_data"]
                 self.assertEqual(sd["title"], "ATEEZ - Bad")
                 self.assertEqual(sd["credit"], "ATEEZ 'Bad' 안무 영상")
                 state.stop_dance()
             finally:
                 server.PRESETS = original
+
+if __name__ == "__main__":
+    unittest.main()
