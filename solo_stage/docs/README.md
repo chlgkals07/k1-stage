@@ -17,8 +17,7 @@
 | [RC_WIRED_COMMAND_PLAN.md](RC_WIRED_COMMAND_PLAN.md) | 유선 RC 명령 경로(PC→라디오→ELRS→K1) 설계와 단계별 계획 |
 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | 폴더 역할과 로봇 동기화 대상 6파일 |
 | [worklog/](worklog/) | 날짜별 작업 기록 5편. 결론이 아니라 경위 |
-| [reference/](reference/) | 실측 데이터 — 로봇 모드 목록, 학습 후보, 발화 시나리오 |
-| [methodology/](methodology/) | 설계 원칙과 연구 방법론. 음성 시절 문서지만 원칙은 유효하다 |
+| [reference/](reference/) | 실측 데이터 — 로봇 모드 목록, 학습 후보 |
 
 ## 코드에서 시작할 때
 
@@ -46,11 +45,10 @@ RC(유선 라디오) 경로:    server.py --rc → rc_backend.py → rc_serial.p
 실제 로드 목록은 [reference/ROBOT_MODES_20260812.md](reference/ROBOT_MODES_20260812.md),
 대조 도구는 `tools/check_modes.sh`다.
 
-## 2026-08-18에 음성을 제거했다
+## 음성·LLM 경로는 여기 없다
 
-이 앱의 주 경로였던 아이폰 음성 대화(OpenAI Realtime)를 뺐다. 지금은 버튼과 무대로만
-운영한다. 무엇이었고 왜 뺐는지, 원본이 어디 있는지는
-[STATUS.md §8](STATUS.md#8-음성-대화-2026-08-18-제거)에 있다.
+한때 이 앱의 주 경로는 아이폰 음성 대화(OpenAI Realtime)였고 2026-08-18에 뺐다.
+관련 문서와 재개 지침은 **`voice-llm-dev` 브랜치**의 `docs/voice/`로 옮겼다.
 
-`ARCHITECTURE.md`와 `methodology/`, `reference/`의 발화 문서들은 그 시절 기준으로 쓰여
-있고, 각 문서 첫머리에 그렇다고 표시해 두었다.
+코드에는 `llm_allowlist`·`pad_llm_exclude`·`source == "llm"` 검사가 아직 살아 있다.
+지금 이 경로로 들어오는 요청이 없을 뿐이고, 구조가 유효해서 그대로 뒀다.

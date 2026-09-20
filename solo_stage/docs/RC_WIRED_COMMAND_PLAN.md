@@ -71,7 +71,7 @@ shape17→shape3 dance 병합 선례를 따름). solo_stage에는 P3(백엔드 �
   동일. 명목 대비 ±12µs는 EdgeTX 표시 관례로 로봇 보드 스케일에서 소멸 추정.
   시리얼 신뢰성 수정: 타임아웃 시 포트 유지 + 재시도. 전체 127 tests OK.
 
-**정본 병합 완료 (2026-08-18)**: solo_stage은 이제 **git 저장소**(main 브랜치)다.
+**정본 병합 완료 (2026-08-18)**: solo_stage는 이제 **git 저장소**(main 브랜치)다.
 베이스라인(title/credit 자막 포함) → RC delta 2커밋 → merge 커밋. 병합 후 133 tests
 OK, 기본 모드 부팅 시 패드 12개·mock·시리얼 미사용 확인 (RC는 토글 전 존재감 0).
 사본 `rc_link/solo_stage_rc`는 보관용으로 강등. rc_list 갱신은

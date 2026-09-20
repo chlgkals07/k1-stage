@@ -6,8 +6,8 @@
 
   단일 로봇·Wi-Fi 운영은 정본 solo_stage 을 쓴다. 이 앱은 RC 전용이다.
 
-음성(WebRTC·OpenAI Realtime)은 2026-08-18 에 완전히 제거했다.
-원본은 archive/server_voice_20260818.py, 화면은 archive/index_voice_20260818.html.
+음성·LLM 경로는 2026-08-18 에 제거했다. 재개발은 voice-llm-dev 브랜치에서 한다
+(`docs/voice/`). 이 파일에 남은 llm_allowlist·source=="llm" 검사는 그때 쓸 구조다.
 
 표준 라이브러리 + pyyaml 만 쓴다.
   python3 server.py            # http 8000 (mock)
@@ -903,7 +903,7 @@ def main():
     print()
     n_ready = sum(1 for m in st.items if m.get("status", "ready") == "ready")
     print(f"  카탈로그 {len(st.items)}개 (학습완료 {n_ready} / 예정 {len(st.items)-n_ready})")
-    print(f"  패드 버튼 {len(st.pad_allowed)}개 · 백엔드 {st.backend.name}   (음성 없음 — 2026-08-18 제거)")
+    print(f"  패드 버튼 {len(st.pad_allowed)}개 · 백엔드 {st.backend.name}")
     print()
     print(f"  PC   {scheme}://localhost:{port}")
     for ip in local_ips():

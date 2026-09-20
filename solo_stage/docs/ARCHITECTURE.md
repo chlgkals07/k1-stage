@@ -1,63 +1,62 @@
-# K1 무선 대화·모션 시스템 상세 문서
+# K1 무대 운영 시스템 상세 문서
 
-> **이 문서의 음성 대화 부분은 2026-08-18에 제거된 기능이다.** 네트워크 구성, gateway,
-> ROS 계약, 보안·안전 정책, Locomotion→API→Mimic 설계는 그대로 유효하다.
-> 현재 운영 절차는 [RUNBOOK.md](RUNBOOK.md), 현재 상태는 [STATUS.md](STATUS.md)를 본다.
-> 음성이 무엇이었고 왜 뺐는지는 [STATUS.md §8](STATUS.md#8-음성-대화-2026-08-18-제거).
+> **왜 이렇게 생겼나**를 적는다. 네트워크 구성, gateway, ROS 계약, 보안·안전 정책,
+> Locomotion→API→Mimic 설계가 여기 있다.
+> 현재 운영 절차는 [RUNBOOK.md](RUNBOOK.md), 지금 무엇이 참인지는 [STATUS.md](STATUS.md).
 
 ## 1. 목표
 
-개소식 방문객이 아이폰을 향해 말하면 OpenAI Realtime API가 짧게 대답하고, 대화 의미에 맞는 K1 Mimic policy를 실행한다.
-
-현재 개소식 1차 범위는 다음 세 가지다.
+관객이 아이패드(`/pad`)에서 동작을 고르면 TV(`/display`)에 미리보기가 뜨고, 확정하면
+로봇이 그 동작을 한다. 무대(`/dance`)는 음원과 안무를 **절대 시각 기준으로** 맞춰 튼다.
+운영자는 폰(`/operator`)으로 수동 실행과 정지를 쥔다.
 
 ```text
-방문객: "안녕"
-→ K1 음성 응답
-→ MimicWaveHand 1회 실행
+관객 아이패드 /pad
+→ 동작 선택 → /display 에 sim 클립 미리보기
+→ 확정 → 로봇이 실행 → 동작 길이만큼 잠금 → 대기 복귀
 
-방문객: "정중하게 인사해줘" 또는 "감사합니다"
-→ MimicBowNavel 1회 실행
+운영자 폰 /operator
+→ 수동 버튼(api_allowlist 78개) · 빨간 정지 · 무대 시작/정지 · RC 모드 토글
 
-방문객: "체스트팝 보여줘"
-→ MimicBadChestpopVer2 1회 실행
+메인컴 /dance
+→ 프리셋(동작 + 음원 + offset_ms) 보정 → 무대 시작
+→ 로봇과 /display 가 각자 같은 절대 시각에 맞춰 발사·재생
 ```
 
-최종 통신 구조는 아래와 같다.
+통신 구조는 아래와 같다.
 
 ```text
-아이폰
-  │ 일반 Wi-Fi + HTTPS
+아이패드 · 폰
+  │ 장소 랜 + HTTPS
   ▼
-Omen PC gateway
-  ├─ 유선 LAN → 인터넷 → OpenAI Realtime API
-  └─ k1-orinnx10 Wi-Fi → Robot gateway
-                               │ ROS 2 / Zenoh
-                               ▼
-                         sim2real / Mimic policy
+Omen PC (relay)
+  ├─ k1-orinnx10 Wi-Fi → Robot gateway        ← 기본 경로
+  │                          │ ROS 2 / Zenoh
+  │                          ▼
+  │                    sim2real / Mimic policy
+  └─ USB → RadioMaster → ELRS → 로봇          ← RC 폴백 (`--rc` 또는 /rc/mode 토글)
 
 Radiomaster RC
   └─ SD: API authority 허용/해제 및 물리 안전장치
 ```
 
-아이폰은 로봇 AP에 연결하지 않는다. 아이폰은 일반 Wi-Fi를 사용하고, PC가 일반 네트워크와 로봇 AP 양쪽에 동시에 연결된다.
+아이패드는 로봇 AP에 연결하지 않는다. 아이패드는 장소 랜을 쓰고, PC가 장소 랜과 로봇 AP
+양쪽에 동시에 연결된다.
 
 ## 2. 현재 검증 상태
 
 ### 완료
 
-- 아이폰 → PC HTTPS UI 연결
+- 아이패드·폰 → PC HTTPS UI 연결
 - PC mock backend에서 수동 버튼 매핑
 - 로봇 API heartbeat 및 `MANUAL → API_WARMUP → API` 전환
 - API를 통한 `MimicWaveHand` 실물 실행
-- 아이폰 → 로봇 AP → robot gateway 직접 무선 실행
+- 아이패드 → 로봇 AP → robot gateway 직접 무선 실행
 - PC 유선 LAN 인터넷과 PC Wi-Fi 로봇 연결 동시 사용
 - PC RelayBackend → 로봇 gateway 무선 `/status` 조회
-- 아이폰 → PC relay → 로봇 gateway → `MimicWaveHand` 실행
-- OpenAI Realtime API 음성 대화에서 “안녕” → `MimicWaveHand` 실행
-- 모델에 노출되는 LLM 동작을 실물 검증된 3개로 제한
-- 별도 사용자 발화에서 같은 인사 동작을 다시 실행하는 반복 인사 확인
-- Python 단위 테스트 10개 통과
+- 아이패드 → PC relay → 로봇 gateway → `MimicWaveHand` 실행
+- 개소식 현장 운영 (패드 12개 중 10개 정상, 나머지 2개는 로봇 config 미등록)
+- Python 단위 테스트 통과 (현재 135개 — [STATUS.md](STATUS.md) 참고)
 - locomotion 유지용 teleop velocity passthrough를 로봇 sim2real 소스에 배포하고 패키지 빌드 완료
 - 로봇에서 `ReadyPose/Velocity → API`, Mimic 완료 후 최신 RC 속도 복귀, heartbeat 정지 우선순위 C++ 테스트 25/25 통과
 
@@ -77,7 +76,7 @@ Radiomaster RC
 
 | 역할 | 인터페이스 | 주소 | 용도 |
 |---|---|---:|---|
-| PC 일반 LAN | `enp129s0` | `192.168.10.58` | 아이폰 접속, OpenAI 인터넷 |
+| PC 장소 랜 | `enp129s0` | `192.168.10.58` | 아이패드·폰 접속 |
 | PC 로봇 Wi-Fi | `wlp128s20f3` | `192.168.60.77` | 로봇 전용 |
 | 로봇 Wi-Fi AP | `wlan0` | `192.168.60.1` | robot gateway |
 | 로봇 USB fallback | `l4tbr0` | `192.168.55.1` | 설치/복구용, 운영 명령 경로에서 제외 |
@@ -118,7 +117,7 @@ curl --interface wlp128s20f3 -k -o /dev/null -sS \
 
 curl --interface enp129s0 -o /dev/null -sS \
   -w 'internet=%{http_code} remote=%{remote_ip}\n' \
-  https://api.openai.com/
+  https://1.1.1.1/
 ```
 
 robot gateway의 token 없이 `/`에 접근했을 때 `403`은 정상이다. 서버가 살아 있고 인증이 동작한다는 뜻이다.
@@ -127,55 +126,43 @@ robot gateway의 token 없이 `/`에 접근했을 때 `403`은 정상이다. 서
 
 | 파일 | 역할 |
 |---|---|
-| `server.py` | HTTPS UI, Realtime client secret 발급, motion 검증 및 backend 호출 |
+| `server.py` | HTTPS UI, stage 상태기계, 무대 싱크, motion 검증 및 backend 호출 |
 | `relay_backend.py` | PC에서 robot gateway의 `/status`, `/motion`을 HTTPS로 중계 |
 | `robot_backend.py` | 로봇 내부에서 ROS heartbeat, status, mode service 처리 |
+| `rc_backend.py` · `rc_serial.py` | RC 폴백 경로 — PC→USB→라디오→ELRS |
 | `gateway.py` | allowlist, 단일 요청, lifecycle, timeout 상태 머신 |
-| `gateway_config.yaml` | ROS endpoint, API/LLM allowlist, timeout |
-| `static/index.html` | 아이폰 UI, WebRTC 연결, function call 처리 |
-| `motions.yaml` | UI/LLM 동작 카탈로그 |
+| `gateway_config.yaml` | ROS endpoint, allowlist 3종, stop/entry state, timeout |
+| `static/pad.html` | 관객 아이패드 화면 — 동작 선택·미리보기·진행바 |
+| `static/display.html` | TV 화면 — 대기·미리보기·실행중·무대영상 |
+| `static/operator.html` | 운영자 화면 — 정지·수동 버튼·무대 조작·RC 토글 |
+| `static/dance.html` | 무대 싱크 오프셋 보정 |
+| `clip_len.py` | sim 클립 mp4에서 길이만 읽는다 — 잠금 타이밍의 기준 |
+| `motions.yaml` | 동작 카탈로그 |
 | `api_arm_probe.py` | 모션 없이 heartbeat/API authority를 점검하는 개발용 도구 |
 | `test_gateway.py` | gateway lifecycle 단위 테스트 |
 | `test_ui_http.py` | token→cookie→운영자 화면과 보호 endpoint 회귀 테스트 |
 | `test_relay_backend.py` | PC relay 전달 및 allowlist 테스트 |
-| `test_server_tools.py` | Realtime tool enum과 LLM allowlist 테스트 |
+| `test_dance.py` | 무대 싱크·세대 번호·자동 종료 테스트 |
 
 ## 5. 보안 및 안전 정책
 
-### 이중 allowlist
+### 이중 검사 + 허용목록 3종
 
-PC relay와 robot gateway가 각각 motion을 검사한다.
+**PC relay와 robot gateway가 각각** motion을 검사한다. 한쪽을 뚫어도 다른 쪽이 막는다.
 
-현재 robot API allowlist:
+허용목록은 셋이고 서로 포함 관계다 — **누가 부르느냐에 따라 위험도가 다르기** 때문이다.
 
-```yaml
-- MimicWaveHand
-- MimicBowNavel
-- MimicBadChestpopVer2
-```
+| 목록 | 누가 부르나 |
+|---|---|
+| `api_allowlist` | gateway가 실행을 허용하는 전부. 운영자 수동 버튼이 여기서 나온다 |
+| `pad_allowlist` | 그중 관객 아이패드에 여는 것 |
+| `llm_allowlist` | 그중 모델이 스스로 고를 수 있는 것. **현재 이 경로로 들어오는 요청은 없다** |
 
-현재 LLM allowlist:
+승격 경로는 **수동으로 먼저 실물 검증 → 그 뒤 패드에 개방**이다. 실제 개수와 목록은
+`gateway_config.yaml`이 정본이고, 현재 값은 [STATUS.md §2](STATUS.md#2-허용목록이-세-개인-이유)에 있다.
 
-```yaml
-- MimicWaveHand
-- MimicBowNavel
-- MimicBadChestpopVer2
-```
-
-따라서 OpenAI 모델은 위 세 동작 외의 state 이름을 tool enum에서 볼 수 없다. 한 사용자 발화에서는 최대 한 동작만 호출하고, 동작 완료 뒤 새로운 발화에서 같은 동작을 다시 요청할 수 있다.
-
-### API key
-
-- `OPENAI_API_KEY`는 PC에만 둔다.
-- 아이폰이나 로봇에 API key를 저장하지 않는다.
-- 문서, Git, shell script에 실제 key를 기록하지 않는다.
-- 가능하면 shell history에 남지 않도록 `read -s`를 사용한다.
-
-```bash
-read -rsp "OpenAI API key: " OPENAI_API_KEY
-echo
-export OPENAI_API_KEY
-```
+`safety: restricted`(복싱류 등)는 사람이 버튼으로만 부른다 — 모델 경로에서는
+`llm_motions()`가 구조적으로 거른다.
 
 ### Gateway token
 
@@ -186,12 +173,12 @@ export OPENAI_API_KEY
 
 ### Radiomaster 역할
 
-Radiomaster는 ChatGPT 명령 전송 수단으로 사용하지 않는다.
+Radiomaster는 PC 명령의 전송 수단이 아니라 **권한과 안전을 쥐는 물리 장치**다.
 
 - SD ON: API authority 요청 허용
 - SD OFF: API authority 해제
 - 물리 RC: locomotion 및 긴급 수동 제어
-- LLM/PC: 허용된 Mimic policy 이름만 요청
+- PC: 허용된 Mimic policy 이름만 요청
 
 RC status/input 토픽을 소프트웨어로 위조하면 물리 RC와 충돌하고 안전 계층이 불분명해지므로 사용하지 않는다.
 
@@ -282,10 +269,6 @@ Omen PC의 같은 터미널에서:
 ```bash
 cd /home/robotis-ai/Projects/shape3/k1-stage/solo_stage
 
-read -rsp "OpenAI API key: " OPENAI_API_KEY
-echo
-export OPENAI_API_KEY
-
 read -rsp "Robot gateway token: " K1_RELAY_TOKEN
 echo
 export K1_RELAY_TOKEN
@@ -294,7 +277,6 @@ export K1_RELAY_TOKEN
 값을 출력하지 않고 존재 여부만 확인한다.
 
 ```bash
-test -n "$OPENAI_API_KEY" && echo 'OpenAI key OK' || echo 'OpenAI key MISSING'
 test -n "$K1_RELAY_TOKEN" && echo 'Robot token OK' || echo 'Robot token MISSING'
 ```
 
@@ -311,17 +293,17 @@ python3 server.py \
 정상 출력 예:
 
 ```text
-LLM 노출 1개 [학습완료만] · 백엔드 relay
-모델 ... · 목소리 marin
-폰 https://192.168.10.58:18444
-제어 URL ...?token=<PC_UI_TOKEN>
+카탈로그 136개 (학습완료 ... / 예정 ...)
+패드 버튼 12개 · 백엔드 relay
+
+PC   https://localhost:18444
+폰   https://192.168.10.58:18444
+제어 URL  https://<robot-ip>:18444/?token=<PC_UI_TOKEN>
 ```
 
-`OPENAI_API_KEY가 없습니다` 경고가 없어야 한다.
+### 6.6 아이패드·폰 접속
 
-### 6.6 아이폰 접속
-
-아이폰은 `k1-orinnx10`이 아니라 일반 Wi-Fi에 연결한다.
+아이패드는 `k1-orinnx10`이 아니라 장소 랜에 연결한다.
 
 PC relay가 출력한 token을 사용해 다음 형식으로 접속한다.
 
@@ -331,16 +313,14 @@ https://192.168.10.58:18444/?token=<PC_UI_TOKEN>
 
 자체 서명 인증서 경고가 나오면 고급 메뉴에서 계속 접속한다.
 
-### 6.7 API Arm 및 대화 테스트
+### 6.7 API Arm 및 동작 테스트
 
 1. 로봇 주변을 비운다.
 2. RC link와 E-stop 상태를 확인한다.
 3. SD를 OFF로 두었다가 ON으로 전환한다.
 4. 약 3초 warmup 후 UI가 `API 준비됨`인지 확인한다.
-5. 아이폰에서 음성 연결을 누른다.
-6. 마이크 권한을 허용한다.
-7. “안녕”이라고 말한다.
-8. 짧은 한국어 답변과 `MimicWaveHand` 1회 실행을 확인한다.
+5. `/operator` 에서 수동 버튼으로 `MimicWaveHand` 1회 실행을 확인한다.
+6. `/pad` 에서 같은 동작을 preview → 실행 → 대기 복귀까지 확인한다.
 
 예상 lifecycle:
 
@@ -492,7 +472,7 @@ MANUAL / Velocity / Teleop velocity
 
 - PC relay ↔ robot gateway upstream lease 추가
 - 20~30분 무선 soak test와 reconnect test
-- Wi-Fi 단절, OpenAI 단절, 폰 화면 종료 각각의 fail-safe 확인
+- Wi-Fi 단절, 폰 화면 종료 각각의 fail-safe 확인
 - 고정 실행 절차 또는 systemd/tmux launcher 작성
 - 고정 token 저장 방식 결정
 - 행사장 Wi-Fi 간섭 테스트
