@@ -21,15 +21,20 @@ solo_stage/
 ├── gateway.py                # 실행 정책·lifecycle·정지·cooldown
 ├── clip_len.py               # sim 클립 길이 → 잠금 타이밍 기준
 ├── session_log.py            # JSONL 세션 로그
-├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal …)
-└── test_*.py                 # Python 단위 테스트 (135개)
+├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal, api_arm_probe …)
+└── tests/                    # Python 단위 테스트 (137개) — test_*.py
 ```
 
 비밀값은 리포지토리에 두지 않는다 — `~/.k1/secrets.env` (chmod 600).
 
 ## 폴더 역할
 
-- 루트: 현재 실행에 필요한 코드·설정만 둔다.
+- 루트: **로봇에 배포되는(또는 배포 코드가 import 하는) 파일만** 둔다 — 아래 "로봇 쪽
+  배포본"의 6개 파일 + 이들이 import 하는 모듈. `run.sh`의 `DEPLOY_FILES`가 이 목록이고,
+  `tests/test_server_tools.py::test_deploy_list_covers_imports`가 어긋나면 잡는다.
+- `tests/`: 단위 테스트(137개). `python3 -m unittest discover -s tests -t .`로 돌린다
+  (`-t .`가 루트를 import 경로에 넣어야 `import server`가 된다 — 안 하면 전부 실패한다).
+- `tools/`: 로봇에 배포되지 않는 진단·개발용 스크립트. `api_arm_probe.py`도 여기 있다.
 - `docs/`: 운영, 설계, 상태를 읽는 곳이다. `README.md`가 문서 색인이다.
 - `archive/`: 실행하지 않는 과거 백업이다. 복구나 비교할 때만 본다. **gitignore 대상이라
   이 저장소에는 없고 작업 PC에만 있다** — git 이전 시절에 `*.bak.<주제>_<날짜>` 규칙으로

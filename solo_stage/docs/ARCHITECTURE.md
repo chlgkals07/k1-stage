@@ -56,7 +56,7 @@ Radiomaster RC
 - PC RelayBackend → 로봇 gateway 무선 `/status` 조회
 - 아이패드 → PC relay → 로봇 gateway → `MimicWaveHand` 실행
 - 개소식 현장 운영 (패드 12개 중 10개 정상, 나머지 2개는 로봇 config 미등록)
-- Python 단위 테스트 통과 (현재 135개 — [STATUS.md](STATUS.md) 참고)
+- Python 단위 테스트 통과 (현재 137개 — [STATUS.md](STATUS.md) 참고)
 - locomotion 유지용 teleop velocity passthrough를 로봇 sim2real 소스에 배포하고 패키지 빌드 완료
 - 로봇에서 `ReadyPose/Velocity → API`, Mimic 완료 후 최신 RC 속도 복귀, heartbeat 정지 우선순위 C++ 테스트 25/25 통과
 
@@ -138,11 +138,11 @@ robot gateway의 token 없이 `/`에 접근했을 때 `403`은 정상이다. 서
 | `static/dance.html` | 무대 싱크 오프셋 보정 |
 | `clip_len.py` | sim 클립 mp4에서 길이만 읽는다 — 잠금 타이밍의 기준 |
 | `motions.yaml` | 동작 카탈로그 |
-| `api_arm_probe.py` | 모션 없이 heartbeat/API authority를 점검하는 개발용 도구 |
-| `test_gateway.py` | gateway lifecycle 단위 테스트 |
-| `test_ui_http.py` | token→cookie→운영자 화면과 보호 endpoint 회귀 테스트 |
-| `test_relay_backend.py` | PC relay 전달 및 allowlist 테스트 |
-| `test_dance.py` | 무대 싱크·세대 번호·자동 종료 테스트 |
+| `tools/api_arm_probe.py` | 모션 없이 heartbeat/API authority를 점검하는 개발용 도구 |
+| `tests/test_gateway.py` | gateway lifecycle 단위 테스트 |
+| `tests/test_ui_http.py` | token→cookie→운영자 화면과 보호 endpoint 회귀 테스트 |
+| `tests/test_relay_backend.py` | PC relay 전달 및 allowlist 테스트 |
+| `tests/test_dance.py` | 무대 싱크·세대 번호·자동 종료 테스트 |
 
 ## 5. 보안 및 안전 정책
 
@@ -241,7 +241,7 @@ tmux capture-pane -pt motion-gateway -S -60
 
 출력된 robot gateway token을 복사한다. 실제 token은 문서에 기록하지 않는다.
 
-`RobotBackend`가 ROS heartbeat를 생성하므로 운영 중에는 별도의 `api_arm_probe.py` heartbeat를 동시에 실행하지 않는다.
+`RobotBackend`가 ROS heartbeat를 생성하므로 운영 중에는 별도의 `tools/api_arm_probe.py` heartbeat를 동시에 실행하지 않는다.
 
 ### 6.3 PC 네트워크 준비
 
@@ -342,11 +342,7 @@ cd /home/robotis-ai/Projects/shape3/k1-stage/solo_stage
 python3 -m py_compile \
   server.py gateway.py robot_backend.py relay_backend.py
 
-python3 -m unittest \
-  test_gateway.py \
-  test_relay_backend.py \
-  test_server_tools.py \
-  test_ui_http.py
+python3 -m unittest discover -s tests -t . -p "test_*.py"
 ```
 
 ### 로봇 상태만 조회

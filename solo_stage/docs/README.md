@@ -6,6 +6,7 @@
 
 | 문서 | 언제 보나 |
 |---|---|
+| **[HANDOVER_CHECK.md](HANDOVER_CHECK.md)** | 로봇을 오래 안 켰다가 다시 잡을 때. RC → 로봇 → 통합 순으로 실측 대조 |
 | **[RUNBOOK.md](RUNBOOK.md)** | 로봇을 돌릴 때. 셋업 → 검증 → 장애 대응 → 종료 |
 | **[STATUS.md](STATUS.md)** | "지금 무엇이 참인가". 허용목록 실제 값, 최종 리뷰 결과, 남은 검증 |
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | 왜 이렇게 생겼나. 네트워크·gateway·ROS 계약·보안 |

@@ -74,7 +74,7 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 
 ```
 k1-stage/
-├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 135 tests
+├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 137 tests
 ├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 94 tests
 ├── rc_link/       라디오 Lua·믹서 패치·SD 백업·왕복 벤치
 └── robot/         ai_sapiens 변경분 (원본 · 현행 · patch)

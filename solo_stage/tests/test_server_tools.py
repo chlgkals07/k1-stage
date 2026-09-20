@@ -9,7 +9,7 @@ import yaml
 import server
 from server import State
 
-GATEWAY_CONFIG = Path(__file__).parent / "gateway_config.yaml"
+GATEWAY_CONFIG = Path(__file__).parent.parent / "gateway_config.yaml"
 
 
 class Backend:
