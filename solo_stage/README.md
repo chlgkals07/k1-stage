@@ -72,7 +72,7 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 | 목록 | 뜻 | 현재 |
 |---|---|---|
 | `api_allowlist` | gateway가 실행을 허용하는 전부. **운영자 수동 버튼**이 여기서 나온다 | **78개** |
-| `pad_allowlist` | 그중 **관객 아이패드에 여는 것** | **12개** |
+| `pad_grid` (venue) | 그중 **관객 아이패드에 여는 것**. 행사 연출이라 `config/venues/` 에 있다 | **12개** |
 | `llm_allowlist` | 그중 **모델이 스스로 고를 수 있는 것** | **21개** |
 
 사람이 E-stop을 두고 버튼으로 부르는 것, 관객이 아무거나 누르는 것, 모델이 대화 중 고르는
@@ -105,7 +105,7 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 | `rc_backend.py` · `rc_serial.py` | 유선 RC 경로 |
 | `clip_len.py` | sim 클립 길이 측정 |
 | `run.sh` | 실행 진입점. 점검·배포·기동·정리 |
-| `test_*.py` | 단위 테스트 **135개** |
+| `test_*.py` | 단위 테스트 **152개** |
 
 로봇과 동기화가 필요한 파일은 6개다(`server.py` `gateway.py` `robot_backend.py`
 `relay_backend.py` `gateway_config.yaml` `motions.yaml`). `run.sh`가 md5로 대조한다.

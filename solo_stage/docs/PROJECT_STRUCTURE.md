@@ -12,8 +12,8 @@ solo_stage/
 ├── static/                   # 웹 UI 4장 — pad · display · operator · dance
 ├── media/                    # 무대 음원·안무 영상 (gitignore — 로컬에만)
 ├── motions.yaml              # 동작 카탈로그
-├── gateway_config.yaml       # allowlist 3종, stop/entry state, ROS endpoint
-├── dance_presets.json        # 무대 프리셋 — 동작 + 음원 + 싱크 오프셋
+├── gateway_config.yaml       # api·llm allowlist, stop/entry state, ROS endpoint
+│                             # (패드 12칸·무대 프리셋은 ../config/venues/<행사>/ — 행사마다 바뀌는 것)
 ├── server.py                 # HTTPS UI, stage 상태기계, 무대 싱크, backend 선택
 ├── relay_backend.py          # PC→robot HTTPS relay
 ├── robot_backend.py          # robot ROS 2 transport
@@ -22,7 +22,7 @@ solo_stage/
 ├── clip_len.py               # sim 클립 길이 → 잠금 타이밍 기준
 ├── session_log.py            # JSONL 세션 로그
 ├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal …)
-└── test_*.py                 # Python 단위 테스트 (135개)
+└── test_*.py                 # Python 단위 테스트 (152개)
 ```
 
 비밀값은 리포지토리에 두지 않는다 — `~/.k1/secrets.env` (chmod 600).

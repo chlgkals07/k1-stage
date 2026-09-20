@@ -57,7 +57,7 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
    반대로 **RC 모드에서는 SD를 내려야** 명령이 먹는다 — API 권한일 때 로봇은 teleop
    전이를 무시하기 때문이다.
 3. 허용목록이 셋이고 서로 다르다. `api_allowlist` 78개가 운영자 수동 버튼이 부를 수 있는
-   전부이고, 그 부분집합인 `pad_allowlist` 12개만 관객 패드에 연다(`llm_allowlist` 21개는
+   전부이고, 그 부분집합인 12개(venue 의 `pad_grid`)만 관객 패드에 연다(`llm_allowlist` 21개는
    모델 경로용). 새 동작은 수동으로 먼저 실물 검증한 뒤 승격한다.
 4. 대기 중 물리 스위치는 SC 상단 + SB 중앙에 둔다. **SC 중앙에 두지 않는다** —
    그 위치가 곧 "권한을 잃으면 ReadyPose"이고, 균형 정책 없는 자세라 가장 넘어지기 쉽다.
@@ -67,16 +67,20 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 `media/`(음원·안무 영상 417MB, 저작권물) · `static/clips/`(동작 sim 렌더 39MB) ·
 `logs/`(관객 발화 원문) · TLS 개인키. 전부 로컬에만 둔다.
 
-클립은 다시 구우면 재생성되고, 음원은 행사마다 다르다. `dance_presets.json`의 싱크
+클립은 다시 구우면 재생성되고, 음원은 행사마다 다르다. `config/venues/<행사>/presets.json`의 싱크
 오프셋은 **현장에서 재보정해야 하는 값**이라 저장소의 값은 출발점일 뿐이다.
 
 ## 저장소 구성
 
 ```
 k1-stage/
-├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 140 tests
-├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 99 tests
+├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 152 tests
+├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 110 tests
 ├── web/           두 앱이 같이 쓰는 프론트 — 관객 화면 2장 · k1.js · base/tool.css · themes/
+├── core/          설정 정합 검증 — 어댑터를 모른다. 하드웨어 없이 돈다
+├── config/        행사별 설정 — venues/<행사>/ (패드 12칸 · 프리셋 · 오프셋)
+├── tools/         출발 전 점검 — preflight.py
+├── tests/         core/ 의 테스트 26개 — 저장소 루트에서 `python3 -m unittest discover -s tests -t .`
 ├── rc_link/       라디오 Lua·믹서 패치·SD 백업·왕복 벤치
 └── robot/         ai_sapiens 변경분 (원본 · 현행 · patch)
 ```
@@ -87,6 +91,38 @@ k1-stage/
 **운영자 화면(operator·dance)은 테마 밖**이다 — 행사마다 바뀌면 현장에서 헷갈린다.
 `web/base.css` 는 테마가 못 건드리는 뼈대(캔버스 스케일 메커니즘·레이어 페이드·z-index)라
 디자인을 잘못 넣어도 화면이 안 뜨는 일은 없다.
+
+## 행사 설정과 출발 전 점검
+
+행사마다 바뀌는 것(패드 12칸 · 오프셋 · 음원)은 코드가 아니라 `config/venues/<행사>/` 에 있다.
+
+```
+config/venues/default/
+├── venue.yaml     사람이 쓴다 — 패드 12칸(pad_grid)·메모. 주석을 마음껏 단다
+└── presets.json   서버가 쓴다 — /dance 에서 저장한 프리셋과 오프셋
+```
+
+두 파일로 가른 이유는 쓰는 주체가 달라서다. 서버가 저장할 때마다 YAML 을 통째로 다시 쓰면 사람이
+적은 주석이 사라진다. 오프셋은 **그 장소의 물리량**(스피커·TV·로봇 경로)이라 행사마다 재보정하는
+값이다 — 폴더째 커밋해 두면 다음 행사의 출발점이 된다.
+
+```bash
+python3 tools/preflight.py --venue default            # 출발 전 점검 (solo_stage 기준)
+python3 tools/preflight.py --venue default --app group_stage
+cd solo_stage && python3 server.py --venue default    # 같은 검증이 부팅 때도 돈다
+```
+
+서버 부팅과 preflight 는 **같은 함수**(`core/catalog.validate`)를 부른다. FATAL 이 있으면 서버가
+뜨지 않는다 — 프리셋이 카탈로그·`api_allowlist` 에 없는 동작을 가리키거나, 패드가 눌러도 거부될
+버튼을 갖고 있거나, 숫자 자리에 문자열이 들어간 경우다. 무대에서 발견하던 걸 노트북에서 발견한다.
+
+**이 검증이 못 잡는 것**: 프리셋의 동작이 카탈로그에 있고 허용돼 있으면 통과한다. 그게 그 곡의
+동작이 맞는지는 코드가 알 수 없다(8/21 의 "영상은 뉴진스, 로봇은 체스트팝"). preflight 가 끝에
+찍는 **프리셋 짝 확인표**를 사람이 한 번 눈으로 본다.
+
+`motions.yaml` · `gateway_config.yaml` 은 앱 폴더에 그대로 둔다. 로봇 컨테이너에 평평하게
+배포되고 `robot_backend.py` 가 자기 옆에서 읽기 때문이다. 두 앱의 사본이 갈라지지 않는지는
+preflight 와 `tests/` 가 본다.
 
 `solo_stage`와 `group_stage`는 각각의 커밋 이력을 그대로 가지고 합쳐졌다.
 `group_stage`는 `solo_stage`에서 파생됐고 stage 상태기계·무대 싱크·자막·자동종료를 공유한다.

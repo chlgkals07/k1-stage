@@ -1,0 +1,32 @@
+# 이 행사의 연출. 사람이 고치는 파일이다 — 주석을 마음껏 달아라.
+# 서버가 쓰는 값(/dance 에서 저장하는 프리셋)은 옆의 presets.json 에 따로 쌓인다.
+#
+# 행사가 바뀌면 이 폴더를 통째로 복사해 새 이름으로 만들고 서버를 --venue <이름> 으로 띄운다.
+# 재보정한 오프셋이 다음 행사의 출발점이 되도록 폴더째 커밋해 둔다.
+name: 기본값 — 2026-08-31 개소식 세트
+date: 2026-08-31
+notes: |
+  8/31 개소식 실측에서 출발한 기본값. 오프셋은 현장에서 반드시 재보정한다 —
+  스피커·TV·로봇 경로가 장소마다 다르다. -rc 프리셋은 -api 값에서 출발한 것이다.
+
+# 관객 패드 12칸. 순서 = 그리드 번호.
+# 안전 정책이 아니라 이번 행사의 연출이라 정책(gateway_config.yaml)에 두지 않는다.
+# 여기 있다고 실행되는 게 아니다 — 서버가 api_allowlist 와 교집합을 낸다.
+# 그러니 이 목록이 권한을 넓힐 수는 없다.
+#
+# 2026-08-16 사용자 지정 12개는 쇼케이스다. restricted(섀도우 복싱)와 caution(팔굽혀펴기·
+# 스쿼트)이 들어 있다 → 안전은 목록이 아니라 운영 전제로 지킨다: 공간 확보 + RC 대기 상시.
+# 12개 전부 static/clips/<state>.mp4 렌더 클립이 있어야 모니터가 튼다.
+pad_grid:
+  - MimicBowNavel                  # 01 배꼽인사
+  - MimicShadowBoxing              # 02 섀도우 복싱
+  - MimicDanceJazzHands            # 03 재즈 핸즈
+  - MimicWaveHand                  # 04 손흔들기
+  - MimicBowCourtly                # 05 궁정식 인사
+  - MimicNewMacarena001A545        # 06 마카레나
+  - MimicNewKnightlyBowR001A429    # 07 기사식 인사
+  - MimicSquat                     # 08 스쿼트
+  - MimicChefsKiss                 # 09 손키스
+  - MimicPushUp                    # 10 팔굽혀펴기
+  - MimicNewRockOut002A487         # 11 rock out
+  - MimicGuapVer2                  # 12 Guap ver2

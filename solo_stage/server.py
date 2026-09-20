@@ -61,8 +61,63 @@ def page_dir(page):
     return WEB if page in SHARED_PAGES else HERE / "static"
 
 MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".mp4", ".webm", ".mov"}
-# /dance 프리셋: 동작-음원 짝 + 싱크 오프셋. 서버 파일이라 어느 기기에서 열어도 같다.
-PRESETS = HERE / "dance_presets.json"
+# 행사별 설정은 config/venues/<이름>/ 에 있다 — 두 앱이 같이 쓴다.
+#   venue.yaml   사람이 쓴다: 이번 행사의 패드 12칸(pad_grid)·메모
+#   presets.json 서버가 쓴다: /dance 프리셋 = 동작-음원 짝 + 싱크 오프셋
+# 오프셋은 코드가 아니라 그 장소의 물리량이다. 재보정한 값이 다음 행사의 출발점이 되도록
+# 폴더째 커밋한다. 정책(gateway_config.yaml)과 카탈로그(motions.yaml)는 로봇에 평평하게
+# 배포되는 파일이라 앱 폴더에 그대로 둔다.
+ROOT = HERE.parent
+VENUES = ROOT / "config" / "venues"
+DEFAULT_VENUE = "default"
+PRESETS = VENUES / DEFAULT_VENUE / "presets.json"   # main() 이 --venue 로 바꾼다
+
+
+def _catalog():
+    """공유 검증 코드(core/catalog.py)는 저장소 루트에 있다.
+
+    로봇 컨테이너에는 없고 필요도 없다 — 로봇(--robot)은 UI 가 없어 venue 를 안 쓴다.
+    그래서 최상단 import 가 아니라 쓰는 자리에서 늦게 불러온다. 최상단에 두면 로봇에서
+    server.py 가 import 에러로 안 뜬다 (배포 목록이 어긋났을 때 실제로 두 번 났던 사고와
+    같은 모양이다).
+    """
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from core import catalog
+    return catalog
+
+
+def load_venue(name=DEFAULT_VENUE):
+    return _catalog().load_venue(VENUES / name)
+
+
+def check_venue(name, gateway_config, *, require_media):
+    """부팅 전 검증. FATAL 이 하나라도 있으면 기동을 거부한다.
+
+    무대에서 발견하던 걸 노트북에서 발견하게 하는 것이 목적이다. tools/preflight.py 와
+    같은 함수를 쓴다 — 두 벌이면 preflight 는 통과하는데 부팅은 실패하는 날이 온다.
+    """
+    cat = _catalog()
+    try:
+        venue = cat.load_venue(VENUES / name)
+    except cat.VenueError as exc:
+        sys.exit(f"\n  venue '{name}' 를 못 읽었다: {exc}\n")
+    problems = cat.validate(yaml.safe_load(CATALOG.read_text()), gateway_config["policy"],
+                            venue, clips_dir=CLIPS, media_dir=MEDIA,
+                            require_media=require_media)
+    fatal = [p for p in problems if p.level == cat.FATAL]
+    warn = [p for p in problems if p.level != cat.FATAL]
+    for p in fatal:
+        print(f"  {p}")
+    # WARN 이 스무 줄씩 쏟아지면 진짜 문제가 묻힌다. 개발 PC 는 클립·음원이 없어 늘 그렇다.
+    for p in warn[:5]:
+        print(f"  {p}")
+    if len(warn) > 5:
+        print(f"  WARN   … 외 {len(warn) - 5}건 — tools/preflight.py --venue {name} 로 전체를 본다")
+    if fatal:
+        sys.exit(f"\n  venue '{name}' 에 FATAL {len(fatal)}건 — 기동하지 않는다. "
+                 f"(tools/preflight.py --venue {name} 로 전체 목록을 본다)\n")
+    return venue
 
 # ───────────────────────────────────────────────────────────── 카탈로그
 
@@ -937,6 +992,8 @@ def main():
     ap.add_argument("--log-dir", default=str(HERE / "logs"),
                     help="turn 단위 JSONL 세션 로그 위치 (기본: logs/)")
     ap.add_argument("--no-log", action="store_true", help="세션 로그를 끈다")
+    ap.add_argument("--venue", default=DEFAULT_VENUE,
+                    help="행사 설정 (config/venues/ 의 폴더명). 패드 12칸과 프리셋이 여기서 온다")
     ap.add_argument("--theme", default="shape",
                     help="관객 화면 디자인 테마 (web/themes/ 의 폴더명)")
     ap.add_argument("--no-transcripts", action="store_true",
@@ -963,6 +1020,13 @@ def main():
         backend = MockBackend()
     if args.robot:
         backend.start()
+    venue = None
+    if not args.robot:   # 로봇은 UI 가 없다 — venue 도 검증도 필요 없다
+        # 음원은 저작권물이라 저장소에 없다. mock 은 화면만 보는 개발 실행이라 없어도 뜬다.
+        venue = check_venue(args.venue, gateway_config,
+                            require_media=not isinstance(backend, MockBackend))
+        global PRESETS
+        PRESETS = venue["dir"] / "presets.json"
     session_log = SessionLog(args.log_dir, transcripts=not args.no_transcripts,
                              enabled=not args.no_log)
     Handler.state = State(
@@ -970,7 +1034,7 @@ def main():
         ready_only=args.ready_only or args.robot or bool(args.relay) or args.rc,
         access_token=args.gateway_token or None,
         llm_allowlist=gateway_config["policy"].get("llm_allowlist"),
-        pad_allowlist=gateway_config["policy"].get("pad_allowlist"),
+        pad_allowlist=venue["pad_grid"] if venue else None,
         pad_llm_exclude=gateway_config["policy"].get("pad_llm_exclude"),
         session_log=session_log,
     )

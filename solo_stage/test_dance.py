@@ -188,7 +188,7 @@ class StageTest(unittest.TestCase):
         import yaml
         cfg = yaml.safe_load((Path(__file__).parent / "gateway_config.yaml").read_text())
         self.state = server.State(server.MockBackend(),
-                                  pad_allowlist=cfg["policy"]["pad_allowlist"])
+                                  pad_allowlist=server.load_venue()["pad_grid"])
 
     def test_view_exposes_stage_and_server_clock(self):
         v = self.state.conversation_view()
@@ -273,7 +273,7 @@ class DanceProtectionTest(unittest.TestCase):
             return real_stop(source, reason)
         self.backend.stop_motion = counting_stop
         self.state = server.State(self.backend,
-                                  pad_allowlist=cfg["policy"]["pad_allowlist"])
+                                  pad_allowlist=server.load_venue()["pad_grid"])
         server.Handler.state = self.state
 
     def tearDown(self):

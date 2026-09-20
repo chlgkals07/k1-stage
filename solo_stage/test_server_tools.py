@@ -123,7 +123,7 @@ class PadAllowlistTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.policy = yaml.safe_load(GATEWAY_CONFIG.read_text())["policy"]
-        cls.pad = cls.policy["pad_allowlist"]
+        cls.pad = server.load_venue()["pad_grid"]
         cls.items, cls.by_state = server.load_catalog()
 
     def test_pad_is_subset_of_api_and_catalog(self):
@@ -219,6 +219,6 @@ class DeployListTest(unittest.TestCase):
 class PadOrderTest(unittest.TestCase):
     def test_state_preserves_pad_grid_order(self):
         """그리드 번호 = 목록 순서 스펙. sorted() 가 끼어들면 배치가 뒤섞인다 (실제 발생)."""
-        policy = yaml.safe_load(GATEWAY_CONFIG.read_text())["policy"]
-        st = State(server.MockBackend(), pad_allowlist=policy["pad_allowlist"])
-        self.assertEqual(st.pad_order, policy["pad_allowlist"])
+        grid = server.load_venue()["pad_grid"]
+        st = State(server.MockBackend(), pad_allowlist=grid)
+        self.assertEqual(st.pad_order, grid)

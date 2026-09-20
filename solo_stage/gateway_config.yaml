@@ -123,27 +123,9 @@ policy:
     - MimicPushUp
     - MimicDanceJazzHands
     - MimicCartwheel
-  # pad_allowlist: 관객이 아이패드(/pad)에서 직접 누를 수 있는 것.
-  #
-  # 2026-08-16 사용자 지정 12개. 이전 판(전부 safety:safe 인 인사·호응 모음)과 달리
-  # 이건 **쇼케이스**다. restricted(섀도우 복싱)와 caution(팔굽혀펴기·스쿼트)이 들어 있다.
-  #   → 안전은 이제 목록이 아니라 운영 전제로 지킨다: 공간 확보 + RC 대기 상시.
-  # 12개 전부 static/clips/<state>.mp4 렌더 클립이 있어야 한다(모니터가 튼다).
-  # 현장에서 빼고 넣는 건 이 목록 한 줄이면 된다.
-  pad_allowlist:
-    # ── 2026-08-18 최종 12 (사용자 확정, 순서 = 패드 그리드 번호) ──
-    - MimicBowNavel                  # 01 배꼽인사
-    - MimicShadowBoxing              # 02 섀도우 복싱
-    - MimicDanceJazzHands            # 03 재즈 핸즈
-    - MimicWaveHand                  # 04 손흔들기
-    - MimicBowCourtly                # 05 궁정식 인사
-    - MimicNewMacarena001A545        # 06 마카레나
-    - MimicNewKnightlyBowR001A429    # 07 기사식 인사
-    - MimicSquat                     # 08 스쿼트
-    - MimicChefsKiss                 # 09 손키스
-    - MimicPushUp                    # 10 팔굽혀펴기
-    - MimicNewRockOut002A487         # 11 rock out
-    - MimicGuapVer2                  # 12 Guap ver2
+  # pad_allowlist 는 여기 없다. 관객 패드 12칸은 안전 정책이 아니라 행사 연출이라
+  # config/venues/<행사>/venue.yaml 의 pad_grid 로 옮겼다. 서버는 그 목록을 위의
+  # api_allowlist 와 교집합해서 쓰므로, venue 가 권한을 넓힐 수는 없다.
   # pad_llm_exclude: /pad 음성 경로에서만 빼는 동작.
   # 2026-08-17: 버튼 12종은 말로도 돼야 한다는 사용자 확정으로 PushUp·JazzHands 는
   # 제외를 풀었다 (버튼 12에 포함). 카트휠만 남는다 — 최대 공간 + E-stop 대기 전제라

@@ -38,7 +38,7 @@ RC(유선 라디오) 경로:    server.py --rc → rc_backend.py → rc_serial.p
 1. motions.yaml 에 카탈로그 항목      ← 없으면 버튼이 안 뜨고 요청도 거부된다
 2. gateway_config.yaml api_allowlist  ← 운영자 수동 버튼으로 실행 가능해짐
 3. 실물 단독 검증 (공간 + E-stop)
-4. pad_allowlist 또는 llm_allowlist   ← 그 뒤에야 관객·모델에게 연다
+4. venue 의 pad_grid 또는 llm_allowlist ← 그 뒤에야 관객·모델에게 연다
 ```
 
 로봇에 policy 자체가 없으면 gateway가 "현재 로봇에 배포되지 않은 동작입니다"로 거부한다.

@@ -204,7 +204,7 @@ class TestServerIntegration(unittest.TestCase):
         import server
         b = make_backend()
         cfg = yaml.safe_load(open(HERE / "gateway_config.yaml"))
-        pad_list = cfg["policy"].get("pad_allowlist")
+        pad_list = server.load_venue()["pad_grid"]
         st = server.State(b, ready_only=True, pad_allowlist=pad_list)
         # UI 동일성: RC 백엔드여도 패드 목록은 primary 와 동일 (12개 그대로)
         self.assertEqual(st.pad_allowed, set(pad_list) & set(st.by_state))

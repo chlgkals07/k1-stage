@@ -247,7 +247,7 @@ slave 를 먼저 닫아 `read` 를 깨우고, 스레드가 끝나는 걸 확인�
 `server.py` 의 기능(무대 시작 전 게이트웨이 준비 확인)을 검사한다 — 그 기능이 여기 없다.
 `test_rc_backend` 의 앵커 교체(리허설 동작 세트)도 동작 변경이라 뺐다.
 
-### 4단계 — `config/` 분리 + 부팅 검증 + preflight
+### ✅ 4단계 — `config/` 분리 + 부팅 검증 + preflight (완료 · 계획과 달라진 곳 있음)
 
 지금 오프셋은 "현장에서 재보정해야 하는 값"인데 **재보정 결과가 쌓일 자리가 없다.**
 매 행사가 직전 값을 덮어쓴다. 커밋 `5eb5783` 에 증거가 있다 — *"배드 api 오프셋
@@ -307,6 +307,49 @@ def validate(catalog, policy, venue, clips_dir, media_dir) -> list[Problem]
 > 무대에서 발견하던 걸 노트북에서 발견하게 된다.
 
 **리스크**: 중. **투자 대비 효과가 이 목록에서 가장 크다.**
+
+**한 것:**
+
+- `core/catalog.py` — `load_venue()` · `validate()` · `Problem`. 파일만 읽는 순수 함수라
+  하드웨어도 네트워크도 필요 없다. 로봇에는 배포하지 않는다
+- `config/venues/default/` — `venue.yaml`(사람이 씀: `pad_grid` · 메모) + `presets.json`(서버가 씀)
+- `tools/preflight.py` — 같은 `validate()` 를 부르고, 두 앱의 사본 일치와 프리셋 짝 확인표를 더한다
+- 서버 부팅이 `--venue` 로 venue 를 읽고 FATAL 이면 기동을 거부한다 (양쪽 앱)
+- `pad_allowlist` 를 `gateway_config.yaml` 에서 venue 의 `pad_grid` 로 옮겼다. 서버는 여전히
+  `api_allowlist` 와 교집합해서 쓰므로 venue 가 권한을 넓힐 수는 없다
+
+**계획과 달라진 곳 — 이유와 함께:**
+
+| 계획 | 실제 | 이유 |
+|---|---|---|
+| `config/motions.yaml` · `config/policy.yaml` 로 이동 | **앱 폴더에 그대로** | 이 둘은 로봇 컨테이너에 **평평하게 배포**되고 `robot_backend.py` 가 `config_path.parent / "motions.yaml"` 로 자기 옆에서 읽는다. 옮기면 배포가 깨진다. 확정 결정 6번("로봇 배포 경로는 그대로")과 충돌하는 계획이었다 |
+| venue 는 YAML 한 파일 | **폴더 = `venue.yaml` + `presets.json`** | `/dance` 가 프리셋을 저장할 때마다 서버가 파일을 다시 쓴다. YAML 로 다시 쓰면 사람이 적은 주석이 사라진다. 쓰는 주체가 다르니 파일을 가른다 |
+| 프리셋을 곡별 `offset_ms: {api, rc}` 로 | **지금 모양 그대로**(`-api` / `-rc` 따로) | 바꾸면 `/dance` UI 와 `/dance/presets` API 가 같이 바뀐다. 데이터를 옮기는 일과 모델을 바꾸는 일을 한 커밋에 섞지 않는다 (STATUS §7-6 의 알려진 항목) |
+| venue 에 `theme` · `mode` | **안 넣음** | 기본 테마가 solo=`shape` / group=`shape-gym` 인데 공유 venue 하나에 넣으면 둘 중 하나를 임의로 골라야 한다 |
+| `core/` 는 6단계에서 | 검증 코드만 **미리** 만듦 | 계획서 목표 구조에 이미 있는 자리(`core/catalog.py`). `stage.py` 추출은 여전히 6단계 |
+
+**데이터가 바뀐 곳 (의도한 것):** 두 앱의 프리셋이 3곳 달랐다(드리프트). solo 값을 정본으로
+합쳤다 — group 의 `newjeans-rc` 750 → **500** (사용자 확인: 500 이 맞는 값),
+`snucheer-rc` 0 → **-1500** (solo 의 값. **사용자 확인 전** — group 이 실제로 쓰기 전에
+현장 재보정으로 맞출 값이다). solo 는 값 변화 0건, 패드 12칸의 순서까지 변경 전과 같다.
+
+**검증:** 변경 전 커밋을 워크트리로 띄워 같은 API(`/motions` · `/dance/presets`)를 비교했다.
+검증 로직은 변이 테스트 7개(검사를 하나씩 지워 봄)를 전부 잡는다. 이 과정에서 검사가 통째로
+지워져도 통과하던 테스트 하나를 찾아 고쳤다 — 다른 분기가 대신 잡아 주고 있었다.
+
+**실수와 그 방어:** `--robot` 이 없는 group 에 solo 의 `if not args.robot:` 을 그대로 복사해
+group 이 부팅할 때마다 `AttributeError` 로 죽었다. 테스트가 전부 초록이었던 이유는 `main()` 을
+부르는 테스트가 하나도 없어서였다. 네트워크만 가짜로 바꾸고 `main()` 을 끝까지 태우는
+`MainBootTest` 를 양쪽에 넣었고, 그 버그를 되살려 빨개지는 것을 확인했다.
+
+**못 잡는 것 (알려진 한계):** 프리셋의 동작이 카탈로그에 있고 허용돼 있으면 통과한다. 그게 그
+곡의 동작이 맞는지는 코드가 알 수 없다. 이름 규칙으로 잡으려 했지만 `badchestpopv2-api` ↔
+`MimicBadChestpopVer2`(`v2` ≠ `ver2`) 같은 멀쩡한 짝에 가짜 경고가 나서 뺐다. preflight 가 끝에
+찍는 **짝 확인표**를 사람이 눈으로 본다.
+
+**남은 것:** 로봇 쪽 실동작은 검증하지 못했다(로봇이 없다). `--robot` 경로는 `core/` 를 import
+하지 않고 venue 를 건너뛰는 구조를 테스트가 지키지만, 실제 컨테이너에서 띄워 본 것은 아니다.
+`run.sh --deploy` 는 배포 파일 목록이 바뀌지 않았으므로 그대로다.
 
 ### 5단계 — `ports.py` + `adapters/` 이동
 

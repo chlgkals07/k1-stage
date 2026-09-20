@@ -16,11 +16,11 @@
 | 화면 | `/pad`(관객) · `/display`(TV) · `/operator`(운영자) · `/dance`(싱크 보정) |
 | 동작 카탈로그 (`motions.yaml`) | **136개** (그중 `restricted` 17개) |
 | gateway `api_allowlist` | **78개** — 운영자 수동 버튼이 부를 수 있는 전부 |
-| gateway `pad_allowlist` | **12개** — 관객 패드에 뜨는 것 |
+| venue `pad_grid` | **12개** — 관객 패드에 뜨는 것 (`config/venues/default/venue.yaml`) |
 | gateway `llm_allowlist` | **21개** — 코드에 살아 있으나 **이 경로로 들어오는 요청은 없다** (`voice-llm-dev` 브랜치용) |
 | 정지 목표 상태 | **`Velocity`** (Damping일 때만 `ReadyPose`) |
 | RC 다이얼 | 2뱅크 × 20슬롯 = **40**. CH5로 뱅크, CH11로 슬롯 |
-| 테스트 | `solo_stage` 140 · `group_stage` 99 |
+| 테스트 | `solo_stage` 152 · `group_stage` 110 · 루트 `tests/` 26 |
 
 실기 검증된 인사 3종은 `MimicWaveHand`(손 흔들기) · `MimicBowNavel`(배꼽 인사) ·
 `MimicBadChestpopVer2`(체스트팝)이다. 개소식에서 패드 12개 중 10개가 정상 동작했다
@@ -52,7 +52,7 @@ ELRS 전파로 직접 쏜다. 로봇 소프트웨어 수정이 필요 없고, �
 | 목록 | 뜻 | 개수 |
 |---|---|---|
 | `api_allowlist` | gateway가 실행을 허용하는 전부. **운영자 수동 버튼**이 여기서 나온다 | 78 |
-| `pad_allowlist` | 그중 **관객 아이패드에 여는 것** | 12 |
+| `pad_grid` (venue) | 그중 **관객 아이패드에 여는 것**. `api_allowlist` 와 교집합해서 쓰므로 venue 가 권한을 넓힐 수는 없다 | 12 |
 | `llm_allowlist` | 그중 **모델이 스스로 고를 수 있는 것** | 21 |
 
 사람이 E-stop을 두고 버튼으로 부르는 것, 관객이 아무거나 누르는 것, 모델이 대화 중 고르는
