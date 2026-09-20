@@ -210,6 +210,44 @@ self.assertIsNone(self.state._dance_timer)   # True (애초에 없었음)
 
 **리스크**: 낮음. **얻는 것**: 4~6단계의 안전망. **이게 없으면 그다음을 검증할 수 없다.**
 
+**진행 상황 (solo 만, group 은 아직):** 스위트를 돌릴 수 있고 초록이 됐다. 원칙("테스트는
+자기가 쓸 데이터를 스스로 만든다")은 **절반만** 지켰다.
+
+한 것 — `main` 의 `a5a5365` 에서 픽스처만 골라 왔다(구조 변경은 안 들였다):
+
+- `test_dance.py`: `setUpModule` 이 `server.MEDIA` 를 임시 폴더로 바꾸고 빈 파일 3개를 만든다.
+  실제 `media/` 를 더는 건드리지 않는다(예전엔 거기에 `_test_track.mp3` 를 써 넣었다)
+- `test_ui_http.py`: `server.CLIPS` 를 임시 폴더로 바꾸고 가짜 `MimicWaveHand.mp4` 를 둔다
+- `test_rc_serial.py`: **이 Mac 에서 스위트가 끝나지 않던 원인.** 아래 참고
+
+결과: solo **140건 6.6초 전부 통과**(전엔 실패 7건 + 종료 불능). 거짓 통과 4건은 픽스처가
+음원을 만들어 주면서 **진짜 통과**가 됐다 — 시작하지 않던 무대가 이제 실제로 시작하고,
+타이머가 실제로 만들어졌다 지워진다.
+
+**macOS 에서 `discover` 가 끝나지 않던 이유**: 프로덕션 코드가 아니라 테스트의 가짜 라디오
+정리 코드였다. 다른 스레드가 `read` 중인 pty master 를 먼저 닫으면 macOS 에서 `close()` 가
+커널 안에서 영영 돌아오지 않는다(프로세스 상태 `U` — `SIGALRM` 도 `SIGKILL` 도 안 먹는다).
+slave 를 먼저 닫아 `read` 를 깨우고, 스레드가 끝나는 걸 확인한 뒤 master 를 닫는다.
+`self._stop` 을 `self.stopped` 로 바꾼 것도 같은 수정이다 — `Thread._stop` 은 threading 의
+내부 메서드라 불리언으로 덮으면 `join()` 이 깨진다.
+
+**못 한 것 (3단계는 아직 안 끝났다):**
+
+- 프리셋이 여전히 프로덕션 이름(`snucheer-api`)이다. 테스트가 프로덕션 데이터에 발목
+  잡혀 있다 — `# offset -1500ms (2026-08-18 실측 고정)` 주석이 그 증거로 남아 있다.
+  픽스처 프리셋(`fx-media-first` 등)을 테스트 안에 정의해야 한다
+- `start_dance()` 를 부르는 자리에 `assertTrue(out["ok"])` 가 없다. 지금 초록인 건 **픽스처가
+  성공시켜 주기 때문**이지 테스트가 지키고 있어서가 아니다. 나중에 시작이 조용히 실패하면
+  다시 거짓 통과가 된다
+- 클립은 `write_bytes(bytes(range(256)))` 로 만든 자리표시자다. `clip_len` 이 읽는 최소
+  mp4(`ftyp` + `moov/mvhd`)가 아니라서 길이를 읽는 테스트를 이걸로 쓸 수 없다
+- **`group_stage` 는 그대로다.** 파일이 solo 의 옛 버전과 같아서 같은 수정이 그대로
+  들어가지만 아직 안 했다. 같은 이유로 group 의 `discover` 도 이 Mac 에서 끝나지 않는다
+
+**가져오지 않은 것**: `main` 의 `test_start_dance_blocked_when_gateway_not_ready` 외 1건은
+`server.py` 의 기능(무대 시작 전 게이트웨이 준비 확인)을 검사한다 — 그 기능이 여기 없다.
+`test_rc_backend` 의 앵커 교체(리허설 동작 세트)도 동작 변경이라 뺐다.
+
 ### 4단계 — `config/` 분리 + 부팅 검증 + preflight
 
 지금 오프셋은 "현장에서 재보정해야 하는 값"인데 **재보정 결과가 쌓일 자리가 없다.**

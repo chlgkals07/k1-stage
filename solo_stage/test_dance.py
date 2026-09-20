@@ -19,12 +19,30 @@ from server import Handler, MockBackend, State
 
 TOKEN = "dance-test-token"
 BLOB = bytes(range(256)) * 8      # 2048 바이트
+_MEDIA_TMPDIR = None
+_ORIG_MEDIA = None
+
+
+def setUpModule():
+    """저작권 미디어 없이도 모든 dance 테스트를 실제 운영 파일과 격리해 실행한다."""
+    global _MEDIA_TMPDIR, _ORIG_MEDIA
+    _MEDIA_TMPDIR = tempfile.TemporaryDirectory()
+    _ORIG_MEDIA = server.MEDIA
+    server.MEDIA = Path(_MEDIA_TMPDIR.name)
+    for name in ("응원단 fade_out.mp4", "straykids.mp4", "bad.mp4"):
+        (server.MEDIA / name).touch()
+
+
+def tearDownModule():
+    global _MEDIA_TMPDIR
+    server.MEDIA = _ORIG_MEDIA
+    _MEDIA_TMPDIR.cleanup()
+    _MEDIA_TMPDIR = None
 
 
 class DanceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        server.MEDIA.mkdir(exist_ok=True)
         cls.track = server.MEDIA / "_test_track.mp3"
         cls.track.write_bytes(BLOB)
         # 실제 프리셋 파일을 건드리지 않는다.
