@@ -398,6 +398,13 @@ class State:
             return {"ok": False, "msg": f"음원 파일이 없습니다: {media}"}
         if motion and motion not in self.by_state:
             return {"ok": False, "msg": f"카탈로그에 없는 동작: {motion}"}
+        # 게이트웨이가 준비 안 된 채로 무대를 시작하면 영상만 돌고 로봇은 안 움직인다
+        # (SD API Arm 안 올림 등). stop_dance 는 로봇을 안 건드리는 설계라 한 번 시작되면
+        # 되돌릴 수 없으므로, 시작 시점에 막는다. mock 은 로봇 미연결 개발용이라 통과.
+        if motion:
+            gw = self.backend.status().get("gateway")
+            if gw not in ("ready", "mock"):
+                return {"ok": False, "msg": f"로봇이 명령을 받을 준비가 안 됐습니다 (gateway: {gw})"}
         # 숫자 필드는 타이머를 걸기 **전에** 전부 파싱한다. 타이머를 먼저 걸면 파싱
         # 오류 시 "시작 실패"로 보이는데 2초 뒤 로봇만 움직인다 (리뷰 지적).
         try:

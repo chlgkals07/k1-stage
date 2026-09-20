@@ -236,6 +236,26 @@ class DanceScheduleTest(unittest.TestCase):
         self.state.play("MimicWaveHand", source="manual")
         self.assertEqual(self.state.conversation_view()["stage"], "dance")
 
+    def test_start_dance_blocked_when_gateway_not_ready(self):
+        """SD API Arm 안 올린 채로 무대를 누르면 영상만 돌고 로봇은 안 움직이던 사고
+        (2026-09-20) — 게이트웨이가 준비되지 않았으면 무대 자체를 시작하지 않는다."""
+        class NotReadyBackend(server.MockBackend):
+            def status(self):
+                return {"gateway": "offline"}
+        state = server.State(NotReadyBackend())
+        out = state.start_dance("snucheer-api")
+        self.assertFalse(out["ok"])
+        self.assertIsNone(state._dance_timer)
+
+    def test_start_dance_without_motion_ignores_gateway(self):
+        """음원만 보정하는 inline preset(동작 없음)은 로봇 상태와 무관하게 통과해야 한다."""
+        class NotReadyBackend(server.MockBackend):
+            def status(self):
+                return {"gateway": "offline"}
+        state = server.State(NotReadyBackend())
+        out = state.start_dance(preset={"motion": "", "media": ""})
+        self.assertTrue(out["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
