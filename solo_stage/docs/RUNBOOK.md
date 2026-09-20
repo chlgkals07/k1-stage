@@ -7,6 +7,10 @@
 > 있으면) 이 문서보다 **[HANDOVER_CHECK.md](HANDOVER_CHECK.md)를 먼저** 돈다 —
 > 여기 적힌 값들이 아직도 참인지부터 실측으로 확인한다.
 
+> **2026-09-22 산업은행 본점**처럼 통신 사전 허가가 필요한 장소에서는 먼저
+> [BANK_EVENT_20260922.md](BANK_EVENT_20260922.md)를 따른다. RC도 ELRS 무선통신이며,
+> RC-only 현장에서는 Wi-Fi를 전제로 하는 `run.sh --deploy`를 실행하지 않는다.
+
 > 이 문서는 예전의 `OPENING_RUNBOOK` · `CEREMONY_RUNBOOK` · `FIELD_SETUP` ·
 > `NEXT_SESSION_CHECKLIST` 네 편을 합친 것이다. 같은 절차가 네 판으로 갈라져 어느 것이
 > 최신인지 파일명으로만 구분되던 문제를 없앴다.

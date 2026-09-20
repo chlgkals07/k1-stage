@@ -2,13 +2,14 @@
 
 루트는 실행 코드와 설정만 두고, 운영·상태·설계 문서는 여기서 관리한다.
 
-## 세 문서면 대개 끝난다
+## 먼저 볼 문서
 
 | 문서 | 언제 보나 |
 |---|---|
 | **[INTERN_FIELD_TEST.md](INTERN_FIELD_TEST.md)** | 인턴이 내일 실물 검증을 할 때. 준비부터 종료까지 한 번에 따르는 사용법 |
 | **[HANDOVER_CHECK.md](HANDOVER_CHECK.md)** | 로봇을 오래 안 켰다가 다시 잡을 때. RC → 로봇 → 통합 순으로 실측 대조 |
 | **[RUNBOOK.md](RUNBOOK.md)** | 로봇을 돌릴 때. 셋업 → 검증 → 장애 대응 → 종료 |
+| **[BANK_EVENT_20260922.md](BANK_EVENT_20260922.md)** | 9/22 산업은행 행사. 통신 사전 허가와 RC-only 운영 절차 |
 | **[STATUS.md](STATUS.md)** | 2026-08 개소식 당시의 허용목록·리뷰 결과·남은 검증 기록(현재 기준 아님) |
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | 왜 이렇게 생겼나. 네트워크·gateway·ROS 계약·보안 |
 
