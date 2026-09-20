@@ -3,6 +3,10 @@
 셋업 → 검증 → 운영 → 장애 대응까지 이 문서 하나로 끝난다. 2026-08-17 개소식 현장에서
 실측한 값이 기준이다.
 
+> 로봇을 한동안 안 켰다가 다시 잡는 자리라면(특히 다른 사람이 로봇을 만졌을 수
+> 있으면) 이 문서보다 **[HANDOVER_CHECK.md](HANDOVER_CHECK.md)를 먼저** 돈다 —
+> 여기 적힌 값들이 아직도 참인지부터 실측으로 확인한다.
+
 > 이 문서는 예전의 `OPENING_RUNBOOK` · `CEREMONY_RUNBOOK` · `FIELD_SETUP` ·
 > `NEXT_SESSION_CHECKLIST` 네 편을 합친 것이다. 같은 절차가 네 판으로 갈라져 어느 것이
 > 최신인지 파일명으로만 구분되던 문제를 없앴다.
@@ -279,7 +283,7 @@ ros2 topic echo /ai_sapiens/mode_status --once
 cd /root/motion_llm
 python3 server.py --robot --https --port 8443 --ready-only
 #   → 출력된 robot gateway token 을 복사한다
-#   → 운영 중에는 api_arm_probe.py 를 같이 실행하지 않는다
+#   → 운영 중에는 tools/api_arm_probe.py 를 같이 실행하지 않는다
 
 # 3. PC 네트워크 확인 (§5 "링크·경로 진단")
 

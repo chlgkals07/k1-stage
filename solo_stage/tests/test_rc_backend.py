@@ -7,7 +7,7 @@ import unittest
 import rc_backend
 from rc_backend import RcBackend, load_rc_map
 
-HERE = pathlib.Path(__file__).parent
+HERE = pathlib.Path(__file__).parent.parent
 MOTIONS = HERE / "motions.yaml"
 
 # rc_list 실측 앵커 (2026-08-18 로봇 백업 k1_config 기준)
