@@ -46,6 +46,10 @@ KEY = HERE / ".key.pem"
 CLIPS = HERE / "static" / "clips"
 # /dance 가 재생할 음원·영상. media/ 에 파일만 넣으면 목록에 뜬다.
 MEDIA = HERE / "media"
+# 공유 프론트. 저장소 루트의 web/ 를 두 앱이 함께 쓴다 (한 벌만 유지).
+# themes/<이름>/ 이 관객 화면의 디자인 자산을 들고 있고, 활성 테마는 --theme 로 고른다.
+WEB = HERE.parent / "web"
+THEMES = WEB / "themes"
 MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".mp4", ".webm", ".mov"}
 # /dance 프리셋: 동작-음원 짝 + 싱크 오프셋. 서버 파일이라 어느 기기에서 열어도 같다.
 PRESETS = HERE / "dance_presets.json"
@@ -545,6 +549,7 @@ class State:
 
 class Handler(BaseHTTPRequestHandler):
     state: State = None  # main 에서 주입
+    theme: str = "shape"  # 활성 테마 이름 (main 에서 주입)
     # HTTP/1.1 이라야 relay 가 연결을 재사용한다 (무선 링크에서 핸드셰이크 반복을 줄인다).
     # _send() 가 항상 Content-Length 를 보내므로 keep-alive 가 안전하다.
     protocol_version = "HTTP/1.1"
@@ -587,6 +592,25 @@ class Handler(BaseHTTPRequestHandler):
         if not clip.is_file():
             return self._send(404, {"error": "clip not found"})
         return self._send_range(clip, "video/mp4", "public, max-age=3600")
+
+    def _send_theme(self, name):
+        """활성 테마의 자산. 확장자 없이 오면 <name>.* 를 찾는다.
+
+        대기 이미지는 테마마다 포맷이 달라(jpg/png) 페이지가 확장자를 알 수 없다.
+        페이지는 늘 /theme/idle 로 요청하고 서버가 실제 파일을 고른다 — 그래서
+        테마를 바꿔도 HTML 을 고칠 일이 없다.
+        """
+        if not name or "/" in name or ".." in name:
+            return self._send(404, {"error": "not found"})
+        folder = THEMES / self.theme
+        hit = folder / name
+        if not hit.is_file():
+            found = sorted(folder.glob(name + ".*"))
+            if not found:
+                return self._send(404, {"error": f"theme asset not found: {name}"})
+            hit = found[0]
+        ctype = mimetypes.guess_type(hit.name)[0] or "application/octet-stream"
+        return self._send_range(hit, ctype, "public, max-age=3600")
 
     def _send_media(self, name):
         """/dance 의 음원·영상. 파일명을 media/ 목록과 대조해 경로 탈출을 막는다."""
@@ -680,6 +704,8 @@ class Handler(BaseHTTPRequestHandler):
                               "text/html; charset=utf-8", headers)
         if not self._authorized():
             return self._send(403, {"error": "gateway authorization required"})
+        if path.startswith("/theme/"):
+            return self._send_theme(path[len("/theme/"):])
         if path.startswith("/clips/"):
             return self._send_clip(path[len("/clips/"):].removesuffix(".mp4"))
         if path == "/media":
@@ -885,6 +911,8 @@ def main():
     ap.add_argument("--log-dir", default=str(HERE / "logs"),
                     help="turn 단위 JSONL 세션 로그 위치 (기본: logs/)")
     ap.add_argument("--no-log", action="store_true", help="세션 로그를 끈다")
+    ap.add_argument("--theme", default="shape",
+                    help="관객 화면 디자인 테마 (web/themes/ 의 폴더명)")
     ap.add_argument("--no-transcripts", action="store_true",
                     help="발화 원문 대신 길이만 기록 (행사장 프라이버시 모드)")
     args = ap.parse_args()
@@ -920,6 +948,7 @@ def main():
         pad_llm_exclude=gateway_config["policy"].get("pad_llm_exclude"),
         session_log=session_log,
     )
+    Handler.theme = args.theme
     st = Handler.state
     started_at = time.monotonic()
     session_log.write("session_start", backend=backend.name,
