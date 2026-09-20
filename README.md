@@ -1,29 +1,35 @@
 # k1-stage — K1 행사 운영 스택
 
 휴머노이드 **K1을 행사에서 운영하기 위한 앱 모음**이다. 관객이 아이패드로 동작을 고르고,
-TV가 미리보기와 무대 영상을 띄우고, 운영자가 폰으로 정지를 쥔다. 로봇에 명령이 닿는
-경로가 두 가지이고, 각각을 담당하는 앱이 따로 있다.
+TV가 미리보기와 무대 영상을 띄우고, 운영자가 폰으로 정지를 쥔다. 앱이 갈리는 기준은
+통신 경로가 아니라 **로봇을 몇 대 움직이느냐**다.
 
 ```
 아이패드 /pad ─┐
-폰 /operator ─┼─ 장소 랜 ─ PC ─┬─ Wi-Fi ──────────────→ 로봇 gateway   ← motion_llm
-메인컴 /dance ─┘               └─ USB ─ RadioMaster ─ ELRS ─→ 로봇     ← rc_stage
-                                 │
+폰 /operator ─┼─ 장소 랜 ─ PC ─┬─ Wi-Fi ───────────────→ 로봇 1대  ┐
+메인컴 /dance ─┘               │                                    ├ solo_stage
+                               ├─ USB ─ 라디오 1대 ─ ELRS ─→ 로봇 1대  ┘
+                               │
+                               └─ USB ─ 라디오 N대 ─ ELRS ─→ 로봇 N대  ← group_stage
+
                           TV /display (HDMI, 네트워크 무관)
 ```
 
-## 세 앱과 고르는 기준
+## 두 앱과 고르는 기준
 
-| | `motion_llm` | `rc_stage` |
+| | `solo_stage` | `group_stage` |
 |---|---|---|
-| 경로 | Wi-Fi → 로봇 gateway → ROS 2 | USB → 라디오 → ELRS 전파 |
-| 로봇 수 | 1대 | **꽂은 라디오 수만큼 동시에** |
-| 로봇 소프트웨어 | gateway 실행 필요 | **수정 불필요** |
+| 로봇 수 | **1대** | **꽂은 라디오 수만큼 동시에** |
+| 경로 | Wi-Fi(기본) **+ RC 폴백** — 운영 중 `/rc/mode` 토글로 전환 | RC 전용 |
+| 로봇 소프트웨어 | Wi-Fi 경로는 gateway 실행 필요 | **수정 불필요** |
 | 실기 검증 | 개소식에서 운영 완료 | 전파 구간 미검증 (P2) |
-| 이럴 때 | 평소 운영 | 여러 대 군무, 또는 Wi-Fi가 죽었을 때 |
+| 이럴 때 | 평소 운영 (Wi-Fi가 죽어도 RC로 이어감) | 여러 대 군무 |
+
+`solo_stage`도 RC를 쏠 수 있다 — `--rc`로 기동하거나 운영자 화면에서 토글하면 같은 1대를
+전파로 몬다. `group_stage`만 가진 것은 **여러 대 동시 발사**(`rc_fleet.py`)다.
 
 `rc_link`는 앱이 아니라 **라디오 쪽 작업 결과물**이다. 라디오에 올리는 Lua 도구(`K1PC.lua`),
-믹서 모델 패치, SD 원본 백업, PC↔라디오 왕복 벤치가 들어 있다. `rc_stage`를 쓰려면
+믹서 모델 패치, SD 원본 백업, PC↔라디오 왕복 벤치가 들어 있다. `group_stage`를 쓰려면
 여기 있는 절차대로 라디오를 먼저 준비해야 한다.
 
 `robot/`은 로봇 쪽 짝이다. 위 앱들이 명령을 보낼 수 있도록 `ai_sapiens`에서 바꾼 부분
@@ -33,16 +39,16 @@ TV가 미리보기와 무대 영상을 띄우고, 운영자가 폰으로 정지�
 
 ```bash
 # Wi-Fi 단일 로봇 — 점검·배포·gateway·relay 를 한 번에
-cd motion_llm && ./run.sh --deploy
+cd solo_stage && ./run.sh --deploy
 
 # RC 군무 — 라디오 준비가 끝난 뒤
-cd rc_stage && python3 server.py            # 실기
-cd rc_stage && python3 server.py --mock     # 라디오 없이 UI 확인
+cd group_stage && python3 server.py            # 실기
+cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 ```
 
-행사 당일 절차는 [motion_llm/docs/RUNBOOK.md](motion_llm/docs/RUNBOOK.md) 하나로 끝난다.
+행사 당일 절차는 [solo_stage/docs/RUNBOOK.md](solo_stage/docs/RUNBOOK.md) 하나로 끝난다.
 셋업 → 검증 시퀀스 → 장애 대응까지 현장 실측값 기준이다. 지금 무엇이 참인지는
-[motion_llm/docs/STATUS.md](motion_llm/docs/STATUS.md)를 본다.
+[solo_stage/docs/STATUS.md](solo_stage/docs/STATUS.md)를 본다.
 
 ## 안전 경계
 
@@ -68,11 +74,17 @@ cd rc_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 
 ```
 k1-stage/
-├── motion_llm/   Wi-Fi 단일 로봇 운영 서버 (정본). 135 tests
-├── rc_stage/     RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 94 tests
-├── rc_link/      라디오 Lua·믹서 패치·SD 백업·왕복 벤치
-└── robot/        ai_sapiens 변경분 (원본 · 현행 · patch)
+├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 135 tests
+├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 94 tests
+├── rc_link/       라디오 Lua·믹서 패치·SD 백업·왕복 벤치
+└── robot/         ai_sapiens 변경분 (원본 · 현행 · patch)
 ```
 
-`motion_llm`과 `rc_stage`는 각각의 커밋 이력을 그대로 가지고 합쳐졌다.
-`rc_stage`는 `motion_llm`에서 파생됐고 stage 상태기계·무대 싱크·자막·자동종료를 공유한다.
+`solo_stage`와 `group_stage`는 각각의 커밋 이력을 그대로 가지고 합쳐졌다.
+`group_stage`는 `solo_stage`에서 파생됐고 stage 상태기계·무대 싱크·자막·자동종료를 공유한다.
+
+> 폴더 이름은 2026-09-20에 바꿨다: `motion_llm` → `solo_stage`, `rc_stage` → `group_stage`.
+> 옛 이름은 음성·LLM 경로가 주 기능이던 시절(2026-08-18 제거)의 잔재이고, RC 폴백이
+> 들어오면서 "Wi-Fi 앱 / RC 앱" 구분도 사실과 맞지 않게 됐다.
+> **로봇 컨테이너 안 배포 경로는 아직 `/root/motion_llm/`이다** — `run.sh`의 `ROBOT_DIR`
+> 참고.

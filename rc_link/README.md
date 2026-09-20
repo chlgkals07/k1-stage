@@ -1,8 +1,8 @@
 # rc_link — PC → 유선 RC(RadioMaster Pocket) → ELRS → K1 명령 경로
 
-motion_llm API 모드(Wi-Fi)의 차선 명령 경로 개발 작업공간.
-전체 설계·단계는 `../motion_llm/docs/RC_WIRED_COMMAND_PLAN.md` 참조 (living doc).
-행사 스택과 격리하기 위해 여기서 개발하고, P3에서 motion_llm에 가산 병합한다.
+solo_stage API 모드(Wi-Fi)의 차선 명령 경로 개발 작업공간.
+전체 설계·단계는 `../solo_stage/docs/RC_WIRED_COMMAND_PLAN.md` 참조 (living doc).
+행사 스택과 격리하기 위해 여기서 개발하고, P3에서 solo_stage에 가산 병합한다.
 
 ## 구성
 
@@ -23,20 +23,20 @@ motion_llm API 모드(Wi-Fi)의 차선 명령 경로 개발 작업공간.
 - [x] **P1 펄스형 오버라이드 (2026-08-18 완료)** — `K1PC.lua` + 모델 믹스 3개(L1 게이트).
       RUN/STOP/DAMP 펄스 실증, keepalive 차단 +0.6s ABORT, 물리 통과 불변 확인.
       주의: USB-VCP=LUA가 재부팅 시 CLI로 리셋됨 — 사용 전 확인. 포트 권한은 udev로 해결
-- [x] **P3a motion_llm 사본 + RcBackend (2026-08-18 코드 완성)** — `motion_llm_rc/`:
+- [x] **P3a solo_stage 사본 + RcBackend (2026-08-18 코드 완성)** — `solo_stage_rc/`:
       `--rc` 백엔드(rc_serial/rc_backend), dance PREP 훅(발사 1.5s 전 사전 준비),
       매핑은 motions.yaml `rc_list`(8/15 로봇 덤프) 사용, busy/cooldown/완료타이머
       PC측 구현. 전체 123 tests OK. **실기 dry-run 통과 (8/18)**: PREP→FIRE 육안,
       뱅크B+자동해제 0.56s, dance 싱크 FIRE 오차 +1ms, 패드 RUN+busy 거부.
       주의: K1PC.lua 갱신 후 도구 EXIT→재실행 필요 (열려 있으면 옛 코드가 돔)
 - [ ] P2 로봇 관측 + rc_list 실배포 대조 (로봇 복구 뒤)
-- [ ] P3b 실기 검증 후 delta를 정본 motion_llm에 가산 병합
+- [ ] P3b 실기 검증 후 delta를 정본 solo_stage에 가산 병합
 - [ ] P4 통합 리허설·런북
 
-## motion_llm_rc 사본 실행
+## solo_stage_rc 사본 실행
 
 ```bash
-cd motion_llm_rc && python3 server.py --rc --https --port 18500
+cd solo_stage_rc && python3 server.py --rc --https --port 18500
 # operator 화면에서 dance 프리셋 "rctest"(마카레나=뱅크B 슬롯2) 로 무대 싱크 dry-run
 ```
 RC 모드 패드 버튼 4개: 기사식 절 · 마카레나 · 록아웃 · 푸시업 (다이얼∩패드 교집합).

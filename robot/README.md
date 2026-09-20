@@ -1,6 +1,6 @@
 # robot — ai_sapiens 실기 변경분
 
-`k1-stage`의 세 앱(`motion_llm` · `rc_stage` · `rc_link`)이 명령을 보내는 **로봇 쪽 짝**이다.
+`k1-stage`의 세 앱(`solo_stage` · `group_stage` · `rc_link`)이 명령을 보내는 **로봇 쪽 짝**이다.
 상류는 ROBOTIS의 `ai_sapiens_private`이고, 여기에는 **shape3에서 바꾼 부분만** 둔다.
 로봇 전체 소스나 정책 자산(`assets/` 132MB)은 들어 있지 않다.
 
@@ -64,4 +64,4 @@ git apply --directory=<ai_sapiens_private 체크아웃>/ai_sapiens_sim2real chan
 ## 관련 문서
 
 - 뱅크 구성과 슬롯표: `../docs/`의 RC 문서
-- 권한 인계 시 로봇 거동: `../motion_llm/docs/FINAL_REVIEW_2026-08-18.md` §0
+- 권한 인계 시 로봇 거동: `../solo_stage/docs/FINAL_REVIEW_2026-08-18.md` §0

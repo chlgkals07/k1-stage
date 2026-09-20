@@ -20,7 +20,7 @@ import sys
 import time
 
 HERE = pathlib.Path(__file__).parent
-sys.path.insert(0, str(HERE.parent / "rc_stage"))
+sys.path.insert(0, str(HERE.parent / "group_stage"))
 
 import yaml
 from rc_serial import RcSerial
@@ -51,7 +51,7 @@ def main():
         for path in sorted(glob.glob(BY_ID_PATTERN)):
             print(path)
         return
-    motions = yaml.safe_load(open(HERE.parent / "rc_stage" / "motions.yaml"))
+    motions = yaml.safe_load(open(HERE.parent / "group_stage" / "motions.yaml"))
     banks = motions["rc_list"]["banks"]
 
     rc = RcSerial(port_pattern=port)
