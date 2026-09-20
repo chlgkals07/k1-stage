@@ -296,8 +296,8 @@ archive/test_ui_dispatch_voice_20260818.py  해당 테스트
 
 `/`로 들어오는 옛 북마크는 `/pad`로 리다이렉트된다(`server.py:658`).
 당시의 연구 설계와 평가 지표는
-[methodology/LLM_ROBOT_RESEARCH_METHODOLOGY.md](methodology/LLM_ROBOT_RESEARCH_METHODOLOGY.md)와
-[methodology/INTERACTION_METHODOLOGY.md](methodology/INTERACTION_METHODOLOGY.md)에 남아 있다.
+[voice/LLM_ROBOT_RESEARCH_METHODOLOGY.md](voice/LLM_ROBOT_RESEARCH_METHODOLOGY.md)와
+[voice/INTERACTION_METHODOLOGY.md](voice/INTERACTION_METHODOLOGY.md)에 남아 있다.
 
 ---
 
