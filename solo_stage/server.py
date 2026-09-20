@@ -4,8 +4,7 @@
   아이패드(/pad) ──버튼──> 이 서버 ──> MotionBackend(mock/robot/relay) ──> 로봇
   TV(/display)   ──폴링──> stage 상태 (idle/preview/executing/dance)
 
-음성·LLM 경로는 2026-08-18 에 제거했다. 재개발은 voice-llm-dev 브랜치에서 한다
-(`docs/voice/`). 이 파일에 남은 llm_allowlist·source=="llm" 검사는 그때 쓸 구조다.
+음성·LLM 경로는 제거됐다. `source="llm"` 요청은 안전하게 거부한다.
 
 표준 라이브러리 + pyyaml 만 쓴다.
   python3 server.py            # http 8000 (mock)
@@ -99,18 +98,6 @@ def load_catalog():
     return items, {m["state"]: m for m in items}
 
 
-def llm_motions(items, ready_only=False):
-    """LLM 에게 노출할 것만. restricted 는 llm 플래그와 무관하게 제외한다.
-
-    ready_only=True 면 학습이 끝난 것(status: ready)만 남긴다. 로봇에 붙일 때 쓴다.
-    status 가 없으면 ready 로 본다.
-    """
-    out = [m for m in items if m.get("llm") and m.get("safety") != "restricted"]
-    if ready_only:
-        out = [m for m in out if m.get("status", "ready") == "ready"]
-    return out
-
-
 # ───────────────────────────────────────────────────────────── 백엔드
 
 class MockBackend:
@@ -137,18 +124,15 @@ class MockBackend:
 # ───────────────────────────────────────────────────────────── 상태
 
 class State:
-    def __init__(self, backend, ready_only=False, access_token=None, llm_allowlist=None,
-                 session_log=None, pad_allowlist=None, pad_llm_exclude=None):
+    def __init__(self, backend, ready_only=False, access_token=None,
+                 session_log=None, pad_allowlist=None):
         self.backend = backend
         # RC 모드 토글의 복귀 지점. 토글은 self.backend 만 바꾼다.
         self._primary_backend = backend
         self.ready_only = ready_only
         self.items, self.by_state = load_catalog()
-        self.allowed = {m["state"] for m in llm_motions(self.items, ready_only)}
-        if hasattr(backend, "api_allowlist"):
-            self.allowed &= backend.api_allowlist
-        if llm_allowlist is not None:
-            self.allowed &= set(llm_allowlist)
+        # 음성/LLM 요청 경로는 제거됐다. source="llm"은 아래 _play()에서 항상 거부한다.
+        self.allowed = set()
         # 관객용(/pad) 버튼 목록. self.allowed 와 같은 방식으로 교집합을 취해
         # 카탈로그·api 밖 항목이 오타 하나로 조용히 통과하는 일이 없게 한다.
         self.pad_allowed = set(pad_allowlist or ())
@@ -158,7 +142,6 @@ class State:
         # 패드 그리드 번호 = 목록 순서 (2026-08-18 사용자 확정 스펙).
         # set 은 순서를 잃으므로 원본 순서를 따로 보존해 API 로 내보낸다.
         self.pad_order = [s for s in (pad_allowlist or ()) if s in self.pad_allowed]
-        self.pad_llm_exclude = set(pad_llm_exclude or ())
         self.session_log = session_log or SessionLog(None, enabled=False)
         self.log = deque(maxlen=200)
         # display(무대 화면)가 폴링으로 읽는 현재 동작. 자막 버퍼는 음성과 함께 제거됨.
@@ -306,9 +289,9 @@ class State:
             return self.record(ok=False, motion=motion, ko="?", reason=reason,
                                source=source, msg="카탈로그에 없는 동작")
         # LLM 경로만 화이트리스트를 강제한다. 운영자 버튼은 사람이 누른 것이라 허용.
-        if source == "llm" and motion not in self.allowed:
+        if source == "llm":
             return self.record(ok=False, motion=motion, ko=info["ko"], reason=reason,
-                               source=source, msg="LLM 에게 허용되지 않은 동작")
+                               source=source, msg="LLM 경로는 현재 운영하지 않습니다")
         # 관객용 아이패드도 사람이 누르는 것이지만 그 사람이 운영자가 아니다.
         if source == "pad" and motion not in self.pad_allowed:
             return self.record(ok=False, motion=motion, ko=info["ko"], reason=reason,
@@ -922,9 +905,7 @@ def main():
         backend,
         ready_only=args.ready_only or args.robot or bool(args.relay) or args.rc,
         access_token=args.gateway_token or None,
-        llm_allowlist=gateway_config["policy"].get("llm_allowlist"),
         pad_allowlist=gateway_config["policy"].get("pad_allowlist"),
-        pad_llm_exclude=gateway_config["policy"].get("pad_llm_exclude"),
         session_log=session_log,
     )
     st = Handler.state

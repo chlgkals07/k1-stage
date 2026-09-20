@@ -2,7 +2,8 @@
 
 > **왜 이렇게 생겼나**를 적는다. 네트워크 구성, gateway, ROS 계약, 보안·안전 정책,
 > Locomotion→API→Mimic 설계가 여기 있다.
-> 현재 운영 절차는 [RUNBOOK.md](RUNBOOK.md), 지금 무엇이 참인지는 [STATUS.md](STATUS.md).
+> 현재 운영 절차는 [RUNBOOK.md](RUNBOOK.md), 이번 리허설 기준은
+> [INTERN_FIELD_TEST.md](INTERN_FIELD_TEST.md)다. [STATUS.md](STATUS.md)는 2026-08 기록이다.
 
 ## 1. 목표
 
@@ -16,7 +17,7 @@
 → 확정 → 로봇이 실행 → 동작 길이만큼 잠금 → 대기 복귀
 
 운영자 폰 /operator
-→ 수동 버튼(api_allowlist 78개) · 빨간 정지 · 무대 시작/정지 · RC 모드 토글
+→ 수동 버튼(api_allowlist 14개) · 빨간 정지 · 무대 시작/정지 · RC 모드 토글
 
 메인컴 /dance
 → 프리셋(동작 + 음원 + offset_ms) 보정 → 무대 시작
@@ -146,23 +147,22 @@ robot gateway의 token 없이 `/`에 접근했을 때 `403`은 정상이다. 서
 
 ## 5. 보안 및 안전 정책
 
-### 이중 검사 + 허용목록 3종
+### 이중 검사 + 허용목록 2종
 
 **PC relay와 robot gateway가 각각** motion을 검사한다. 한쪽을 뚫어도 다른 쪽이 막는다.
 
-허용목록은 셋이고 서로 포함 관계다 — **누가 부르느냐에 따라 위험도가 다르기** 때문이다.
+운영 허용목록은 둘이고 포함 관계다 — **누가 부르느냐에 따라 위험도가 다르기** 때문이다.
 
 | 목록 | 누가 부르나 |
 |---|---|
 | `api_allowlist` | gateway가 실행을 허용하는 전부. 운영자 수동 버튼이 여기서 나온다 |
 | `pad_allowlist` | 그중 관객 아이패드에 여는 것 |
-| `llm_allowlist` | 그중 모델이 스스로 고를 수 있는 것. **현재 이 경로로 들어오는 요청은 없다** |
 
 승격 경로는 **수동으로 먼저 실물 검증 → 그 뒤 패드에 개방**이다. 실제 개수와 목록은
-`gateway_config.yaml`이 정본이고, 현재 값은 [STATUS.md §2](STATUS.md#2-허용목록이-세-개인-이유)에 있다.
+`gateway_config.yaml`이 정본이다. 현재는 API 14개, 패드 12개이며 음성·LLM 경로는 운영하지
+않는다.
 
-`safety: restricted`(복싱류 등)는 사람이 버튼으로만 부른다 — 모델 경로에서는
-`llm_motions()`가 구조적으로 거른다.
+`safety: restricted`(복싱류 등)는 공간 확보와 E-stop 담당자 대기 후 사람이 직접 검증한다.
 
 ### Gateway token
 
@@ -474,4 +474,3 @@ MANUAL / Velocity / Teleop velocity
 - 행사장 Wi-Fi 간섭 테스트
 - locomotion 전환 저속 실물 검증
 - E-stop 담당자와 종료 절차 지정
-

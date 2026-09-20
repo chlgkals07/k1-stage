@@ -24,19 +24,24 @@ class RobotRcConfigTest(unittest.TestCase):
     def test_current_rc_list_matches_equivalent_robot_backup(self):
         problems, checked = verify_robot_rc_config.verify(self.config, self.motions)
         self.assertEqual(problems, [])
-        self.assertEqual(checked, 40)
+        self.assertEqual(checked, 14)
 
-    def test_guap_v1_is_a_blocking_failure(self):
-        self.config["selectors"]["mimic_selector_b"]["table"][202] = "MimicGuap"
+    def test_wrong_selected_slot_is_a_blocking_failure(self):
+        self.config["selectors"]["mimic_selector_b"]["table"][202] = "MimicDance1"
         problems, _ = verify_robot_rc_config.verify(self.config, self.motions)
         self.assertTrue(any("B-202" in problem for problem in problems))
-        self.assertTrue(any("MimicGuapVer2" in problem for problem in problems))
+        self.assertTrue(any("MimicNewSnuCheerHeadShort" in problem for problem in problems))
+
+    def test_extra_robot_slot_is_a_blocking_failure(self):
+        self.config["selectors"]["mimic_selector"]["table"][219] = "MimicOld"
+        problems, _ = verify_robot_rc_config.verify(self.config, self.motions)
+        self.assertTrue(any("A-219" in problem for problem in problems))
 
     def test_missing_selector_is_reported_without_crash(self):
         del self.config["selectors"]["mimic_selector"]
         problems, checked = verify_robot_rc_config.verify(self.config, self.motions)
         self.assertIn("A: selectors.mimic_selector.table 을 찾지 못했습니다", problems)
-        self.assertEqual(checked, 20)
+        self.assertEqual(checked, 4)
 
     def test_cli_reads_a_backup_without_modifying_it(self):
         with tempfile.TemporaryDirectory() as directory:

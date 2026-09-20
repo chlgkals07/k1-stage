@@ -36,25 +36,35 @@
 
 ### 1.2 다이얼 슬롯 매핑 대조 — "예전 rc list랑 달라졌다"의 핵심
 
-RC 다이얼 슬롯 번호는 `solo_stage/motions.yaml`의 `slot:` 필드가 소프트웨어 쪽
-진실이고, 로봇 실물 `k1_config.yaml`의 selector 테이블이 하드웨어 쪽 진실이다.
+RC 다이얼 슬롯 번호는 `solo_stage/motions.yaml`의 `rc_list`가 이번 배포 목표이고,
+로봇 실물 `k1_config.yaml`의 selector 테이블이 현재 상태다.
 둘이 어긋나면 "버튼은 눌리는데 다른 동작이 나가거나 아예 안 나간다."
+
+먼저 로봇의 `ai_sapiens/config/k1_config.yaml`을 PC로 **복사**한다. 검사 결과가 다르면
+자동으로 어느 한쪽을 덮어쓰지 말고, 다음 중 맞는 방향을 선택한다.
+
+- 로봇 설정이 실제 사용할 최신 목록이면: 그 백업으로 `motions.yaml`의 `rc_list`를 재생성한다.
+- 이 저장소의 14개 목록이 이번 무대 목표면: 로봇 selector를 이 목록으로 갱신하고 새 백업을
+  받아 다시 검사한다.
+- 동작을 새로 추가하려면: 로봇 selector와 `motions.yaml`의 `motions`/`rc_list`,
+  `gateway_config.yaml`의 `api_allowlist`를 함께 갱신한다. 패드에도 보일 동작만
+  `pad_allowlist`에 추가하고, dance라면 `dance_presets.json`도 추가한다.
 
 ```bash
 # 로봇 최신 k1_config.yaml 백업을 받은 뒤 — 이 명령은 읽기 전용이다.
-python3 tools/verify_robot_rc_config.py <받은 k1_config.yaml>
+python3 solo_stage/tools/verify_robot_rc_config.py <받은 k1_config.yaml>
 
 # 위 검사가 통과한 뒤에만 rc_list를 재생성한다 (이 명령은 motions.yaml을 바꾼다).
 python3 rc_link/gen_rc_list.py <받은 k1_config.yaml> solo_stage/motions.yaml
-git diff solo_stage/motions.yaml   # rc_list 섹션에 diff 가 있는지만 본다
+git diff -- solo_stage/motions.yaml   # rc_list 섹션에 diff 가 있는지만 본다
 ```
 
 - [ ] diff 없음
 - [ ] diff 있음 — 바뀐 슬롯 기록: ___________________________________
       (git diff 결과를 그대로 여기 붙여넣거나 별도 커밋으로 반영)
-- [ ] `verify_robot_rc_config.py` 통과 — A/B 40슬롯 일치 + B-202 `MimicGuapVer2`
-- [ ] 패드 12개 동작이 전부 다이얼에 있는지 (`test_rc_backend.py`의 `KNOWN_A`/`KNOWN_B`
-      앵커, `RUNBOOK.md` "RC delta" 절 참고)
+- [ ] `verify_robot_rc_config.py` 통과 — 이번 무대 A/B 14슬롯 일치
+- [ ] 14개 고유 슬롯이 전부 다이얼에 있는지: 패드 12개 + 서울대 응원 + 스트레이키즈
+      (`BAD`는 패드와 dance가 같은 슬롯을 공유)
 
 ### 1.3 SD/SC/SB 스위치 상호작용 — 가장 헷갈리는 실패 모양
 
@@ -77,24 +87,15 @@ PC 화면엔 성공으로 뜨는데 로봇은 안 움직이는 원인 1위. 지�
 ### 2.1 부팅 및 모드 로드
 
 - [ ] 전원 → (사람이 직접) `go`
-- [ ] `tools/check_modes.sh` 실행 → `[로드됨 + 카탈로그 없음]` 항목 확인
-- [ ] 136개 카탈로그 대비 로드된 개수: ___/136
+- [ ] `cd solo_stage && tools/check_modes.sh` 실행 → `[로드됨 + 카탈로그 없음]` 항목 확인
+- [ ] 이번 무대 14개 동작 대비 로드된 개수: ___/14
 - [ ] 빠진 것 기록: ___________________________________
 
-### 2.2 다이얼 교체 여부 — STATUS.md §6-① (완료 여부 불명, 최우선 확인)
+### 2.2 이번 무대 동작 로드 여부 (최우선 확인)
 
-로봇 `ai_sapiens`의 `config/k1_config.yaml`을 연다:
-
-```yaml
-selectors:
-  mimic_selector_b:
-    table:
-      202: MimicGuapVer2      # 이 값 확인
-```
-
-- [ ] `MimicGuapVer2`로 돼 있음 (정상)
-- [ ] `MimicGuap`(v1)로 남아 있음 → **패드 12번이 RC에서 계속 죽는다.** 교체 후
-      로봇 백업을 다시 떠서 §1.2 `gen_rc_list.py`를 재실행한다
+- [ ] 패드 12개 + dance 전용 서울대 응원·스트레이키즈가 `tools/check_modes.sh`에 모두 있음
+- [ ] 빠진 state: ___________________________________
+- [ ] 빠진 state가 있으면 selector/RC를 배포하지 않고 로봇 policy부터 복구한다
 
 ### 2.3 API 권한 확립
 
@@ -103,6 +104,7 @@ selectors:
 ### 2.4 Wi-Fi 링크
 
 ```bash
+cd solo_stage
 tools/link_test.sh 30   # 사람이 로봇-PC 사이를 오가며 워크 테스트
 ```
 
@@ -115,8 +117,12 @@ tools/link_test.sh 30   # 사람이 로봇-PC 사이를 오가며 워크 테스�
 - [ ] **정지 버튼** — 동작 중에도 눌리는지 가장 먼저
 - [ ] 인사 3종 회귀: 손 흔들기 → 배꼽 인사 → 손키스
 - [ ] preview 흐름: 패드 탭 → TV 미리보기 → [실행] → 로봇 동작 + TV "실행 중"
-- [ ] **dance, API 모드**: 프리셋 재생 → 싱크 확인 → 어긋나면 오프셋 재조정
-- [ ] **dance, RC 모드**: `/rc/mode` 토글 → 같은 프리셋 재생 → 싱크 확인
+- [ ] **dance, API 모드**: `/operator`에서 현재 경로가 `RELAY`, SD OFF→ON 후
+      `API 준비됨` 확인 → 프리셋 재생 → 싱크 확인 → 어긋나면 오프셋 재조정
+- [ ] **dance, RC 모드**: SD OFF → `/operator`의 `RC 모드 켜기` → 현재 경로 `RC` 확인 →
+      같은 프리셋 재생 → 싱크 확인
+- [ ] **API 복귀**: `/operator`의 `RC 모드 끄기 — 기본 경로 복귀` → 현재 경로 `RELAY`
+      확인 → SD OFF→ON → `API 준비됨` 확인
 - [ ] **(신규 회귀 확인)** SD를 안 올린 채로 dance 시작 버튼을 눌러 **"로봇이 명령을
       받을 준비가 안 됐습니다"로 시작이 거부**되는지 (영상만 돌고 로봇이 안 움직이는
       사고가 재발하지 않는지 — 2026-09-20에 고친 것)
@@ -128,6 +134,5 @@ tools/link_test.sh 30   # 사람이 로봇-PC 사이를 오가며 워크 테스�
 
 ## 결과 요약
 
-| 날짜 | 담당자 | 발견된 이슈 | 다음 조치 |
-|---|---|---|---|
-| | | | |
+- 발견된 이슈: ___________________________________
+- 다음 조치: _____________________________________

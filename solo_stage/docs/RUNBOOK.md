@@ -133,14 +133,20 @@ gateway 기동(이미 떠 있으면 재사용) → relay 경로 → 접속 URL �
 
 ## 3. 검증 시퀀스 — 순서 고정
 
-1. RC **API Arm(CH8) 올림** → `/operator` 상단 `API 준비됨`
-   (SD를 OFF → ON으로 edge를 만들고 약 3초 warm-up)
+1. `/operator` 상단 경로가 `RELAY · PC→ROBOT`인지 확인하고 RC **API Arm(CH8) 올림** →
+   `API 준비됨` 확인 (SD를 OFF → ON으로 edge를 만들고 약 3초 warm-up)
 2. **정지 버튼** — 동작 중에도 눌리는지 **가장 먼저**
 3. 인사 3종 회귀: 손 흔들기 → 배꼽 인사 → 손키스
 4. **preview 흐름**: 패드 탭 → TV 미리보기 → [실행] → 로봇 동작 + TV "실행 중"
-5. **dance**: `/dance` 프리셋 불러오기 → ▶ 시작("무대에서 재생" 체크 상태)
+5. **dance API 모드**: `/dance` 프리셋 불러오기 → ▶ 시작("무대에서 재생" 체크 상태)
    → 2초 뒤 TV 영상+소리 + 로봇 동작 → **어긋나면 오프셋 조정 → 재시작 → 프리셋 저장**
-6. 공간 확보 후: 팔굽혀펴기 → 스쿼트 → 섀도우 복싱 (E-stop 대기)
+6. **dance RC 모드**: SD OFF → `/operator`에서 `RC 모드 켜기 — 유선 RC로 전환` →
+   상단 `RC · 유선 RC→ELRS` 확인 → 같은 프리셋 재생·싱크 확인
+7. **API 복귀**: `/operator`에서 `RC 모드 끄기 — 기본 경로 복귀` → `RELAY` 확인 →
+   SD OFF→ON → `API 준비됨` 확인
+8. **신규 회귀**: SD OFF 상태에서 dance 시작 → `로봇이 명령을 받을 준비가 안 됐습니다`로
+   시작이 거부돼야 한다. 영상만 재생되면 실패다.
+9. 공간 확보 후: 팔굽혀펴기 → 스쿼트 → 섀도우 복싱 (E-stop 대기)
 
 > 수동 버튼은 `/operator` 전용이다. gateway가 `API 준비됨`이 되기 전에는 잠긴다 —
 > **SD Arm 전에 버튼이 안 눌리는 건 고장이 아니다.**
@@ -148,7 +154,7 @@ gateway 기동(이미 떠 있으면 재사용) → relay 경로 → 접속 URL �
 ### 새 동작을 처음 실기에서 확인할 때
 
 각 동작마다 기록한다: 시작·종료 자세 / 이동량 / 소요 시간 / 복귀 상태 / 이상 여부.
-이 기록이 잠금 타이밍과 LLM 승격 판단의 근거가 된다.
+이 기록이 잠금 시간과 패드·dance 공개 여부 판단의 근거가 된다.
 
 로봇에 실제로 로드된 모드와 카탈로그를 대조하려면:
 
@@ -231,7 +237,8 @@ ros2 topic echo /ai_sapiens/mode_status --once
 
 ## 7. 알려진 제약
 
-- **기사식 인사·마카레나**: 로봇 config 미등록 → [실행] 시 거부된다 (패드 12개 중 10개 정상).
+- 이번 무대 목록은 패드 12개 + dance 전용 서울대 응원·스트레이키즈, 총 14개 고유
+  동작이다. `BAD`는 패드와 dance가 같은 동작을 공유한다.
   등록하려면 config 2쌍 삽입 + `go` 재시작이 필요하다
 - 로봇 시계가 이틀 어긋난다. 싱크는 전부 PC 시계라 무영향이고, **로봇 로그를 대조할 때만** 주의
 - dance 오프셋(-420ms 등)은 **이 현장에서 재보정한 값이어야 한다**
@@ -256,10 +263,12 @@ bringup이 `sim2real_yaml missing file`로 죽는다 (2026-08-18에 실제로 �
 카탈로그만 고쳐서는 아무 일도 일어나지 않는다. **넷이 모두 맞아야 한다.**
 
 ```text
-1. motions.yaml 에 카탈로그 항목      ← 없으면 버튼이 안 뜨고 요청도 거부된다
-2. gateway_config.yaml api_allowlist  ← 운영자 수동 버튼으로 실행 가능해짐
-3. 실물 단독 검증 (공간 + E-stop)
-4. pad_allowlist 또는 llm_allowlist   ← 그 뒤에야 관객·모델에게 연다
+1. 로봇 k1_config.yaml selector       ← RC 다이얼에서 실행할 슬롯
+2. motions.yaml motions / rc_list     ← UI 카탈로그와 RC 배포 목표
+3. gateway_config.yaml api_allowlist  ← 운영자 수동 버튼으로 실행 가능해짐
+4. 실물 단독 검증 (공간 + E-stop)
+5. pad_allowlist                     ← 패드에 보일 동작만 추가
+6. dance_presets.json                ← dance에서 사용할 때만 추가
 ```
 
 로봇에 policy 자체가 없으면 gateway가 "현재 로봇에 배포되지 않은 동작입니다"로 거부한다.

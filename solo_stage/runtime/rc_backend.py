@@ -71,7 +71,8 @@ def _verify_obs(entry, obs):
 
 def load_rc_map(motions_path):
     """rc_list → {state: {bank, slot, ko, duration_sec}}. slot 은 1..20 (ch11 기준)."""
-    data = yaml.safe_load(open(motions_path, encoding="utf-8"))
+    with open(motions_path, encoding="utf-8") as handle:
+        data = yaml.safe_load(handle)
     rc = data.get("rc_list") or {}
     mapping = {}
     for bank_name, bank in (rc.get("banks") or {}).items():
@@ -184,7 +185,7 @@ class RcBackend:
     def motion_duration(self, motion):
         """추정 길이(초). 무대 자동 종료 fallback 과 busy 잠금이 쓴다.
 
-        rc_list note 에 길이가 적힌 슬롯은 40개 중 2개뿐이라 나머지는 전부 기본 30초로
+        rc_list에 길이 note가 없으면 기본 30초로
         잠겼다 — 4초짜리 손인사에도 관객 패드가 30초 멈춘다. 같은 동작으로 구운 sim
         클립 길이가 실제 동작 길이이므로 그걸 먼저 본다 (없으면 기존 값 그대로).
         """
@@ -269,7 +270,9 @@ class RcBackend:
         갱신은 한 번에 하나만 하고, 나머지는 직전 값을 그대로 받아 간다.
         """
         cached, at = self._tlm_cache
-        if time.monotonic() - at < 1.0:
+        # 초기 캐시는 at=0이다. 프로세스 직후 monotonic 값이 1초 미만이어도
+        # 첫 status는 반드시 라디오를 한 번 읽어야 한다.
+        if at and time.monotonic() - at < 1.0:
             return cached
         if not self._tlm_refresh.acquire(blocking=False):
             return cached                      # 다른 폴러가 이미 갱신 중

@@ -9,7 +9,7 @@
 | **[INTERN_FIELD_TEST.md](INTERN_FIELD_TEST.md)** | 인턴이 내일 실물 검증을 할 때. 준비부터 종료까지 한 번에 따르는 사용법 |
 | **[HANDOVER_CHECK.md](HANDOVER_CHECK.md)** | 로봇을 오래 안 켰다가 다시 잡을 때. RC → 로봇 → 통합 순으로 실측 대조 |
 | **[RUNBOOK.md](RUNBOOK.md)** | 로봇을 돌릴 때. 셋업 → 검증 → 장애 대응 → 종료 |
-| **[STATUS.md](STATUS.md)** | "지금 무엇이 참인가". 허용목록 실제 값, 최종 리뷰 결과, 남은 검증 |
+| **[STATUS.md](STATUS.md)** | 2026-08 개소식 당시의 허용목록·리뷰 결과·남은 검증 기록(현재 기준 아님) |
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | 왜 이렇게 생겼나. 네트워크·gateway·ROS 계약·보안 |
 
 ## 그 밖
@@ -40,17 +40,13 @@ RC(유선 라디오) 경로:    server.py --rc → runtime/rc_backend.py → run
 1. motions.yaml 에 카탈로그 항목      ← 없으면 버튼이 안 뜨고 요청도 거부된다
 2. gateway_config.yaml api_allowlist  ← 운영자 수동 버튼으로 실행 가능해짐
 3. 실물 단독 검증 (공간 + E-stop)
-4. pad_allowlist 또는 llm_allowlist   ← 그 뒤에야 관객·모델에게 연다
+4. gateway_config.yaml의 api_allowlist / pad_allowlist 에 함께 반영
 ```
 
 로봇에 policy 자체가 없으면 gateway가 "현재 로봇에 배포되지 않은 동작입니다"로 거부한다.
 실제 로드 목록은 [reference/ROBOT_MODES_20260812.md](reference/ROBOT_MODES_20260812.md),
 대조 도구는 `tools/check_modes.sh`다.
 
-## 음성·LLM 경로는 여기 없다
+## 음성·LLM 경로는 운영하지 않는다
 
-한때 이 앱의 주 경로는 아이폰 음성 대화(OpenAI Realtime)였고 2026-08-18에 뺐다.
-관련 문서와 재개 지침은 **`voice-llm-dev` 브랜치**의 `docs/voice/`로 옮겼다.
-
-코드에는 `llm_allowlist`·`pad_llm_exclude`·`source == "llm"` 검사가 아직 살아 있다.
-지금 이 경로로 들어오는 요청이 없을 뿐이고, 구조가 유효해서 그대로 뒀다.
+이 앱은 패드·운영자·dance만 쓴다. `source="llm"` 요청은 서버가 거부한다.

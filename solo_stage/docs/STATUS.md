@@ -1,5 +1,9 @@
 # 상태와 인수인계
 
+> 아래 본문은 2026-08 실기 기록이다. 현재 무대의 정본은 `motions.yaml`,
+> `gateway_config.yaml`, 그리고 [실물 검증 사용법](INTERN_FIELD_TEST.md)이다.
+> 136개 카탈로그·LLM·Guap 관련 수치는 현재 운영 기준으로 쓰지 않는다.
+
 갱신일: **2026-08-20**
 
 > 예전의 `STATUS_AND_HANDOVER`(8/12판) · `FINAL_REVIEW_2026-08-18` · `archive/snapshots_20260812`의

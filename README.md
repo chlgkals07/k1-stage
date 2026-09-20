@@ -47,8 +47,9 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 ```
 
 행사 당일 절차는 [solo_stage/docs/RUNBOOK.md](solo_stage/docs/RUNBOOK.md) 하나로 끝난다.
-셋업 → 검증 시퀀스 → 장애 대응까지 현장 실측값 기준이다. 지금 무엇이 참인지는
-[solo_stage/docs/STATUS.md](solo_stage/docs/STATUS.md)를 본다.
+셋업 → 검증 시퀀스 → 장애 대응까지 현장 실측값 기준이다. 이번 리허설의 현재 기준은
+[solo_stage/docs/INTERN_FIELD_TEST.md](solo_stage/docs/INTERN_FIELD_TEST.md)를 보고,
+지난 개소식 기록은 [solo_stage/docs/STATUS.md](solo_stage/docs/STATUS.md)를 참고한다.
 
 ## 안전 경계
 
@@ -56,9 +57,8 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 2. RC의 SD(CH8)가 API 권한의 물리 허가다. 내리면 PC가 무슨 말을 해도 안 움직인다.
    반대로 **RC 모드에서는 SD를 내려야** 명령이 먹는다 — API 권한일 때 로봇은 teleop
    전이를 무시하기 때문이다.
-3. 허용목록이 셋이고 서로 다르다. `api_allowlist` 78개가 운영자 수동 버튼이 부를 수 있는
-   전부이고, 그 부분집합인 `pad_allowlist` 12개만 관객 패드에 연다(`llm_allowlist` 21개는
-   모델 경로용). 새 동작은 수동으로 먼저 실물 검증한 뒤 승격한다.
+3. 이번 무대는 `api_allowlist` 14개만 열고, 그중 `pad_allowlist` 12개를 관객 패드에
+   노출한다. 음성·LLM 경로는 쓰지 않는다. 새 동작은 수동으로 먼저 실물 검증한 뒤 연다.
 4. 대기 중 물리 스위치는 SC 상단 + SB 중앙에 둔다. **SC 중앙에 두지 않는다** —
    그 위치가 곧 "권한을 잃으면 ReadyPose"이고, 균형 정책 없는 자세라 가장 넘어지기 쉽다.
 

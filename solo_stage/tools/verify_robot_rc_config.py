@@ -4,8 +4,8 @@
 사용:
   python3 tools/verify_robot_rc_config.py <robot-k1_config.yaml> [motions.yaml]
 
-성공(0): A/B selector의 모든 슬롯이 motions.yaml rc_list와 같고, B-202가
-MimicGuapVer2 이다. 실패(1): 누락·차이·구압 v1 잔존 중 하나가 있다.
+성공(0): A/B selector의 모든 슬롯이 motions.yaml rc_list와 같다.
+실패(1): selector 누락 또는 슬롯 차이가 있다.
 """
 
 import sys
@@ -53,13 +53,14 @@ def verify(config, motions):
             actual = table_value(table, slot)
             if actual != wanted:
                 problems.append(f"{bank}-{slot}: 로봇={actual!r}, 기대={wanted!r}")
+        # 이번 무대 목록 밖의 Mimic selector 슬롯이 남아 있으면, PC와 로봇이
+        # 서로 다른 목록을 보게 된다. 200~219 슬롯은 배포 목표와 정확히 같아야 한다.
+        actual_slots = {int(key) for key in table if str(key).isdigit()
+                        and 200 <= int(key) <= 219}
+        for slot in sorted(actual_slots - set(expected[bank])):
+            problems.append(f"{bank}-{slot}: 이번 무대 목록 밖 슬롯이 로봇에 남아 있습니다 "
+                            f"({table_value(table, slot)!r})")
 
-    b_selector = selectors.get(SELECTOR_KEY["B"], {})
-    b_table = b_selector.get("table", {}) if isinstance(b_selector, dict) else {}
-    guap = table_value(b_table, 202) if isinstance(b_table, dict) else None
-    if guap != "MimicGuapVer2":
-        problems.append("B-202: MimicGuapVer2 여야 합니다 "
-                        f"(현재 {guap!r}; MimicGuap이면 v1이 남은 상태)")
     return problems, checked
 
 
@@ -79,7 +80,7 @@ def main(argv):
         print(*[f"- {problem}" for problem in problems], sep="\n")
         print("수정 후 rc_link/gen_rc_list.py로 rc_list를 재생성하고 git diff로 검토하세요.")
         return 1
-    print(f"통과: A/B RC 슬롯 {checked}개 일치, B-202 = MimicGuapVer2")
+    print(f"통과: A/B RC 슬롯 {checked}개가 motions.yaml과 일치")
     return 0
 
 
