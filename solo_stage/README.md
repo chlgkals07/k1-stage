@@ -36,7 +36,8 @@ python3 server.py --https          # 자체 서명 인증서 자동 생성
 
 `pyyaml` 외 의존성이 없다.
 
-현장 절차 전체는 [docs/RUNBOOK.md](docs/RUNBOOK.md) 하나로 끝난다.
+내일 실물 검증 담당자는 [docs/INTERN_FIELD_TEST.md](docs/INTERN_FIELD_TEST.md)를 처음부터
+끝까지 따른다. 행사 운영 절차 전체와 장애 대응은 [docs/RUNBOOK.md](docs/RUNBOOK.md)에 있다.
 
 ## 화면
 
@@ -100,15 +101,12 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 | `motions.yaml` | 동작 카탈로그 + RC 매핑 |
 | `gateway_config.yaml` | 허용목록 3종, 정지 목표 상태, ROS 엔드포인트 |
 | `server.py` | 화면 서빙, stage 상태기계, 무대 스케줄, 백엔드 선택 |
-| `relay_backend.py` | PC → 로봇 HTTPS relay |
-| `robot_backend.py` · `gateway.py` | 로봇 쪽 ROS 게이트웨이와 실행 정책 |
-| `rc_backend.py` · `rc_serial.py` | 유선 RC 경로 |
-| `clip_len.py` | sim 클립 길이 측정 |
+| `runtime/` | PC→로봇 relay, 로봇 gateway, RC 폴백, sim 클립 길이 등 실행 구성요소 |
 | `run.sh` | 실행 진입점. 점검·배포·기동·정리 |
-| `tests/test_*.py` | 단위 테스트 **137개** |
+| `tests/test_*.py` | 단위 테스트 (RC/로봇 설정 대조 포함) |
 
-로봇과 동기화가 필요한 파일은 6개다(`server.py` `gateway.py` `robot_backend.py`
-`relay_backend.py` `gateway_config.yaml` `motions.yaml`). `run.sh`가 md5로 대조한다.
+로봇과 동기화가 필요한 파일은 `server.py`, `runtime/`, `gateway_config.yaml`,
+`motions.yaml`이다. `run.sh`가 md5로 대조한다.
 
 ## 문서
 

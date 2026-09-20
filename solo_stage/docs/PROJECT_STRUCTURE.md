@@ -7,20 +7,12 @@ solo_stage/
 ├── run.sh                    # 실행 진입점. 점검 → 배포 → gateway → relay → 폰 URL
 ├── README.md                 # 짧은 진입점
 ├── docs/                     # 현재 문서와 인수인계
-├── archive/                  # 과거 코드·설정 스냅샷 (gitignore — 로컬에만)
-├── robot/                    # 로봇 적용 파일 매니페스트
 ├── static/                   # 웹 UI 4장 — pad · display · operator · dance
-├── media/                    # 무대 음원·안무 영상 (gitignore — 로컬에만)
 ├── motions.yaml              # 동작 카탈로그
 ├── gateway_config.yaml       # allowlist 3종, stop/entry state, ROS endpoint
 ├── dance_presets.json        # 무대 프리셋 — 동작 + 음원 + 싱크 오프셋
 ├── server.py                 # HTTPS UI, stage 상태기계, 무대 싱크, backend 선택
-├── relay_backend.py          # PC→robot HTTPS relay
-├── robot_backend.py          # robot ROS 2 transport
-├── rc_backend.py · rc_serial.py  # RC 폴백 경로 (PC→USB→라디오→ELRS)
-├── gateway.py                # 실행 정책·lifecycle·정지·cooldown
-├── clip_len.py               # sim 클립 길이 → 잠금 타이밍 기준
-├── session_log.py            # JSONL 세션 로그
+├── runtime/                  # relay·robot gateway·RC·타이밍·세션 실행 구성요소
 ├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal, api_arm_probe …)
 └── tests/                    # Python 단위 테스트 (137개) — test_*.py
 ```
@@ -36,10 +28,6 @@ solo_stage/
   (`-t .`가 루트를 import 경로에 넣어야 `import server`가 된다 — 안 하면 전부 실패한다).
 - `tools/`: 로봇에 배포되지 않는 진단·개발용 스크립트. `api_arm_probe.py`도 여기 있다.
 - `docs/`: 운영, 설계, 상태를 읽는 곳이다. `README.md`가 문서 색인이다.
-- `archive/`: 실행하지 않는 과거 백업이다. 복구나 비교할 때만 본다. **gitignore 대상이라
-  이 저장소에는 없고 작업 PC에만 있다** — git 이전 시절에 `*.bak.<주제>_<날짜>` 규칙으로
-  남기던 것의 잔재다. 지금 이력은 git 이 들고 있으므로 새 스냅샷을 여기 쌓지 않는다.
-- `robot/`: 로봇 ROS 패키지를 중복 보관하지 않고 관리본과 배포 파일을 안내한다.
 - `static/`: 별도 frontend 빌드 없이 `server.py`가 그대로 제공하는 웹 UI다.
 
 ## 로봇 쪽 배포본
@@ -60,4 +48,3 @@ gateway_config.yaml  motions.yaml
 `static/`은 PC relay가 서빙하므로 로봇에 없어도 된다.
 
 ## 읽는 순서
-

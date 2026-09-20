@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from gateway import Gateway, RobotSnapshot
+from runtime.gateway import Gateway, RobotSnapshot
 
 
 def ready_snapshot(active="Velocity"):

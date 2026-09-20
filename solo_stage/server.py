@@ -32,11 +32,11 @@ from pathlib import Path
 
 import yaml
 
-import clip_len
-from robot_backend import RobotBackend
-from relay_backend import RelayBackend
-from rc_backend import RcBackend
-from session_log import SessionLog
+from runtime import clip_len
+from runtime.robot_backend import RobotBackend
+from runtime.relay_backend import RelayBackend
+from runtime.rc_backend import RcBackend
+from runtime.session_log import SessionLog
 
 HERE = Path(__file__).parent
 CATALOG = HERE / "motions.yaml"

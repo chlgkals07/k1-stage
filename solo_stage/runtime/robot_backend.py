@@ -12,7 +12,7 @@ from pathlib import Path
 
 import yaml
 
-from gateway import Gateway, RobotSnapshot
+from .gateway import Gateway, RobotSnapshot
 
 
 def _load_cooldowns(catalog_path: Path):

@@ -8,7 +8,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from server import Handler, MockBackend, State
-from session_log import SessionLog
+from runtime.session_log import SessionLog
 
 TOKEN = "log-test-token"
 

@@ -4,8 +4,8 @@ import pathlib
 import time
 import unittest
 
-import rc_backend
-from rc_backend import RcBackend, load_rc_map
+from runtime import rc_backend
+from runtime.rc_backend import RcBackend, load_rc_map
 
 HERE = pathlib.Path(__file__).parent.parent
 MOTIONS = HERE / "motions.yaml"

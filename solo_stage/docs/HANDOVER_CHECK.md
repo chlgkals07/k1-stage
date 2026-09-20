@@ -41,7 +41,10 @@ RC 다이얼 슬롯 번호는 `solo_stage/motions.yaml`의 `slot:` 필드가 소
 둘이 어긋나면 "버튼은 눌리는데 다른 동작이 나가거나 아예 안 나간다."
 
 ```bash
-# 로봇 최신 k1_config.yaml 백업을 받은 뒤 (§2.1에서 확보)
+# 로봇 최신 k1_config.yaml 백업을 받은 뒤 — 이 명령은 읽기 전용이다.
+python3 tools/verify_robot_rc_config.py <받은 k1_config.yaml>
+
+# 위 검사가 통과한 뒤에만 rc_list를 재생성한다 (이 명령은 motions.yaml을 바꾼다).
 python3 rc_link/gen_rc_list.py <받은 k1_config.yaml> solo_stage/motions.yaml
 git diff solo_stage/motions.yaml   # rc_list 섹션에 diff 가 있는지만 본다
 ```
@@ -49,6 +52,7 @@ git diff solo_stage/motions.yaml   # rc_list 섹션에 diff 가 있는지만 본
 - [ ] diff 없음
 - [ ] diff 있음 — 바뀐 슬롯 기록: ___________________________________
       (git diff 결과를 그대로 여기 붙여넣거나 별도 커밋으로 반영)
+- [ ] `verify_robot_rc_config.py` 통과 — A/B 40슬롯 일치 + B-202 `MimicGuapVer2`
 - [ ] 패드 12개 동작이 전부 다이얼에 있는지 (`test_rc_backend.py`의 `KNOWN_A`/`KNOWN_B`
       앵커, `RUNBOOK.md` "RC delta" 절 참고)
 

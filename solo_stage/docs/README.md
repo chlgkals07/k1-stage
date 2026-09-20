@@ -6,6 +6,7 @@
 
 | 문서 | 언제 보나 |
 |---|---|
+| **[INTERN_FIELD_TEST.md](INTERN_FIELD_TEST.md)** | 인턴이 내일 실물 검증을 할 때. 준비부터 종료까지 한 번에 따르는 사용법 |
 | **[HANDOVER_CHECK.md](HANDOVER_CHECK.md)** | 로봇을 오래 안 켰다가 다시 잡을 때. RC → 로봇 → 통합 순으로 실측 대조 |
 | **[RUNBOOK.md](RUNBOOK.md)** | 로봇을 돌릴 때. 셋업 → 검증 → 장애 대응 → 종료 |
 | **[STATUS.md](STATUS.md)** | "지금 무엇이 참인가". 허용목록 실제 값, 최종 리뷰 결과, 남은 검증 |
@@ -24,9 +25,9 @@
 
 ```text
 실행 진입점:            ../run.sh
-관객·운영자 화면 요청:   server.py → relay_backend.py
-로봇 HTTPS/ROS gateway: server.py --robot → robot_backend.py → gateway.py
-RC(유선 라디오) 경로:    server.py --rc → rc_backend.py → rc_serial.py
+관객·운영자 화면 요청:   server.py → runtime/relay_backend.py
+로봇 HTTPS/ROS gateway: server.py --robot → runtime/robot_backend.py → runtime/gateway.py
+RC(유선 라디오) 경로:    server.py --rc → runtime/rc_backend.py → runtime/rc_serial.py
 동작·안전 메타데이터:    ../motions.yaml, ../gateway_config.yaml
 로봇 상태머신 변경분:    ../../robot/
 ```
