@@ -175,6 +175,31 @@ class UiHttpTest(unittest.TestCase):
                        "/clips/../../etc/passwd"):
             self.assertEqual(self.request(attack, self.cookie())[0], 404, attack)
 
+    def test_shared_web_files_are_served(self):
+        """화면 4장이 <link> 로 부르는 경로. 여기가 404 면 무대에서 스타일 없는 화면이 뜬다."""
+        for path in ("/web/base.css", "/web/tool.css",
+                     "/web/themes/shape/tokens.css", "/web/themes/shape/display.css"):
+            status, headers, _ = self.request(path, self.cookie())
+            self.assertEqual(status, 200, path)
+            self.assertEqual(headers["Content-Type"], "text/css", path)
+
+    def test_web_path_traversal_is_blocked(self):
+        """/web/ 는 경로를 그대로 받으므로 저장소 밖으로 못 나가는지가 여기 달렸다."""
+        for attack in ("/web/../server.py", "/web//etc/passwd",
+                       "/web/themes/../../group_stage/server.py",
+                       "/web/..%2Fserver.py"):
+            self.assertEqual(self.request(attack, self.cookie())[0], 404, attack)
+
+    def test_web_requires_token(self):
+        self.assertEqual(self.request("/web/base.css")[0], 403)
+
+    def test_display_links_theme_css_not_inline_style(self):
+        """시각은 테마가 준다. 페이지에 <style> 이 돌아오면 또 두 앱이 갈린다."""
+        body = self.request("/display?token=" + TOKEN)[2].decode()
+        self.assertIn('href="/web/base.css"', body)
+        self.assertIn('href="/theme/display.css"', body)
+        self.assertNotIn("<style>", body)
+
     def test_clip_requires_token(self):
         self.assertEqual(self.request(f"/clips/{self.any_clip()}.mp4")[0], 403)
 

@@ -1,0 +1,10 @@
+/* SHAPE 화이트 톤 — Figma export 에서 뽑은 값.
+ * Monitor(TV)와 iPad 가 같은 값을 다른 이름으로 부르는 구간이 있다(ink/fg, steel/dim).
+ * 이번 분리는 "픽셀 변화 0" 이 원칙이라 이름을 통일하지 않았다. 통일은 새 디자인 때다.
+ */
+:root{
+  --bg:#f8f9ff;
+  --ink:#101638; --fg:#101638;      /* 본문 글자 — display / pad */
+  --steel:#5b638a; --dim:#5b638a;   /* 보조 글자 — display / pad */
+  --font:"Inter",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",Helvetica,sans-serif;
+}

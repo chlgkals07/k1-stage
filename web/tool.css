@@ -1,0 +1,32 @@
+/* 운영자 도구 공통 다크 UI — /operator 와 /dance 가 같이 쓴다.
+ *
+ * 이것은 테마가 아니다. 행사마다 바뀌면 현장에서 운영자가 헷갈린다. 관객 화면(display·pad)만
+ * 테마를 탄다. 여기 있는 것은 두 화면이 글자 하나까지 같던 규칙뿐이고, 갈리는 것(main 폭,
+ * header padding, 셀렉트 범위, 페이지별 요소)은 각 페이지에 남겨 뒀다.
+ */
+:root{--bg:#0e1116;--panel:#171b22;--line:#2a3240;--fg:#edf1f8;--dim:#97a2b5;--ok:#3ddc84;--bad:#ff6b62;--warn:#ffbd59;--accent:#73a9ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif}
+
+/* header 의 padding 만 두 화면이 다르다 (operator 12px / dance 10px) — 각 페이지에 있다 */
+header{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;background:var(--bg);border-bottom:1px solid var(--line)}
+h1{font-size:16px;margin:0;flex:1}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--bad)}
+.dot.ready{background:var(--ok)}
+.dot.warming{background:var(--warn)}
+
+/* 모드 배지. operator 는 .mode-badge, dance 는 .badge 로 부른다 — 이름 통일은 픽셀이
+   바뀌는 일이 아니지만 HTML 을 같이 고쳐야 해서 이번 이동에서는 그대로 뒀다. */
+.badge,.mode-badge{font-size:11px;font-weight:800;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--dim)}
+.badge.mock,.mode-badge.mock{color:#171006;background:var(--warn);border-color:var(--warn)}
+.badge.relay,.mode-badge.relay{color:#06101f;background:var(--accent);border-color:var(--accent)}
+.badge.robot,.mode-badge.robot{color:#06140c;background:var(--ok);border-color:var(--ok)}
+
+a,button,select,input{font:inherit}
+a.button,button{border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:var(--panel);color:var(--fg);text-decoration:none;cursor:pointer}
+button.primary{background:var(--accent);color:#07111f;border-color:var(--accent);font-weight:700}
+button.danger{background:#c0263a;border-color:#c0263a;color:#fff;font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+.hint{color:var(--dim);font-size:13px}
+.field label{display:block;color:var(--dim);font-size:12px;margin-bottom:4px}

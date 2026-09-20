@@ -74,11 +74,19 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 
 ```
 k1-stage/
-├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 135 tests
-├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 94 tests
+├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 139 tests
+├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 98 tests
+├── web/           두 앱이 같이 쓰는 프론트 — base.css · tool.css · themes/
 ├── rc_link/       라디오 Lua·믹서 패치·SD 백업·왕복 벤치
 └── robot/         ai_sapiens 변경분 (원본 · 현행 · patch)
 ```
+
+화면 4장의 CSS 는 `web/` 한 벌이다. 앱마다 복제해 두니 실제로 갈렸다 — 8/31 새 대기
+이미지가 `group_stage` 에만 들어가 `display.html` 두 벌이 서로 다른 화면이 됐다. 지금은
+**관객 화면(display·pad)만 테마를 타고**(`--theme`, 기본 solo=`shape` / group=`shape-gym`),
+**운영자 화면(operator·dance)은 테마 밖**이다 — 행사마다 바뀌면 현장에서 헷갈린다.
+`web/base.css` 는 테마가 못 건드리는 뼈대(캔버스 스케일 메커니즘·레이어 페이드·z-index)라
+디자인을 잘못 넣어도 화면이 안 뜨는 일은 없다.
 
 `solo_stage`와 `group_stage`는 각각의 커밋 이력을 그대로 가지고 합쳐졌다.
 `group_stage`는 `solo_stage`에서 파생됐고 stage 상태기계·무대 싱크·자막·자동종료를 공유한다.

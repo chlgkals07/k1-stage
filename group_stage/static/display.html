@@ -6,117 +6,9 @@
 <title>SHAPE 무대</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
-<style>
-/* ── SHAPE 디자인 토큰 (Figma export 에서 추출) ─────────────────
-   Monitor 는 라이트 톤: bg #f8f9ff · navy #152a9e · steel #5b638a · ink #101638
-   보라 blur #b7afff29 · 링 #7667ff · 블루 #5a9bff                         */
-:root{
-  --bg:#f8f9ff; --navy:#152a9e; --steel:#5b638a; --ink:#101638;
-  --violet:#7667ff; --blue:#5a9bff; --blur:#b7afff29;
-  --font:"Inter",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",Helvetica,sans-serif;
-}
-*{box-sizing:border-box;margin:0}
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);font-family:var(--font);color:var(--ink)}
-
-/* 시안은 1440×810 고정 캔버스다. 반응형으로 다시 짜면 디자인이 깨지므로
-   원본 좌표 그대로 두고 화면에 맞춰 통째로 scale 한다 (4K TV = 정확히 2.667배). */
-.canvas{position:fixed;left:50%;top:50%;width:1440px;height:810px;
-  transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center;
-  background:var(--bg);overflow:hidden}
-/* 화면 전환은 컷이 아니라 교차 페이드다 (2026-08-18: 무대→대기 복귀가 너무 뚝 끊겼다).
-   display 로 껐다 켜면 transition 이 안 걸리므로 opacity 로 숨긴다 — 안 보이는 레이어는
-   pointer-events 도 끈다. 겹치는 0.5초 동안 두 화면이 자연스럽게 섞인다. */
-.canvas,.full{opacity:0;pointer-events:none;transition:opacity .5s ease}
-.canvas.on,.full.on{opacity:1;pointer-events:auto}
-.canvas{display:block}
-.full{position:fixed;inset:0;display:block;background:var(--bg)}
-
-/* Monitor 공통 헤더 (모든 프레임 동일 좌표) */
-.brand{position:absolute;top:74px;left:58px}
-.brand h1{font-size:64px;font-weight:800;color:var(--navy);line-height:26px;white-space:nowrap}
-.brand p{margin-top:25px;font-size:15px;font-weight:600;color:var(--steel);line-height:14px;white-space:nowrap}
-
-/* ── IDLE_IMAGE: 전체화면 이미지 (spec RULE 01·02) ── */
-/* 배경은 이미지 바탕색과 같아야 여백에 경계선이 안 보인다. 2026-08-31 이미지
-   (Open Humanoid GYM)는 가장자리 최빈색이 순백 255,255,255 라 #fff 로 맞췄다. */
-#layer-idle{display:flex;align-items:center;justify-content:center;background:#fff}
-#idleBg{display:none}
-/* 2026-08-31 이미지는 960x540 = 16:9 라 TV 화면비와 같다. 여백 없이 꽉 채운다
-   (비율이 같아 contain 이어도 잘리지 않는다). */
-#idleImg{position:relative;max-width:72vw;max-height:72vh;object-fit:contain;display:block;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges}
-
-/* ── preview: 전체화면 sim 영상 + 최소 오버레이 ── */
-#clipVideo{width:100vw;height:100vh;object-fit:contain;background:#070914;display:block}
-#clipName{position:fixed;left:4vw;bottom:4vh;font-size:2.2vw;font-weight:700;color:#f8faff;
-  text-shadow:0 2px 12px rgba(0,0,0,.75)}
-/* 클립 없는 동작(최종 렌더 대기): 이름을 화면 중앙에 크게 */
-#clipName.noclip{left:0;right:0;bottom:auto;top:50%;transform:translateY(-50%);
-  text-align:center;font-size:6vw}
-#clipTagEl{position:fixed;top:4vh;right:4vw;font-size:1.3vw;font-weight:800;letter-spacing:.12em;
-  color:#c4b5fd;text-shadow:0 2px 10px rgba(0,0,0,.7)}
-
-/* ── 02 Robot_Running ── */
-#layer-executing .glow{position:absolute;top:55px;left:260px;width:920px;height:720px;
-  background:var(--blur);border-radius:460px/360px;filter:blur(55px)}
-#layer-executing .msg{position:absolute;top:320px;left:0;width:1440px;text-align:center;
-  font-size:96px;font-weight:800;color:#0b3980;letter-spacing:.01em}
-#layer-executing .sub{position:absolute;top:470px;left:0;width:1440px;text-align:center;
-  font-size:30px;font-weight:600;color:var(--steel)}
-
-/* ── 04 Listening / Thinking ── */
-#layer-listening .blob{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%);
-  border-radius:50%;filter:blur(110px)}
-#layer-listening .b1{width:500px;height:500px;background:#5a9bff33}
-#layer-listening .b2{width:370px;height:370px;background:#7667ff3d}
-#layer-listening .b3{width:240px;height:240px;background:#8b5cf64d}
-#layer-listening .ring{position:absolute;left:50%;top:352px;transform:translateX(-50%);
-  width:220px;height:220px;border-radius:50%;border:3px solid #7667ff66;
-  animation:breath 1.8s ease-in-out infinite}
-@keyframes breath{0%,100%{transform:translateX(-50%) scale(1);opacity:.9}
-                  50%{transform:translateX(-50%) scale(1.14);opacity:.5}}
-#layer-listening .word{position:absolute;top:410px;left:0;width:1440px;text-align:center;
-  font-size:55px;font-weight:900;color:var(--ink);letter-spacing:.04em}
-#layer-listening .h2{position:absolute;top:620px;left:0;width:1440px;text-align:center;
-  font-size:34px;font-weight:700;color:var(--steel)}
-#layer-listening .proc{position:absolute;top:96px;right:58px;font-size:34px;font-weight:700;
-  color:var(--blue);letter-spacing:.02em}
-
-/* ── 05 Response ── */
-#layer-response .glow{position:absolute;top:120px;right:60px;width:800px;height:430px;
-  filter:blur(100px);border-radius:50%;background:var(--blur)}
-#layer-response .quote{position:absolute;top:240px;right:120px;width:760px;
-  font-size:64px;line-height:1.35;font-weight:600;color:var(--ink);text-align:left;
-  word-break:keep-all}
-#layer-response .complete{position:absolute;right:44px;bottom:36px;display:flex;
-  align-items:center;gap:13px;font-size:30px;font-weight:800;color:var(--ink)}
-#layer-response .complete i{width:19px;height:19px;border-radius:50%;background:var(--blue)}
-
-/* ── 03 Dance: 중앙 미디어 박스 (91,152) 1257×618 — RULE 33 ── */
-#layer-dance .title{position:absolute;top:92px;left:0;width:1440px;text-align:center;
-  font-size:40px;font-weight:700;color:#0b3980}
-#danceVideo{position:absolute;top:152px;left:91px;width:1257px;height:618px;
-  object-fit:contain;background:#070914;border-radius:16px}
-#danceTop{position:absolute;top:96px;right:58px;font-size:26px;font-weight:700;color:var(--steel)}
-/* 출처는 영상 아래(770px) 여백에 작게. 캔버스 810px 안에 들어가야 잘리지 않는다. */
-#danceCredit{position:absolute;top:778px;left:0;width:1440px;text-align:center;
-  font-size:19px;font-weight:500;color:var(--steel)}
-
-/* ── 오디오 잠금 (운영 단계 — 디자인 톤으로) ── */
-#layer-unlock{position:fixed;inset:0;display:none;z-index:100;cursor:pointer;
-  background:var(--bg);text-align:center}
-#layer-unlock.on{display:block}
-#layer-unlock .big{position:absolute;top:44%;left:0;width:100%;
-  font-size:3.4vw;font-weight:800;color:var(--navy)}
-#layer-unlock .sub{position:absolute;top:56%;left:0;width:100%;
-  font-size:1.6vw;font-weight:600;color:var(--steel)}
-
-footer{position:fixed;left:16px;bottom:10px;display:flex;align-items:center;gap:10px;
-  color:var(--steel);font-size:12px;z-index:50;opacity:.75}
-.dot{width:8px;height:8px;border-radius:50%;background:#fb7185;transition:background .3s}
-.dot.on{background:#4ade80}
-#audioState{color:#b45309}
-</style>
+<link rel="stylesheet" href="/web/base.css">
+<!-- 관객 화면의 시각은 활성 테마가 준다 (--theme). 서버가 테마 폴더에서 골라 서빙한다. -->
+<link rel="stylesheet" href="/theme/display.css">
 </head>
 <body>
 
@@ -177,14 +69,16 @@ footer{position:fixed;left:16px;bottom:10px;display:flex;align-items:center;gap:
 <script>
 const $ = s => document.querySelector(s);
 
-// 시안 캔버스(1440×810)를 화면에 맞춰 통째로 스케일
+// 고정 캔버스를 화면에 맞춰 통째로 스케일. 치수는 테마가 --canvas-w/h 로 준다 —
+// 새 디자인이 다른 비율로 와도 CSS 한 곳만 고치면 되고, 여기는 안 고친다.
 function fit(){
-  const s = Math.min(innerWidth / 1440, innerHeight / 810);
-  document.documentElement.style.setProperty('--s', s);
+  const cs = getComputedStyle(document.documentElement);
+  const w = parseFloat(cs.getPropertyValue('--canvas-w'));
+  const h = parseFloat(cs.getPropertyValue('--canvas-h'));
+  document.documentElement.style.setProperty('--s', Math.min(innerWidth / w, innerHeight / h));
 }
 addEventListener('resize', fit); fit();
 
-// IDLE 이미지 (사용자 제공, idle_image.js 의 data URI — 서버 라우트 불필요)
 $('#idleImg').src = $('#idleBg').src = '/theme/idle';   // 활성 테마의 대기 이미지
 
 const q = new URLSearchParams(location.search);

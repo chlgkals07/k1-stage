@@ -6,86 +6,8 @@
 <title>SHAPE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
-<style>
-/* ── SHAPE 디자인 토큰 — 화이트 톤 (Monitor 와 통일, 2026-08-18 사용자 요청) ──
-   bg #f8f9ff · card #fff · border #dfe3f4 · ink #101638 · steel #5b638a
-   번호/강조 violet #7667ff · 실행 #193fe8 · READY green                  */
-:root{
-  --bg:#f8f9ff; --card:#ffffff; --card2:#eef1ff; --panel:#ffffff;
-  --line:#dfe3f4; --fg:#101638; --dim:#5b638a; --num:#7667ff;
-  --exec:#193fe8; --ready:#16a34a; --violet:#8b5cf6; --cyan:#0ea5e9;
-  --font:"Inter",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",Helvetica,sans-serif;
-}
-*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);font-family:var(--font);color:var(--fg)}
-
-/* 시안은 1024×768 고정 캔버스 — 통째로 scale */
-#cv{position:fixed;left:50%;top:50%;width:1024px;height:768px;
-  transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center;
-  background:var(--bg);overflow:hidden}
-
-/* 헤더 */
-#cv h1{position:absolute;top:52px;left:36px;font-size:40px;font-weight:800;letter-spacing:.01em}
-.tagline{position:absolute;top:118px;left:36px;font-size:13px;line-height:18px;color:var(--dim)}
-.divider{position:absolute;top:156px;left:36px;width:952px;height:1px;background:var(--line)}
-#statusRow{position:absolute;top:56px;right:36px;display:flex;align-items:center;gap:10px}
-#state{font-size:14px;font-weight:700;color:var(--dim)}
-.dot{width:10px;height:10px;border-radius:50%;background:#fb7185}
-.dot.ok{background:var(--ready)} .dot.busy{background:#fbbf24} .dot.hear{background:var(--cyan)}
-
-/* ── 좌측: 4×3 커맨드 그리드 (01_iPad_No Selection 시안 기하) ──
-   카드 130×132 · 열간 20 · 행간 33, top 234 → 그리드가 좌측 열 전체(234~696)를
-   채운다. talk 제거로 생긴 하단 빈칸은 별도 요소가 아니라 이 늘어난 행간·카드
-   높이가 흡수한다 (시안 방식). */
-#motions{position:absolute;top:234px;left:34px;width:580px;height:462px;
-  display:grid;grid-template-columns:repeat(4,130px);grid-auto-rows:132px;
-  column-gap:20px;row-gap:33px;align-content:start}
-button.motion{
-  border-radius:12px;background:var(--card);border:1px solid var(--line);
-  color:var(--dim);text-align:left;padding:12px 12px 12px;cursor:pointer;
-  box-shadow:0 1px 3px rgba(16,22,56,.06);
-  display:flex;flex-direction:column;gap:6px;font-family:inherit}
-button.motion .num{font-size:11px;font-weight:600;line-height:15px}
-button.motion b{font-size:14px;font-weight:700;line-height:18px;color:var(--fg);
-  letter-spacing:.01em;white-space:normal;word-break:keep-all}
-button.motion small{font-size:10px;line-height:13px;color:var(--dim)}
-button.motion .sel{margin-top:auto;font-size:10px;line-height:14px;letter-spacing:.08em}
-button.motion.selected{background:var(--card2);border-color:var(--violet);color:var(--fg);box-shadow:0 2px 8px rgba(139,92,246,.25)}
-button.motion.selected .sel{color:var(--ready)}
-button.motion:active{transform:scale(.97);background:var(--card2)}
-button.motion:disabled{opacity:.35;cursor:not-allowed;transform:none}
-
-
-/* ── 우측 패널 (x 640, 폭 348) ── */
-#previewPanel{position:absolute;top:186px;right:36px;width:348px;bottom:36px;
-  border-radius:16px;background:var(--panel);border:1px solid var(--line);
-  box-shadow:0 2px 10px rgba(16,22,56,.07);
-  padding:24px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
-#cancelBtn{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;
-  border:1px solid var(--line);background:transparent;color:var(--dim);
-  font:600 16px/1 var(--font);cursor:pointer}
-#cancelBtn:disabled{opacity:0;pointer-events:none}
-#selNum{font-size:15px;font-weight:600;color:var(--num);min-height:18px}
-#previewName{font-size:26px;font-weight:800;letter-spacing:.02em;min-height:32px}
-#previewMedia{border-radius:12px;background:#0d1020;border:1px solid var(--line);
-  height:170px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-#previewMedia video{width:100%;height:100%;object-fit:cover;display:none}
-#previewMedia .ph{font-size:44px;opacity:.5}
-#previewHint{font-size:13px;line-height:1.5;color:var(--dim)}
-.statusline{display:flex;align-items:baseline;gap:10px;margin-top:auto}
-.statusline .k{font-size:11px;letter-spacing:.1em;color:var(--dim)}
-#padStatus{font-size:18px;font-weight:800;color:var(--ready);letter-spacing:.04em}
-#goBtn{height:64px;border-radius:12px;border:0;background:var(--exec);color:#ffffff;
-  font:700 20px/1 var(--font);cursor:pointer;letter-spacing:.02em}
-#goBtn:disabled{opacity:.35;cursor:not-allowed}
-/* 실행 progress (expectedDuration = 클립 길이 + 2초, 시안 RULE 10 의 시각화) */
-#progWrap{display:none;flex-direction:column;gap:8px}
-#progTrack{height:12px;border-radius:6px;background:#e4e8f8;overflow:hidden}
-#progFill{height:100%;width:0%;background:linear-gradient(90deg,var(--violet),var(--cyan))}
-
-/* (음성 제거 2026-08-18) TALK 오버레이 CSS 는 여기 있었다 */
-</style>
+<link rel="stylesheet" href="/web/base.css">
+<link rel="stylesheet" href="/theme/pad.css">
 </head>
 <body>
 <div id="cv">
@@ -115,10 +37,13 @@ button.motion:disabled{opacity:.35;cursor:not-allowed;transform:none}
 <script>
 const $ = s => document.querySelector(s);
 
-// 시안 캔버스(1024×768) 스케일
+// 고정 캔버스를 화면에 맞춰 통째로 스케일. 치수는 테마가 --canvas-w/h 로 준다 —
+// 새 디자인이 다른 비율로 와도 CSS 한 곳만 고치면 되고, 여기는 안 고친다.
 function fit(){
-  const s = Math.min(innerWidth / 1024, innerHeight / 768);
-  document.documentElement.style.setProperty('--s', s);
+  const cs = getComputedStyle(document.documentElement);
+  const w = parseFloat(cs.getPropertyValue('--canvas-w'));
+  const h = parseFloat(cs.getPropertyValue('--canvas-h'));
+  document.documentElement.style.setProperty('--s', Math.min(innerWidth / w, innerHeight / h));
 }
 addEventListener('resize', fit); fit();
 

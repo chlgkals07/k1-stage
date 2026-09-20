@@ -1,0 +1,74 @@
+@import url("/web/themes/shape/tokens.css");
+
+/* 아이패드(4:3) 관객 화면. 시안은 1024×768 고정 캔버스 — 통째로 scale.
+   스케일 메커니즘은 base.css, 치수는 여기다 — JS 도 이 값을 읽는다.
+   화이트 톤은 Monitor 와 통일한 것이다 (2026-08-18 사용자 요청). */
+:root{
+  --canvas-w:1024px; --canvas-h:768px;
+  --card:#ffffff; --card2:#eef1ff; --panel:#ffffff;
+  --line:#dfe3f4; --num:#7667ff;
+  --exec:#193fe8; --ready:#16a34a; --violet:#8b5cf6; --cyan:#0ea5e9;
+}
+/* 탭 하이라이트는 관객이 만지는 화면에서만 끈다 (TV 는 한 번 탭하는 잠금해제가 있어
+   피드백이 남아야 한다) */
+*{-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);font-family:var(--font);color:var(--fg)}
+#cv{background:var(--bg)}
+
+/* 헤더 */
+#cv h1{position:absolute;top:52px;left:36px;font-size:40px;font-weight:800;letter-spacing:.01em}
+.tagline{position:absolute;top:118px;left:36px;font-size:13px;line-height:18px;color:var(--dim)}
+.divider{position:absolute;top:156px;left:36px;width:952px;height:1px;background:var(--line)}
+#statusRow{position:absolute;top:56px;right:36px;display:flex;align-items:center;gap:10px}
+#state{font-size:14px;font-weight:700;color:var(--dim)}
+.dot{width:10px;height:10px;border-radius:50%;background:#fb7185}
+.dot.ok{background:var(--ready)} .dot.busy{background:#fbbf24} .dot.hear{background:var(--cyan)}
+
+/* ── 좌측: 4×3 커맨드 그리드 (01_iPad_No Selection 시안 기하) ──
+   카드 130×132 · 열간 20 · 행간 33, top 234 → 그리드가 좌측 열 전체(234~696)를
+   채운다. talk 제거로 생긴 하단 빈칸은 별도 요소가 아니라 이 늘어난 행간·카드
+   높이가 흡수한다 (시안 방식). */
+#motions{position:absolute;top:234px;left:34px;width:580px;height:462px;
+  display:grid;grid-template-columns:repeat(4,130px);grid-auto-rows:132px;
+  column-gap:20px;row-gap:33px;align-content:start}
+button.motion{
+  border-radius:12px;background:var(--card);border:1px solid var(--line);
+  color:var(--dim);text-align:left;padding:12px 12px 12px;cursor:pointer;
+  box-shadow:0 1px 3px rgba(16,22,56,.06);
+  display:flex;flex-direction:column;gap:6px;font-family:inherit}
+button.motion .num{font-size:11px;font-weight:600;line-height:15px}
+button.motion b{font-size:14px;font-weight:700;line-height:18px;color:var(--fg);
+  letter-spacing:.01em;white-space:normal;word-break:keep-all}
+button.motion small{font-size:10px;line-height:13px;color:var(--dim)}
+button.motion .sel{margin-top:auto;font-size:10px;line-height:14px;letter-spacing:.08em}
+button.motion.selected{background:var(--card2);border-color:var(--violet);color:var(--fg);box-shadow:0 2px 8px rgba(139,92,246,.25)}
+button.motion.selected .sel{color:var(--ready)}
+button.motion:active{transform:scale(.97);background:var(--card2)}
+button.motion:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+/* ── 우측 패널 (x 640, 폭 348) ── */
+#previewPanel{position:absolute;top:186px;right:36px;width:348px;bottom:36px;
+  border-radius:16px;background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(16,22,56,.07);
+  padding:24px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+#cancelBtn{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;
+  border:1px solid var(--line);background:transparent;color:var(--dim);
+  font:600 16px/1 var(--font);cursor:pointer}
+#cancelBtn:disabled{opacity:0;pointer-events:none}
+#selNum{font-size:15px;font-weight:600;color:var(--num);min-height:18px}
+#previewName{font-size:26px;font-weight:800;letter-spacing:.02em;min-height:32px}
+#previewMedia{border-radius:12px;background:#0d1020;border:1px solid var(--line);
+  height:170px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#previewMedia video{width:100%;height:100%;object-fit:cover;display:none}
+#previewMedia .ph{font-size:44px;opacity:.5}
+#previewHint{font-size:13px;line-height:1.5;color:var(--dim)}
+.statusline{display:flex;align-items:baseline;gap:10px;margin-top:auto}
+.statusline .k{font-size:11px;letter-spacing:.1em;color:var(--dim)}
+#padStatus{font-size:18px;font-weight:800;color:var(--ready);letter-spacing:.04em}
+#goBtn{height:64px;border-radius:12px;border:0;background:var(--exec);color:#ffffff;
+  font:700 20px/1 var(--font);cursor:pointer;letter-spacing:.02em}
+#goBtn:disabled{opacity:.35;cursor:not-allowed}
+/* 실행 progress (expectedDuration = 클립 길이 + 2초, 시안 RULE 10 의 시각화) */
+#progWrap{display:none;flex-direction:column;gap:8px}
+#progTrack{height:12px;border-radius:6px;background:#e4e8f8;overflow:hidden}
+#progFill{height:100%;width:0%;background:linear-gradient(90deg,var(--violet),var(--cyan))}

@@ -4,20 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>K1 댄스 싱크</title>
+<link rel="stylesheet" href="/web/tool.css">
 <style>
-:root{--bg:#0e1116;--panel:#171b22;--line:#2a3240;--fg:#edf1f8;--dim:#97a2b5;--ok:#3ddc84;--bad:#ff6b62;--warn:#ffbd59;--accent:#73a9ff}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif}
-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
-h1{font-size:16px;margin:0;flex:1}.dot{width:10px;height:10px;border-radius:50%;background:var(--bad)}.dot.ready{background:var(--ok)}.dot.warming{background:var(--warn)}
-.badge{font-size:11px;font-weight:800;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--dim)}
-.badge.mock{color:#171006;background:var(--warn);border-color:var(--warn)}.badge.relay{color:#06101f;background:var(--accent);border-color:var(--accent)}.badge.robot{color:#06140c;background:var(--ok);border-color:var(--ok)}
-a,button,select,input{font:inherit}a.button,button{border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:var(--panel);color:var(--fg);text-decoration:none;cursor:pointer;white-space:nowrap}
-button.primary{background:var(--accent);color:#07111f;border-color:var(--accent);font-weight:700}
-button.danger{background:#c0263a;border-color:#c0263a;color:#fff;font-weight:700}
-button:disabled{opacity:.45;cursor:not-allowed}
+/* /dance 고유. 공통 다크 UI 는 /web/tool.css 에 있고 테마를 타지 않는다. */
+header{padding:10px 16px}
+a.button,button{white-space:nowrap}
 main{max-width:1280px;margin:0 auto;padding:14px 18px}
-.hint{color:var(--dim);font-size:13px;margin:4px 0 0}
-.field{min-width:0}.field label{display:block;color:var(--dim);font-size:12px;margin-bottom:4px}
+.hint{margin:4px 0 0}
+.field{min-width:0}
 select,input[type=number],input[type=text]{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:9px;color:var(--fg);padding:9px}
 input[type=range]{width:100%;margin:0}
 .offset-val{font-weight:700;font-variant-numeric:tabular-nums}

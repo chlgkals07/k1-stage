@@ -593,6 +593,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "clip not found"})
         return self._send_range(clip, "video/mp4", "public, max-age=3600")
 
+    def _send_web(self, name):
+        """저장소 루트 web/ 의 공유 프론트 파일 (base.css · tool.css · themes/).
+
+        /theme/ 는 활성 테마 안만 보고, 이쪽은 실제 경로 그대로다. 테마가 다른 테마를
+        @import 로 물려받을 때(shape-gym → shape) 쓰는 길이기도 하다.
+        """
+        if not name or name.startswith("/") or ".." in name:
+            return self._send(404, {"error": "not found"})
+        hit = (WEB / name).resolve()
+        if not hit.is_file() or WEB.resolve() not in hit.parents:
+            return self._send(404, {"error": "not found"})
+        ctype = mimetypes.guess_type(hit.name)[0] or "application/octet-stream"
+        return self._send_range(hit, ctype, "public, max-age=3600")
+
     def _send_theme(self, name):
         """활성 테마의 자산. 확장자 없이 오면 <name>.* 를 찾는다.
 
@@ -704,6 +718,8 @@ class Handler(BaseHTTPRequestHandler):
                               "text/html; charset=utf-8", headers)
         if not self._authorized():
             return self._send(403, {"error": "gateway authorization required"})
+        if path.startswith("/web/"):
+            return self._send_web(path[len("/web/"):])
         if path.startswith("/theme/"):
             return self._send_theme(path[len("/theme/"):])
         if path.startswith("/clips/"):

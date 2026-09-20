@@ -1,0 +1,32 @@
+/* 공유 구조층 — 관객 화면 2장(display · pad)의 뼈대다.
+ *
+ * 여기 있는 것은 테마가 건드리지 못한다. z-index 나 position 을 테마가 바꿀 수 있으면
+ * 디자인 하나 잘못 넣었을 때 무대에서 화면이 안 뜬다. 색 바꾸는 작업이 쇼를 멈추면 안 된다.
+ * 색·폰트·여백·타이포·캔버스 치수는 전부 /theme/*.css 쪽이다.
+ */
+
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden}
+
+/* 고정 캔버스 스케일 메커니즘. 치수(--canvas-w/h)만 테마가 준다.
+   display 는 .canvas, pad 는 #cv 를 쓴다 — 두 화면이 따로 자란 탓이고, 이름을 통일하면
+   픽셀이 바뀌므로 여기서 둘 다 받는다. */
+.canvas,#cv{position:fixed;left:50%;top:50%;
+  width:var(--canvas-w);height:var(--canvas-h);
+  transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center;
+  overflow:hidden}
+
+/* 레이어 교차 페이드 — display 전용이다. 컷으로 끊으면 무대→대기 복귀가 뚝 끊긴다
+   (2026-08-18). display 로 껐다 켜면 transition 이 안 걸리므로 opacity 로 숨긴다.
+   #cv 를 이 선택자 목록에 끼워 넣지 마라 — opacity:0 이 걸려 패드가 통째로 안 보인다. */
+.canvas,.full{opacity:0;pointer-events:none;transition:opacity .5s ease}
+.canvas.on,.full.on{opacity:1;pointer-events:auto}
+.canvas{display:block}
+.full{position:fixed;inset:0;display:block}
+
+/* 오디오 잠금은 무엇보다 위에 떠야 하고, 켜질 때만 보인다 */
+#layer-unlock{position:fixed;inset:0;display:none;z-index:100;cursor:pointer}
+#layer-unlock.on{display:block}
+
+/* 상태 표시줄은 캔버스 밖에 고정 */
+footer{position:fixed;z-index:50}
