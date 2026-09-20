@@ -50,6 +50,16 @@ MEDIA = HERE / "media"
 # themes/<이름>/ 이 관객 화면의 디자인 자산을 들고 있고, 활성 테마는 --theme 로 고른다.
 WEB = HERE.parent / "web"
 THEMES = WEB / "themes"
+# 관객 화면(display · pad)은 두 앱이 web/ 한 벌을 같이 쓴다. 운영자 화면
+# (operator · dance)은 아직 앱마다 다르다 — operator 는 RC 토글과 플릿 재탐색으로
+# 갈리고, dance 는 프리셋 유실 수정이 group 에만 있다(main 에서 포팅할 것).
+# 여기 목록이 비면 static/ 이 사라지고 화면 넷이 전부 web/ 에 있게 된다.
+SHARED_PAGES = {"display.html", "pad.html"}
+
+
+def page_dir(page):
+    return WEB if page in SHARED_PAGES else HERE / "static"
+
 MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".mp4", ".webm", ".mov"}
 # /dance 프리셋: 동작-음원 짝 + 싱크 오프셋. 서버 파일이라 어느 기기에서 열어도 같다.
 PRESETS = HERE / "dance_presets.json"
@@ -714,7 +724,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(403, {"error": "gateway authorization required"})
             page = {"/operator": "operator.html", "/display": "display.html",
                     "/pad": "pad.html", "/dance": "dance.html"}.get(path, "pad.html")
-            return self._send(200, (HERE / "static" / page).read_bytes(),
+            return self._send(200, (page_dir(page) / page).read_bytes(),
                               "text/html; charset=utf-8", headers)
         if not self._authorized():
             return self._send(403, {"error": "gateway authorization required"})

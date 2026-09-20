@@ -20,7 +20,7 @@
 | gateway `llm_allowlist` | **21개** — 코드에 살아 있으나 **이 경로로 들어오는 요청은 없다** (`voice-llm-dev` 브랜치용) |
 | 정지 목표 상태 | **`Velocity`** (Damping일 때만 `ReadyPose`) |
 | RC 다이얼 | 2뱅크 × 20슬롯 = **40**. CH5로 뱅크, CH11로 슬롯 |
-| 테스트 | `solo_stage` 139 · `group_stage` 98 |
+| 테스트 | `solo_stage` 140 · `group_stage` 99 |
 
 실기 검증된 인사 3종은 `MimicWaveHand`(손 흔들기) · `MimicBowNavel`(배꼽 인사) ·
 `MimicBadChestpopVer2`(체스트팝)이다. 개소식에서 패드 12개 중 10개가 정상 동작했다

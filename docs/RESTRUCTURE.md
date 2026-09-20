@@ -111,7 +111,7 @@ k1-stage/
 - `--theme` CLI. 기본 solo=`shape` / group=`shape-gym` → **지금 화면과 픽셀 단위로 동일**
 - 결과: display.html 각각 14.7KB. 읽을 수 있고 diff 할 수 있다
 
-### 2단계 — CSS 3층 분리
+### ✅ 2단계 — CSS 3층 분리 + 화면을 `web/` 로 (완료)
 
 ```
 web/base.css                구조만
@@ -147,6 +147,35 @@ web/themes/shape/*.css      관객용 디자인 언어
 
 **리스크**: 중. **검증**: mock 서버 띄우고 브라우저로 4장 육안. 자동 테스트는 CSS 를
 커버하지 않는다. **원칙: 이동과 디자인 변경을 절대 같이 하지 않는다. 픽셀 변화 0.**
+
+**한 것:**
+
+- `web/base.css` · `web/tool.css` · `web/themes/shape/{tokens,display,pad}.css`
+- `shape-gym` 은 `shape` 를 `@import` 하고 대기화면 두 줄만 덮는다. 시각을 통째로
+  복사하면 또 갈린다 — 이 브랜치가 고치려는 바로 그 병이다
+- 캔버스 치수를 `--canvas-w/h` 로 모으고 `fit()` 이 그 값을 읽는다
+- **`display.html` · `pad.html` 을 `web/` 로 올렸다.** 공통 JS 세 조각(`$` · `fitCanvas`
+  · `stripToken`)은 `web/k1.js` 로 뺐다. `server.py` 의 `SHARED_PAGES` 가 어느 화면이
+  공유본인지 한 곳에서 말한다
+- 글꼴도 테마 소유로 내렸다. Inter `<link>` 가 페이지 HTML 에 박혀 있어 테마를 바꿔도
+  안 따라오던 구멍이었다
+
+**검증**: 헤드리스 크롬 before/after 스크린샷이 네 장 전부 바이트 동일. 선택자별 최종
+선언을 `var()` 까지 풀어 대조해 값이 바뀐 선언 0건. 콘솔 오류 없음(모듈 전환 확인).
+
+**폴링을 `k1.js` 에 안 올린 이유**: display 는 `/conversation` 을 300ms 로, pad 는
+`/status` 와 `/conversation` 을 1초로 본다. 주기도 대상도 실패 처리도 달라서 합치면
+둘 중 하나에 안 맞는 추상이 생긴다. 같아지면 그때 올린다.
+
+**`operator.html` · `dance.html` 이 아직 `*/static/` 에 남은 이유**: 합치려면 둘 중
+하나를 골라야 하는데 그게 곧 드리프트 처리다.
+
+- `dance.html` 의 유일한 차이가 **드리프트 1번 그 자체**다(프리셋 유실 수정, group 에만).
+  solo 것을 고르면 수정이 사라지고 group 것을 고르면 포팅이 된다. 둘 다 이 브랜치에서
+  할 일이 아니다 — §4 대로 `main` 에서 한다
+- `operator.html` 은 RC 토글 대 플릿 재탐색으로 진짜 갈린다. 7단계(`app.py --mode`) 몫이다
+
+둘이 정리되면 `SHARED_PAGES` 에 넣고 `static/` 을 지우면 된다.
 
 ### 3단계 — 테스트 초록화
 

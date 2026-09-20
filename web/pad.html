@@ -32,26 +32,11 @@
 
 </div>
 
-<script>
-const $ = s => document.querySelector(s);
+<script type="module">
+import { $, fitCanvas, stripToken } from '/web/k1.js';
 
-// 고정 캔버스를 화면에 맞춰 통째로 스케일. 치수는 테마가 --canvas-w/h 로 준다 —
-// 새 디자인이 다른 비율로 와도 CSS 한 곳만 고치면 되고, 여기는 안 고친다.
-function fit(){
-  const cs = getComputedStyle(document.documentElement);
-  const w = parseFloat(cs.getPropertyValue('--canvas-w'));
-  const h = parseFloat(cs.getPropertyValue('--canvas-h'));
-  document.documentElement.style.setProperty('--s', Math.min(innerWidth / w, innerHeight / h));
-}
-addEventListener('resize', fit); fit();
-
-// 주소창에서 토큰을 지운다. 관객에게 건네는 화면이라 더 중요하다.
-const q = new URLSearchParams(location.search);
-if (q.has("token")) {
-  q.delete("token");
-  const clean = q.toString();
-  history.replaceState(null, "", location.pathname + (clean ? "?" + clean : ""));
-}
+addEventListener('resize', fitCanvas); fitCanvas();
+stripToken();
 
 let catalog = [], padAllowed = new Set(), padClips = new Set(), backendName = "", gatewayState = "offline";
 let submitting = false, turnId = 0;

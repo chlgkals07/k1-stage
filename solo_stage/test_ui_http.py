@@ -5,7 +5,7 @@ import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
 
-from server import Handler, MockBackend, State
+from server import HERE, Handler, MockBackend, State
 
 
 TOKEN = "ui-test-token"
@@ -225,6 +225,16 @@ class UiHttpTest(unittest.TestCase):
         self.assertIn('href="/web/base.css"', body)
         self.assertIn('href="/theme/display.css"', body)
         self.assertNotIn("<style>", body)
+
+    def test_display_is_served_from_shared_web(self):
+        """화면 원본이 web/ 한 벌이다. 앱 안에 사본이 생기면 또 갈린다 —
+        8/31 에 display.html 두 벌이 서로 다른 화면이 된 그 경로다."""
+        from server import WEB, SHARED_PAGES, page_dir
+        self.assertIn("display.html", SHARED_PAGES)
+        self.assertEqual(page_dir("display.html"), WEB)
+        self.assertFalse((HERE / "static" / "display.html").exists())
+        body = self.request("/display?token=" + TOKEN)[2].decode()
+        self.assertIn("from '/web/k1.js'", body)
 
     def test_clip_requires_token(self):
         self.assertEqual(self.request(f"/clips/{self.any_clip()}.mp4")[0], 403)
