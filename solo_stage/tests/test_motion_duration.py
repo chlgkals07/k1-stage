@@ -10,15 +10,13 @@
 """
 
 import tempfile
-import time
 import unittest
 from pathlib import Path
 
-import clip_len
-import rc_backend
+from runtime import clip_len
 import server
-from rc_backend import BUSY_MARGIN_SEC, DEFAULT_DURATION_SEC, RcBackend
-from test_clip_len import fake_mp4
+from runtime.rc_backend import BUSY_MARGIN_SEC, DEFAULT_DURATION_SEC, RcBackend
+from tests.test_clip_len import fake_mp4
 
 # ch11 = 1000 + 20 * (slot - 1). slot 1..20. 이 다이얼은 이 파일이 스스로 만든다.
 SYNTHETIC_MOTIONS = """\

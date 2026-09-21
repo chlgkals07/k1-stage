@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import clip_len
+from runtime import clip_len
 
 
 def _box(kind, payload):

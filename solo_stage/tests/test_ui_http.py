@@ -9,7 +9,7 @@ from pathlib import Path
 
 import server
 from server import HERE, Handler, MockBackend, State
-from test_clip_len import fake_mp4
+from tests.test_clip_len import fake_mp4
 
 
 TOKEN = "ui-test-token"

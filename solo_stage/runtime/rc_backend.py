@@ -18,8 +18,8 @@ from pathlib import Path
 
 import yaml
 
-import clip_len
-from rc_serial import RcSerial
+from . import clip_len
+from .rc_serial import RcSerial
 
 DEFAULT_DURATION_SEC = 30.0
 # 클립 길이로 추정할 때의 여백. 패드 진행바(클립+2.0s)와 같은 값이라

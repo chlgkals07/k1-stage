@@ -21,10 +21,10 @@ import yaml
 
 import server
 from core.ports import MotionResult, SupportsDiscovery, SupportsDuration, SupportsPrepare, Transport
-from rc_backend import RcBackend
-from test_rc_backend import FakeSerial
-from relay_backend import RelayBackend
-from robot_backend import RobotBackend
+from runtime.rc_backend import RcBackend
+from tests.test_rc_backend import FakeSerial
+from runtime.relay_backend import RelayBackend
+from runtime.robot_backend import RobotBackend
 
 HERE = Path(server.__file__).parent
 POLICY = yaml.safe_load((HERE / "gateway_config.yaml").read_text())["policy"]

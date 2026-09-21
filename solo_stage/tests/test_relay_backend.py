@@ -2,7 +2,7 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
-from relay_backend import RelayBackend
+from runtime.relay_backend import RelayBackend
 
 
 def fake_response(body, status=200):

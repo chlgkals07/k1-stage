@@ -6,7 +6,7 @@ import re
 import threading
 import unittest
 
-from rc_serial import RcSerial
+from runtime.rc_serial import RcSerial
 
 
 class FakeRadio(threading.Thread):

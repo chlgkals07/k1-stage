@@ -4,10 +4,10 @@ import pathlib
 import time
 import unittest
 
-import rc_backend
-from rc_backend import RcBackend, load_rc_map
+from runtime import rc_backend
+from runtime.rc_backend import RcBackend, load_rc_map
 
-HERE = pathlib.Path(__file__).parent
+HERE = pathlib.Path(__file__).parent.parent
 MOTIONS = HERE / "motions.yaml"
 
 # rc_list 실측 앵커 (2026-08-18 로봇 백업 k1_config 기준)
@@ -167,7 +167,7 @@ class TestRcBackend(unittest.TestCase):
         self.assertEqual(st["stop_state"], "Velocity")
 
     def test_obs_verification(self):
-        from rc_backend import _model_us, _parse_obs, _verify_obs
+        from runtime.rc_backend import _model_us, _parse_obs, _verify_obs
         entry = {"slot": 1, "bank": "A"}
         # 정상 관측: slot1 A → ch11=988, ch5=988, code 4 유지
         line = "OK RUN 1 ch5=988 ch6=2012 ch7=2012 ch11=988"

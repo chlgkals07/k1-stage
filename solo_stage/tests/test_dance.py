@@ -206,7 +206,7 @@ class StageTest(unittest.TestCase):
 
     def setUp(self):
         import yaml
-        cfg = yaml.safe_load((Path(__file__).parent / "gateway_config.yaml").read_text())
+        cfg = yaml.safe_load((Path(__file__).parent.parent / "gateway_config.yaml").read_text())
         self.state = server.State(server.MockBackend(),
                                   pad_allowlist=server.load_venue()["pad_grid"])
 
@@ -293,7 +293,7 @@ class DanceProtectionTest(unittest.TestCase):
 
     def setUp(self):
         import yaml
-        cfg = yaml.safe_load((Path(__file__).parent / "gateway_config.yaml").read_text())
+        cfg = yaml.safe_load((Path(__file__).parent.parent / "gateway_config.yaml").read_text())
         self.backend = MockBackend()
         self.backend.stop_calls = []
         real_stop = self.backend.stop_motion

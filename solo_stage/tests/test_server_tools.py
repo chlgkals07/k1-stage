@@ -9,7 +9,7 @@ import yaml
 import server
 from server import State
 
-GATEWAY_CONFIG = Path(__file__).parent / "gateway_config.yaml"
+GATEWAY_CONFIG = Path(__file__).parent.parent / "gateway_config.yaml"
 
 
 class Backend:
@@ -204,11 +204,8 @@ class DeployListTest(unittest.TestCase):
         root = GATEWAY_CONFIG.parent
         deploy = set(re.search(r"DEPLOY_FILES=\((.*?)\)",
                                (root / "run.sh").read_text(), re.S).group(1).split())
-        local = {p.name for p in root.glob("*.py") if not p.name.startswith("test_")}
-        source = (root / "server.py").read_text()
-        pairs = re.findall(r"^from (\w+) import|^import (\w+)", source, re.M)
-        needed = {f"{m}.py" for pair in pairs for m in pair if m and f"{m}.py" in local}
-        self.assertTrue(needed, "의존 모듈을 하나도 못 찾았다 — 정규식이 깨졌다")
+        needed = {p.relative_to(root).as_posix() for p in (root / "runtime").glob("*.py")}
+        self.assertTrue(needed, "runtime 실행 모듈을 하나도 못 찾았다")
         self.assertFalse(needed - deploy, f"배포 목록에서 빠짐: {sorted(needed - deploy)}")
 
     def test_deploy_list_covers_core_imports_transitively(self):
