@@ -126,16 +126,16 @@ robot gateway의 token 없이 `/`에 접근했을 때 `403`은 정상이다. 서
 
 | 파일 | 역할 |
 |---|---|
-| `server.py` | HTTPS UI, stage 상태기계, 무대 싱크, motion 검증 및 backend 호출 |
-| `relay_backend.py` | PC에서 robot gateway의 `/status`, `/motion`을 HTTPS로 중계 |
-| `robot_backend.py` | 로봇 내부에서 ROS heartbeat, status, mode service 처리 |
-| `rc_backend.py` · `rc_serial.py` | RC 폴백 경로 — PC→USB→라디오→ELRS |
-| `gateway.py` | allowlist, 단일 요청, lifecycle, timeout 상태 머신 |
-| `gateway_config.yaml` | ROS endpoint, allowlist 3종, stop/entry state, timeout |
-| `static/pad.html` | 관객 아이패드 화면 — 동작 선택·미리보기·진행바 |
-| `static/display.html` | TV 화면 — 대기·미리보기·실행중·무대영상 |
-| `static/operator.html` | 운영자 화면 — 정지·수동 버튼·무대 조작·RC 토글 |
-| `static/dance.html` | 무대 싱크 오프셋 보정 |
+| `app.py` | HTTPS UI, stage 상태기계, 무대 싱크, motion 검증 및 backend 호출 |
+| `runtime/relay_backend.py` | PC에서 robot gateway의 `/status`, `/motion`을 HTTPS로 중계 |
+| `runtime/robot_backend.py` | 로봇 내부에서 ROS heartbeat, status, mode service 처리 |
+| `runtime/rc_backend.py` · `runtime/rc_serial.py` | RC 폴백 경로 — PC→USB→라디오→ELRS |
+| `runtime/gateway.py` | allowlist, 단일 요청, lifecycle, timeout 상태 머신 |
+| `config/solo/gateway_config.yaml` | ROS endpoint, allowlist 3종, stop/entry state, timeout |
+| `web/pad.html` | 관객 아이패드 화면 — 동작 선택·미리보기·진행바 |
+| `web/display.html` | TV 화면 — 대기·미리보기·실행중·무대영상 |
+| `web/operator.html` | 운영자 화면 — 정지·수동 버튼·무대 조작·RC 토글 |
+| `web/dance.html` | 무대 싱크 오프셋 보정 |
 | `clip_len.py` | sim 클립 mp4에서 길이만 읽는다 — 잠금 타이밍의 기준 |
 | `motions.yaml` | 동작 카탈로그 |
 | `api_arm_probe.py` | 모션 없이 heartbeat/API authority를 점검하는 개발용 도구 |
@@ -220,7 +220,7 @@ is_control_input_safe: true
 ```bash
 cd /root/motion_llm
 
-python3 server.py \
+python3 app.py \
   --robot \
   --https \
   --port 8443 \
@@ -234,7 +234,7 @@ tmux new-session -d -s motion-gateway \
   "source /opt/ros/jazzy/setup.bash; \
    source /root/ros2_ws/install/setup.bash; \
    cd /root/motion_llm; \
-   python3 server.py --robot --https --port 8443 --ready-only"
+   python3 app.py --robot --https --port 8443 --ready-only"
 
 tmux capture-pane -pt motion-gateway -S -60
 ```
@@ -267,7 +267,7 @@ token 없이 실행했을 때 `403`이면 정상이다.
 Omen PC의 같은 터미널에서:
 
 ```bash
-cd /home/robotis-ai/Projects/shape3/k1-stage/solo_stage
+cd /home/robotis-ai/Projects/shape3/k1-stage
 
 read -rsp "Robot gateway token: " K1_RELAY_TOKEN
 echo
@@ -283,7 +283,7 @@ test -n "$K1_RELAY_TOKEN" && echo 'Robot token OK' || echo 'Robot token MISSING'
 ### 6.5 PC relay 실행
 
 ```bash
-python3 server.py \
+python3 app.py \
   --relay https://192.168.60.1:8443 \
   --https \
   --port 18444 \
@@ -337,16 +337,9 @@ MANUAL
 ### 테스트
 
 ```bash
-cd /home/robotis-ai/Projects/shape3/k1-stage/solo_stage
+cd /home/robotis-ai/Projects/shape3/k1-stage
 
-python3 -m py_compile \
-  server.py gateway.py robot_backend.py relay_backend.py
-
-python3 -m unittest \
-  test_gateway.py \
-  test_relay_backend.py \
-  test_server_tools.py \
-  test_ui_http.py
+python3 -m unittest discover -s tests -t .
 ```
 
 ### 로봇 상태만 조회

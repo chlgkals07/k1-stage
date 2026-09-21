@@ -1,4 +1,4 @@
-# solo_stage — Wi-Fi 단일 로봇 운영 서버
+# solo 모드 — Wi-Fi 단일 로봇 운영 서버
 
 K1 한 대를 Wi-Fi로 운영하는 정본 앱이다. 관객이 아이패드에서 동작을 고르면 미리보기가 TV에
 뜨고, [실행]을 누르면 로봇이 움직인다. 운영자는 폰으로 상태를 보고 정지를 쥔다.
@@ -10,7 +10,7 @@ K1 한 대를 Wi-Fi로 운영하는 정본 앱이다. 관객이 아이패드에�
                                 └── HDMI ── TV /display
 ```
 
-여러 대를 동시에 움직이거나 Wi-Fi가 죽었을 때는 옆의 [`group_stage`](../group_stage/)가 라디오
+여러 대를 동시에 움직이거나 Wi-Fi가 죽었을 때는 `--mode fleet`([docs/fleet](../fleet/README.md))가 라디오
 전파로 직접 쏜다. 라디오 준비는 [`rc_link`](../rc_link/)에 있다.
 
 ## 실행
@@ -88,7 +88,7 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 동작이 끝나고 2초 뒤 패드가 풀리고, 3초 뒤 서버가 화면을 되돌린다(안전망).
 
 현장에서 조절하려면 세 값이 같은 뜻이므로 함께 움직인다:
-`static/pad.html`의 `+2000` · `server.py`의 `EXEC_IDLE_MARGIN_SEC` ·
+`static/pad.html`의 `+2000` · `core/stage.py`의 `EXEC_IDLE_MARGIN_SEC` ·
 `runtime/rc_backend.py`의 `BUSY_MARGIN_SEC`. 근거는
 [docs/STATUS.md §4](docs/STATUS.md#잠금-타이밍-구조).
 

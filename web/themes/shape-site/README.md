@@ -9,5 +9,5 @@
   현장 네트워크를 믿을 수 없고, 안 깔린 기계에서는 여유가 십몇 픽셀뿐인 칸이 무너진다.
 
 ```bash
-cd solo_stage && python3 server.py --theme shape-site
+python3 app.py --theme shape-site
 ```

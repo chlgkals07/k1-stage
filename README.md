@@ -1,23 +1,23 @@
 # k1-stage — K1 행사 운영 스택
 
-휴머노이드 **K1을 행사에서 운영하기 위한 앱 모음**이다. 관객이 아이패드로 동작을 고르고,
-TV가 미리보기와 무대 영상을 띄우고, 운영자가 폰으로 정지를 쥔다. 앱이 갈리는 기준은
-통신 경로가 아니라 **로봇을 몇 대 움직이느냐**다.
+휴머노이드 **K1을 행사에서 운영하기 위한 앱**이다. 관객이 아이패드로 동작을 고르고,
+TV가 미리보기와 무대 영상을 띄우고, 운영자가 폰으로 정지를 쥔다. 앱은 `app.py` 하나고
+**모드**가 둘이다 — 갈리는 기준은 통신 경로가 아니라 **로봇을 몇 대 움직이느냐**다.
 
 ```
 아이패드 /pad ─┐
 폰 /operator ─┼─ 장소 랜 ─ PC ─┬─ Wi-Fi ───────────────→ 로봇 1대  ┐
-메인컴 /dance ─┘               │                                    ├ solo_stage
+메인컴 /dance ─┘               │                                    ├ solo 모드
                                ├─ USB ─ 라디오 1대 ─ ELRS ─→ 로봇 1대  ┘
                                │
-                               └─ USB ─ 라디오 N대 ─ ELRS ─→ 로봇 N대  ← group_stage
+                               └─ USB ─ 라디오 N대 ─ ELRS ─→ 로봇 N대  ← fleet 모드
 
                           TV /display (HDMI, 네트워크 무관)
 ```
 
-## 두 앱과 고르는 기준
+## 두 모드와 고르는 기준
 
-| | `solo_stage` | `group_stage` |
+| | `--mode solo` (기본) | `--mode fleet` |
 |---|---|---|
 | 로봇 수 | **1대** | **꽂은 라디오 수만큼 동시에** |
 | 경로 | Wi-Fi(기본) **+ RC 폴백** — 운영 중 `/rc/mode` 토글로 전환 | RC 전용 |
@@ -25,11 +25,11 @@ TV가 미리보기와 무대 영상을 띄우고, 운영자가 폰으로 정지�
 | 실기 검증 | 개소식에서 운영 완료 | 전파 구간 미검증 (P2) |
 | 이럴 때 | 평소 운영 (Wi-Fi가 죽어도 RC로 이어감) | 여러 대 군무 |
 
-`solo_stage`도 RC를 쏠 수 있다 — `--rc`로 기동하거나 운영자 화면에서 토글하면 같은 1대를
-전파로 몬다. `group_stage`만 가진 것은 **여러 대 동시 발사**(`rc_fleet.py`)다.
+solo 모드도 RC를 쏠 수 있다 — `--rc`로 기동하거나 운영자 화면에서 토글하면 같은 1대를
+전파로 몬다. fleet 모드만 가진 것은 **여러 대 동시 발사**(`runtime/rc_fleet.py`)다.
 
 `rc_link`는 앱이 아니라 **라디오 쪽 작업 결과물**이다. 라디오에 올리는 Lua 도구(`K1PC.lua`),
-믹서 모델 패치, SD 원본 백업, PC↔라디오 왕복 벤치가 들어 있다. `group_stage`를 쓰려면
+믹서 모델 패치, SD 원본 백업, PC↔라디오 왕복 벤치가 들어 있다. fleet 모드를 쓰려면
 여기 있는 절차대로 라디오를 먼저 준비해야 한다.
 
 `robot/`은 로봇 쪽 짝이다. 위 앱들이 명령을 보낼 수 있도록 `ai_sapiens`에서 바꾼 부분
@@ -39,16 +39,19 @@ TV가 미리보기와 무대 영상을 띄우고, 운영자가 폰으로 정지�
 
 ```bash
 # Wi-Fi 단일 로봇 — 점검·배포·gateway·relay 를 한 번에
-cd solo_stage && ./run.sh --deploy
+./run.sh --deploy
+
+# 로봇·라디오 없이 UI 만 (solo 는 인자 없이 mock)
+python3 app.py
+python3 app.py --mode fleet --mock
 
 # RC 군무 — 라디오 준비가 끝난 뒤
-cd group_stage && python3 server.py            # 실기
-cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
+python3 app.py --mode fleet                    # 또는 tools/start_fleet.sh
 ```
 
-행사 당일 절차는 [solo_stage/docs/RUNBOOK.md](solo_stage/docs/RUNBOOK.md) 하나로 끝난다.
+행사 당일 절차는 [docs/solo/RUNBOOK.md](docs/solo/RUNBOOK.md) 하나로 끝난다.
 셋업 → 검증 시퀀스 → 장애 대응까지 현장 실측값 기준이다. 지금 무엇이 참인지는
-[solo_stage/docs/STATUS.md](solo_stage/docs/STATUS.md)를 본다.
+[docs/solo/STATUS.md](docs/solo/STATUS.md)를 본다.
 
 ## 안전 경계
 
@@ -75,20 +78,22 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 
 ```
 k1-stage/
-├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 195 tests
-├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 153 tests
-├── web/           두 앱이 같이 쓰는 프론트 — 관객 화면 2장 · k1.js · base/tool.css · themes/
+├── app.py         앱 하나 — `--mode solo|fleet`. HTTP·인증·부팅 검증·백엔드 선택·State 배선
 ├── core/          도메인 — 무대 상태기계(stage) · 백엔드 계약(ports) · 설정 검증(catalog). 어댑터를 모른다
-├── config/        행사별 설정 — venues/<행사>/ (패드 12칸 · 프리셋 · 오프셋)
-├── tools/         출발 전 점검 — preflight.py
-├── tests/         core/ 의 테스트 44개 — 저장소 루트에서 `python3 -m unittest discover -s tests -t .`
+├── runtime/       통신 경로와 보조 — gateway · robot/relay/rc/rc_fleet 백엔드 · rc_serial · clip_len · session_log
+├── web/           화면 4장(display · pad · operator · dance) · k1.js · base/tool.css · themes/
+├── config/        solo/ · fleet/ (모드별 카탈로그·정책) · venues/<행사>/ (패드 12칸 · 프리셋 · 오프셋)
+├── tools/         preflight.py(출발 전 점검) · 진단 스크립트 · start_fleet.sh
+├── tests/         전부 여기 — 저장소 루트에서 `python3 -m unittest discover -s tests -t .`
+├── docs/          solo/ · fleet/ (운영 문서) · design/ · RESTRUCTURE.md(구조 정리 기록)
+├── run.sh         로봇 배포·relay 기동 진입점 (solo)
 ├── rc_link/       라디오 Lua·믹서 패치·SD 백업·왕복 벤치
 └── robot/         ai_sapiens 변경분 (원본 · 현행 · patch)
 ```
 
 화면 4장의 CSS 는 `web/` 한 벌이다. 앱마다 복제해 두니 실제로 갈렸다 — 8/31 새 대기
-이미지가 `group_stage` 에만 들어가 `display.html` 두 벌이 서로 다른 화면이 됐다. 지금은
-**관객 화면(display·pad)만 테마를 타고**(`--theme`, 기본 solo=`shape` / group=`shape-gym`),
+이미지가 fleet 앱 쪽에만 들어가 `display.html` 두 벌이 서로 다른 화면이 됐다. 지금은
+**관객 화면(display·pad)만 테마를 타고**(`--theme`, 기본 solo=`shape` / fleet=`shape-gym`),
 **운영자 화면(operator·dance)은 테마 밖**이다 — 행사마다 바뀌면 현장에서 헷갈린다.
 `web/base.css` 는 테마가 못 건드리는 뼈대(캔버스 스케일 메커니즘·레이어 페이드·z-index)라
 디자인을 잘못 넣어도 화면이 안 뜨는 일은 없다.
@@ -98,7 +103,7 @@ k1-stage/
 행사마다 바뀌는 것(패드 12칸 · 오프셋 · 음원)은 코드가 아니라 `config/venues/<행사>/` 에 있다.
 
 ```
-config/venues/default/
+config/venues/20260922-bank/
 ├── venue.yaml     사람이 쓴다 — 패드 12칸(pad_grid)·메모. 주석을 마음껏 단다
 └── presets.json   서버가 쓴다 — /dance 에서 저장한 프리셋과 오프셋
 ```
@@ -108,9 +113,9 @@ config/venues/default/
 값이다 — 폴더째 커밋해 두면 다음 행사의 출발점이 된다.
 
 ```bash
-python3 tools/preflight.py --venue default            # 출발 전 점검 (solo_stage 기준)
-python3 tools/preflight.py --venue default --app group_stage
-cd solo_stage && python3 server.py --venue default    # 같은 검증이 부팅 때도 돈다
+python3 tools/preflight.py                            # 출발 전 점검 (solo, 기본 venue 20260922-bank)
+python3 tools/preflight.py --mode fleet
+python3 app.py --venue 20260922-bank                  # 같은 검증이 부팅 때도 돈다
 ```
 
 서버 부팅과 preflight 는 **같은 함수**(`core/catalog.validate`)를 부른다. FATAL 이 있으면 서버가
@@ -121,15 +126,13 @@ cd solo_stage && python3 server.py --venue default    # 같은 검증이 부팅 
 동작이 맞는지는 코드가 알 수 없다(8/21 의 "영상은 뉴진스, 로봇은 체스트팝"). preflight 가 끝에
 찍는 **프리셋 짝 확인표**를 사람이 한 번 눈으로 본다.
 
-`motions.yaml` · `gateway_config.yaml` 은 앱 폴더에 그대로 둔다. 로봇 컨테이너에 평평하게
-배포되고 `robot_backend.py` 가 자기 옆에서 읽기 때문이다. 두 앱의 사본이 갈라지지 않는지는
-preflight 와 `tests/` 가 본다.
+`motions.yaml` · `gateway_config.yaml` 은 **모드별** 데이터라 `config/solo/` · `config/fleet/` 에 따로 있다 —
+로봇의 RC 다이얼 덤프가 달라서다(코드가 아니라 데이터의 차이다). 로봇에는 저장소와 같은 배치의
+부분집합(`run.sh` 의 `DEPLOY_FILES`)이 실린다.
 
-`solo_stage`와 `group_stage`는 각각의 커밋 이력을 그대로 가지고 합쳐졌다.
-`group_stage`는 `solo_stage`에서 파생됐고 stage 상태기계·무대 싱크·자막·자동종료를 공유한다.
+`solo_stage` 와 `group_stage` 는 각각의 이력을 가지고 합쳐졌고 2026-09-21 에 앱 하나로 통합됐다
+(기록: [docs/RESTRUCTURE.md](docs/RESTRUCTURE.md)).
 
-> 폴더 이름은 2026-09-20에 바꿨다: `motion_llm` → `solo_stage`, `rc_stage` → `group_stage`.
-> 옛 이름은 음성·LLM 경로가 주 기능이던 시절(2026-08-18 제거)의 잔재이고, RC 폴백이
-> 들어오면서 "Wi-Fi 앱 / RC 앱" 구분도 사실과 맞지 않게 됐다.
+> 폴더 이름은 2026-09-20에 바꿨다: `motion_llm` → `solo_stage`, `rc_stage` → `group_stage` (그 뒤 통합).
 > **로봇 컨테이너 안 배포 경로는 아직 `/root/motion_llm/`이다** — `run.sh`의 `ROBOT_DIR`
 > 참고.

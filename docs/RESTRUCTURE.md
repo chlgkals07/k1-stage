@@ -573,30 +573,48 @@ class Stage:
   `preflight` 는 이 Mac 에 음원(저작권물)이 없어 FATAL 6 — 가드가 의도대로 동작
 - `main`/`origin/main` = `ccfa40a` 불변
 
-### 7단계 — `app.py --mode` 로 두 앱 통합
+### ✅ 7단계 — 앱 하나, 모드 둘 (`app.py --mode solo|fleet`, 완료)
 
-이 시점엔 차이가 배선 20줄이다.
+`solo_stage` 와 `group_stage` 는 `State` 두 메서드와 화면 한두 곳만 달랐다(6단계 측정). 그래서 갈라 둘 이유가 없었다.
+`main` 이 통합을 못 한 것은 9/22 행사를 앞두고 불가침이라서다 — 그 제약은 `rebuild` 에 없다.
 
-```python
-MODES = {
-    "solo":  dict(pages=["pad","display","operator","dance"], default="/pad",
-                  transports={"relay": mk_relay, "robot": mk_robot, "rc": mk_rc}),
-    "fleet": dict(pages=["display","operator","dance"], default="/operator",
-                  transports={"rc_fleet": mk_fleet}),
-}
+**세 커밋:** ① `solo_stage` 를 저장소 루트로 올린다(이동 + 경로) ② 플릿을 흡수하고 `group_stage/` 를 지운다 ③ 문서.
+
+| 모드가 정하는 것 | solo | fleet |
+|---|---|---|
+| 데이터 `config/<모드>/` | 카탈로그 16 · 허용 14 · RC 다이얼 14슬롯 | 카탈로그 139 · 허용 79 · 다이얼 65슬롯 (2026-08-18 덤프) |
+| 화면 표 `MODES[..]["pages"]` | operator · display · **pad** · dance | operator · display · dance (관객 패드 없음) |
+| 기본 화면 · 테마 · 포트 | `/pad` · `shape` · 8000/8443 | `/operator` · `shape-gym` · 19000 |
+| 백엔드 | mock(기본) · `--robot` · `--relay` · `--rc` | 라디오 플릿(기본) · `--mock` |
+| 앱 고유 라우트 | `/rc/mode`(RC 토글) | `/rc/rescan`(USB 재탐색) |
+
+- **데이터가 갈리는 이유는 코드가 아니다.** 로봇의 RC 다이얼 덤프가 다르다(solo 는 9/22 배포 목표 14슬롯, fleet 은 8/18 실측 65슬롯).
+  합치면 한쪽의 물리 사실이 사라진다. 그래서 `config/solo/` · `config/fleet/` 로 둔다. 새 모드는 표에 한 줄 + `config/<모드>/` 폴더다.
+- **`RcBackend` 의 암묵 결합을 드러냈다** — 클립을 "카탈로그 옆 `static/clips`"에서 찾았다. 카탈로그가 옮겨 가면 엉뚱한 곳을 본다.
+  `clips_dir` 인자로 받고 `app.py` 가 넘긴다.
+- **D1 (채택):** `dance.html` 에 박혀 있던 무대 동작 3종(앱마다 달랐다: fleet 은 뉴진스가 하나 더)을 서버가 준다 —
+  `/motions` 의 `dance_motions` = 그 행사 프리셋이 쓰는 동작, 프리셋이 없는 새 행사면 패드 동작. 프리셋 유실 수정(`sel.value=''`)도 채택.
+  **알려진 한계:** 프리셋에 아직 없는 동작은 `/dance` 목록에 안 뜬다(옛 하드코딩도 같았다). 새 무대 동작은 `presets.json` 에 먼저 한 줄 넣는다.
+- **D2 (채택):** TLM 대기 1.5초(단일)/0.6초(플릿)를 통일하지 않고 `RcSerial(tlm_timeout_s=)` 로 둘 다 보존. 0.6 은 "전파 구간 미검증"이다.
+- **D3 (채택):** 로봇 진입 `server.py` → `app.py`. `run.sh` 는 저장소 루트에서 tar 하고 `DEPLOY_FILES` 15개가 저장소와 같은 배치로 풀린다
+  (`app.py` · `runtime/` 9 · `config/solo/` yaml 2 · `core/` 3). 심볼릭 링크와 앱 폴더 사본이 사라졌다.
+  `runtime/rc_fleet.py` 는 로봇에서 안 쓰지만 `app.py` 가 최상단 import 하므로 목록에 있어야 한다(`test_deploy_list_covers_imports` 가 지킨다).
+- **안전 코어는 모드와 무관하다** — 정지 · `api_allowlist` 게이트 · LLM 거부 · 인증 · 부팅 검증. `test_modes.SafetyCoreIsTheSameInEveryModeTest` 가 같은 시나리오를 두 모드에 보내 확인한다.
+- **`main` 의 문서 3개**(`BANK_EVENT_20260922` · `HANDOVER_CHECK` · `INTERN_FIELD_TEST`)는 `main` 의 경로(`solo_stage/…`)를 그대로 적고 있다. `main` 이 그 배치로 무대에 나가므로 고치지 않았다 — Phase 5 에서 합칠 때 충돌을 피한다.
+
+**검증:** 테스트 281(루트로 모임) · 정답지 재생: `origin/main` 의 `solo_stage`(52호출)와 `group_stage --mock`(57호출)을 분리 워크트리로 띄워 같은 시나리오를 재생 —
+solo 는 새 키 `dance_motions`(값이 옛 하드코딩 3종과 같다)와 화면 HTML 바이트 수 외에 **동일**, fleet 는 의도한 차이(LLM 거부 · 12칸/6프리셋 venue · `dance_motions`)만 다르다.
+변이 6개(fleet 에서 `/rc/mode` 열기 · fleet 에 `/pad` 열기 · fleet TLM 1.5초 · `dance_motions` 폴백 삭제 · fleet 테마 · `select_mode` 삭제)가 전부 잡혔다.
+로봇 배포 재현: 15개만 풀어 ROS 만 가짜로 둔 배치에서 `app.py --robot` 이 카탈로그 16 으로 기동.
+
+**로컬 산출물 이사(Linux PC 에서 한 번):** `media/` · `logs/` · `.cert.pem` · `.key.pem` 은 gitignore 이고 저장소 루트로 옮겨야 한다.
+동작 sim 클립은 `solo_stage/static/clips/` → `clips/`.
+
+```bash
+cd ~/Projects/shape3/k1-stage        # rebuild 를 받은 뒤
+mv solo_stage/media media; mv solo_stage/logs logs; mv solo_stage/static/clips clips
+mv solo_stage/.cert.pem solo_stage/.key.pem . 2>/dev/null; rmdir solo_stage/static solo_stage 2>/dev/null
 ```
-
-근거 셋:
-1. `server.py` 차이가 4가지뿐 — 백엔드 배선, 라우트(`/pad` 유무), `/rc/mode` vs
-   `/rc/rescan`, CLI
-2. **런타임에 상호 배타적** — solo 를 RC 모드로 토글하면 group 과 같은 USB tty 를 놓고
-   다툰다. 두 프로세스가 같은 포트에 쓰면 명령이 섞인다
-3. 공유 파일 16개 + 드리프트 3건 — 분리의 비용은 이미 지불했고 이득은 못 받고 있다
-
-**리스크**: 중. 큰 리팩터는 "한 번에 하는 것"이 아니라 **"여러 작은 안전한 변경의
-결과로 저절로 가능해지는 것"**이다. 1~6 이 끝나면 남는 게 배선뿐이다.
-
----
 
 ## 4. 알려진 문제 (이 브랜치에서 고치지 않는 것)
 

@@ -20,7 +20,7 @@
 | gateway `llm_allowlist` | **21개** — 코드에 살아 있으나 **이 경로로 들어오는 요청은 없다** (`voice-llm-dev` 브랜치용) |
 | 정지 목표 상태 | **`Velocity`** (Damping일 때만 `ReadyPose`) |
 | RC 다이얼 | 2뱅크 × 20슬롯 = **40**. CH5로 뱅크, CH11로 슬롯 |
-| 테스트 | `solo_stage` 194 · `group_stage` 153 · 루트 `tests/` 44 |
+| 테스트 | `tests/` 전체 (앱이 하나가 되어 한 곳에 모였다) |
 
 실기 검증된 인사 3종은 `MimicWaveHand`(손 흔들기) · `MimicBowNavel`(배꼽 인사) ·
 `MimicBadChestpopVer2`(체스트팝)이다. 개소식에서 패드 12개 중 10개가 정상 동작했다
@@ -42,7 +42,7 @@
 PC는 장소 랜과 로봇 Wi-Fi를 동시에 쓴다. 아이패드는 로봇 AP에 직접 붙지 않는다.
 DHCP로 주소가 바뀔 수 있으므로 실행 전 `ip route get 192.168.60.1`로 확인한다.
 
-**차선 경로**가 하나 더 있다. Wi-Fi가 죽으면 `group_stage`가 PC → USB → RadioMaster Pocket →
+**차선 경로**가 하나 더 있다. Wi-Fi가 죽으면 fleet 모드(`app.py --mode fleet`)가 PC → USB → RadioMaster Pocket →
 ELRS 전파로 직접 쏜다. 로봇 소프트웨어 수정이 필요 없고, 꽂은 라디오 수만큼 로봇이 같이 움직인다.
 
 ---
@@ -140,8 +140,8 @@ SB 하단(Velocity)에 둔다. **SC 중앙에 두지 않는다.** 코드로 막�
 중일 때 다음 명령이 나간다. 너무 빠르면 관객이 아직 움직이는 로봇에 다음 버튼을 누르고,
 너무 늦으면 쇼가 늘어진다.
 
-현장에서 조절하려면 `static/pad.html`의 `+2000`, `server.py`의 `EXEC_IDLE_MARGIN_SEC`,
-`rc_backend.py`의 `BUSY_MARGIN_SEC` 세 값이 같은 뜻이므로 함께 움직인다.
+현장에서 조절하려면 `web/pad.html`의 `+2000`, `core/stage.py`의 `EXEC_IDLE_MARGIN_SEC`,
+`runtime/rc_backend.py`의 `BUSY_MARGIN_SEC` 세 값이 같은 뜻이므로 함께 움직인다.
 
 클립이 없는 동작은 화면 복귀 기본 12초, RC busy 기본 30초. 둘 다 stage TTL(60초)이 백스톱이다.
 **무대(dance)는 이 사다리를 쓰지 않는다** — 영상 종료 신호가 주 해제자이고
@@ -243,11 +243,11 @@ PC 쪽 `motions.yaml`의 rc_list는 이미 v2로 바꿔 뒀다.
 
 | 구분 | 위치 | 내용 |
 |---|---|---|
-| PC 작업본 | `k1-stage/solo_stage/` | UI, relay, gateway, 동작 카탈로그 |
-| 로봇 실행본 | **`ai_sapiens` 컨테이너 안** `/root/motion_llm/` | `server.py --robot`으로 뜨는 HTTPS/ROS gateway |
+| PC 작업본 | `k1-stage/` (`app.py` · `core/` · `runtime/` · `web/` · `config/`) | UI, relay, gateway, 동작 카탈로그 |
+| 로봇 실행본 | **`ai_sapiens` 컨테이너 안** `/root/motion_llm/` | `app.py --robot`으로 뜨는 HTTPS/ROS gateway |
 | 로봇 sim2real 소스 | 로봇의 `/root/ros2_ws` | API authority와 Mimic 실행 상태머신 |
 | 그 관리본 | `k1-stage/robot/` | 로봇에 적용·빌드한 변경의 원본·현행·patch |
 
 로봇과 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 13개). 목록을 여기 베껴 적지 않는다 —
-코드는 10개인데 문서는 6개라고 적고 있었다. `run.sh`가 md5로 대조하고 `--deploy`로 동기화한다. `static/`은 PC relay가 서빙하므로
+코드는 10개인데 문서는 6개라고 적고 있었다. `run.sh`가 md5로 대조하고 `--deploy`로 동기화한다. `web/`은 PC relay가 서빙하므로
 로봇에 없어도 된다. **이 경로에서 실제로 두 번 사고가 났다.**

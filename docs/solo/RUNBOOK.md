@@ -87,7 +87,7 @@ nmcli connection modify k1-orinnx10 ipv4.never-default yes
 # 0. PC: 절전·화면보호기 꺼짐 확인. TV 입력 = PC HDMI
 # 1. 로봇 전원 → (사람) go        ※ cb(colcon build) 불필요 — 코드 안 바뀜
 # 2. PC 터미널 1 — 워치독 (로봇 부팅 전에 켜도 된다. 알아서 붙는다)
-cd /home/robotis-ai/Projects/shape3/k1-stage/solo_stage
+cd /home/robotis-ai/Projects/shape3/k1-stage
 tools/wifi_watch.sh
 
 # 3. PC 터미널 2 — 링크 실측 (손실 0% 확인)
@@ -277,18 +277,18 @@ ros2 topic echo /ai_sapiens/mode_status --once
 
 # 2. 로봇 컨테이너에서 gateway
 cd /root/motion_llm
-python3 server.py --robot --https --port 8443 --ready-only
+python3 app.py --robot --https --port 8443 --ready-only
 #   → 출력된 robot gateway token 을 복사한다
 #   → 운영 중에는 api_arm_probe.py 를 같이 실행하지 않는다
 
 # 3. PC 네트워크 확인 (§5 "링크·경로 진단")
 
 # 4. PC 비밀값
-cd /home/robotis-ai/Projects/shape3/k1-stage/solo_stage
+cd /home/robotis-ai/Projects/shape3/k1-stage
 read -rsp "Robot gateway token: " K1_RELAY_TOKEN; echo; export K1_RELAY_TOKEN
 
 # 5. PC relay
-python3 server.py --relay https://192.168.60.1:8443 --https --port 18444 --ready-only
+python3 app.py --relay https://192.168.60.1:8443 --https --port 18444 --ready-only
 
 # 6. 접속
 ~/k1links 18444

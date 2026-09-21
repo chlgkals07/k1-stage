@@ -1,7 +1,7 @@
 # rc_link — PC → 유선 RC(RadioMaster Pocket) → ELRS → K1 명령 경로
 
 solo_stage API 모드(Wi-Fi)의 차선 명령 경로 개발 작업공간.
-전체 설계·단계는 `../solo_stage/docs/RC_WIRED_COMMAND_PLAN.md` 참조 (living doc).
+전체 설계·단계는 `../docs/solo/RC_WIRED_COMMAND_PLAN.md` 참조 (living doc).
 행사 스택과 격리하기 위해 여기서 개발하고, P3에서 solo_stage에 가산 병합한다.
 
 ## 구성
