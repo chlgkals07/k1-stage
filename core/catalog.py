@@ -11,6 +11,7 @@
 """
 
 import json
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,6 +69,8 @@ def load_venue(venue_dir):
         "name": doc.get("name") or venue_dir.name,
         "date": doc.get("date"),
         "notes": doc.get("notes") or "",
+        # 보관용 venue(옛 행사의 이력). 지금 카탈로그·정책으로는 검증도 기동도 못 한다.
+        "archived": bool(doc.get("archived")),
         "pad_grid": doc.get("pad_grid"),   # 없으면 None — validate 가 FATAL 로 잡는다
         "presets": presets,
     }
@@ -108,9 +111,21 @@ def validate(catalog_doc, policy, venue, *, clips_dir=None, media_dir=None, requ
     저장소에 없고, 그게 없다고 mock 실행까지 막으면 아무도 화면을 못 본다. 음원이 없다는
     사실 자체는 여전히 WARN 으로 보인다.
     """
+    if venue.get("archived"):
+        # 옛 행사가 가리키던 동작이 지금 카탈로그에서 줄었을 수 있다(main 이 9/22 를 위해 139→16 으로 줄였다).
+        # 그런 venue 로 무대를 띄우면 안 되므로 검증 결과가 아니라 **이 사실 자체**를 FATAL 로 알린다.
+        return [Problem(FATAL, "venue", "보관된 venue 다(archived: true) — 지금 카탈로그·정책으로 검증할 수 없고 "
+                        "이 venue 로는 기동하지 않는다. --venue 로 현재 행사의 venue 를 골라라")]
     out = []
     states = catalog_states(catalog_doc)
     api = set(policy.get("api_allowlist") or [])
+
+    # load_catalog 는 {state: 항목} 을 만들어서 같은 state 가 두 번 있으면 뒤의 것이 앞의 것을 **조용히** 덮어쓴다
+    # (옛 전체 카탈로그에 MimicCartwheelin 이 '옆돌기 연속' 과 '카트휠린' 으로 두 번 있었다).
+    items = list(catalog_doc.get("motions") or []) + list(catalog_doc.get("control_states") or [])
+    for state, n in sorted(Counter(m.get("state") for m in items if isinstance(m, dict)).items()):
+        if state and n > 1:
+            out.append(Problem(WARN, f"catalog.{state}", f"카탈로그에 {n}번 있다 — 뒤의 항목이 앞의 것을 덮어쓴다"))
 
     # ── pad_grid ────────────────────────────────────────────────────
     grid = venue.get("pad_grid")

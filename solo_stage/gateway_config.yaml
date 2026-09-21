@@ -6,145 +6,30 @@ ros:
   heartbeat_hz: 10
 
 policy:
-  # api_allowlist: gateway 가 실행을 허용하는 전부. 운영자 수동 버튼이 여기서 나온다.
-  # llm_allowlist: 그중 모델이 스스로 고를 수 있는 것.
-  #
-  # 2026-08-14 전 자산 개방: 체크포인트·실험본 뺀 실동작 전부(71) 를 API 버튼으로.
-  # restricted(복싱류·카트휠린)도 버튼 개방 — 운영자 화면에 빨간 띠, E-stop 전제.
-  # LLM 은 llm_allowlist 21 로 불변이며 restricted 는 llm_motions() 가 구조적으로 거른다.
-  # 제어 상태(Damping/ZeroPose/ReadyPose/Velocity)와 turnit ckpt·실험본은 넣지 않는다.
+  # 이번 무대에서 운영자/패드/dance가 쓸 동작 전부. 최신 실물 mode 목록과
+  # selector 백업을 확인한 뒤에만 여기와 motions.yaml을 함께 바꾼다.
   api_allowlist:
-    # ── greeting ──
-    - MimicBow
-    - MimicBowCourtly
-    - MimicNewKnightlyBowR001A429
     - MimicBowNavel
-    - MimicByeBye
-    - MimicCasualGreeting
-    - MimicWaveHand
-    # ── reaction ──
-    - MimicBadChestpop
-    - MimicBadChestpopVer2
-    - MimicBravo
-    - MimicChefsKiss
-    - MimicClapHands
-    - MimicCrowdCheer
-    - Mimiclove
-    # ── guide ──
-    - MimicAiming
-    - MimicBeckon
-    - MimicCalmDown
-    - MimicComeHere
-    # ── idle ──
-    - MimicBodyStretch
-    - MimicCheckingTime
-    - MimicCoinPick
-    - MimicCrossedArms
-    - MimicIdleBase
-    # ── expression ──
-    - MimicAnseKabanse
-    - MimicBegRub
-    - MimicBossDustBrushingNew
-    - MimicBossDustBrushingR001A036
-    - MimicDeepDab001A467
-    - MimicGuap
-    - MimicGuapIntro
-    - MimicGuapIntroP2
-    - MimicGuapVer2
-    # ── performance ──
-    - MimicBillyJean
-    - MimicBurpee
-    - MimicCartwheel
-    - MimicCrossedArmsTurn
-    - MimicDance1
-    - MimicDance2
-    - MimicDanceBasicTurnV1360RLoopFast003A325
-    - MimicDanceBlindingLights
-    - MimicDanceClick
-    - MimicDanceCrossTurn360
-    - MimicDanceCrossTurnFull
-    - MimicDanceFishin
-    - MimicDanceFloss
-    - MimicDanceJazzHands
-    - MimicHaminJumpFront
-    - MimicJump
-    - MimicNewMacarena001A545
-    - MimicNewjeansHani
-    - MimicOmbrinho
-    - MimicPara
-    - MimicPushUp
-    - MimicRedRed
-    - MimicRedRedNewton
-    - MimicRedRedWoojin
-    - MimicNewRockOut002A487
-    - MimicShuffleDance
-    - MimicNewSnuCheerHeadShort
-    - MimicSnuCheer
-    - MimicSnuCheerGvhmr
-    - MimicSquat
-    - MimicSquat05
-    - MimicStraykidsThisAndThat
-    - MimicTaeguk
-    - MimicTkd1poomBasic
-    - MimicTkdHorseStanceBodyPunch
-    - Mimicbad
-    - Mimicggang_1
-    - Mimicggang_2
-    - Mimicggang_3
-    # ── intense ──
-    - MimicBoxingK05
-    - MimicBoxingLpfW9
-    - MimicBoxingNewUrdf
-    - MimicBoxingNewton
-    - MimicCartwheelin
-    - MimicCartwheelBallTq42
     - MimicShadowBoxing
-    - MimicWalk1Subject1
-  llm_allowlist:
-    - MimicWaveHand
-    - MimicBowNavel
-    - MimicBadChestpopVer2
-    - MimicAnseKabanse
-    - MimicBeckon
-    - MimicBodyStretch
-    - MimicBowCourtly
-    - MimicBravo
-    - MimicByeBye
-    - MimicCalmDown
-    - MimicCasualGreeting
-    - MimicCheckingTime
-    - MimicChefsKiss
-    - MimicCoinPick
-    - MimicComeHere
-    - MimicCrossedArms
-    - MimicCrowdCheer
-    - MimicDeepDab001A467
-    # 명시 요청 전용 (desc 로 게이팅)
-    - MimicPushUp
     - MimicDanceJazzHands
-    - MimicCartwheel
+    - MimicWaveHand
+    - MimicBowCourtly
+    - MimicNewMacarena001A545
+    - MimicNewKnightlyBowR001A429
+    - MimicSquat
+    - MimicChefsKiss
+    - MimicPushUp
+    - MimicNewRockOut002A487
+    - MimicBadChestpopVer2
+    - MimicNewSnuCheerHeadShort
+    - MimicStraykidsThisAndThat
+
   # pad_allowlist 는 여기 없다. 관객 패드 12칸은 안전 정책이 아니라 행사 연출이라
   # config/venues/<행사>/venue.yaml 의 pad_grid 로 옮겼다. 서버는 그 목록을 위의
   # api_allowlist 와 교집합해서 쓰므로, venue 가 권한을 넓힐 수는 없다.
-  # pad_llm_exclude: /pad 음성 경로에서만 빼는 동작.
-  # 2026-08-17: 버튼 12종은 말로도 돼야 한다는 사용자 확정으로 PushUp·JazzHands 는
-  # 제외를 풀었다 (버튼 12에 포함). 카트휠만 남는다 — 최대 공간 + E-stop 대기 전제라
-  # 관객이 말로 부를 수 없다. 진행자가 / 로 열면 21개 그대로다.
-  pad_llm_exclude:
-    - MimicCartwheel
-  # 운영자 정지 버튼이 요청하는 상태. allowlist 를 우회하는 별도 경로라
-  # api_allowlist/llm_allowlist 에는 넣지 않는다 (넣으면 LLM 에 노출될 위험이 있다).
-  #
-  # 2026-08-18 사용자 확정: **정지는 locomotion(Velocity) 으로 되돌린다.**
-  # 로봇 설정 기준(k1_config.yaml) ReadyPose 는 `kind: posture` — 균형 정책이 없는
-  # 고정 자세다. 동작 중이거나 무게중심이 흔들릴 때 여기로 선점하면 넘어질 수 있다.
-  # Velocity 는 `kind: policy`(locomotion/velocity/...) 로 균형을 잡는 학습 정책이고,
-  # Mimic 도 `on_complete: Velocity` 로 스스로 여기 복귀한다 — 즉 이게 로봇의 정상
-  # 대기 상태다. 어떤 실패 경로에서도 ReadyPose 로 떨어뜨리지 않는다.
+
+  # 정지는 allowlist와 독립된 안전 경로다.
   stop_state: Velocity
-  # 부팅 직후 진입용. 로봇 상태기계에서 Damping 을 벗어나는 유일한 전이가
-  # Damping → ReadyPose 라서, 전원 인가 후 한 번은 ReadyPose 를 거쳐야 한다.
-  # 운영자 화면의 회색 [준비 자세] 버튼이 이걸 보낸다 (빨간 정지와 분리).
   entry_state: ReadyPose
   entry_timeout_sec: 5
   status_timeout_sec: 1

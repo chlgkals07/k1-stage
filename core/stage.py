@@ -3,7 +3,8 @@
 관객 패드·운영자·TV(display)가 서로 다른 시각에 같은 무대를 본다. 이 클래스가 그 무대의 유일한 주인이다.
 
 - 화면 상태(idle · preview · executing · dance)와 그 수명(TTL) — 어느 기기가 조작하든 display 는 서버만 본다
-- 동작 실행: 카탈로그·허용목록(LLM · 패드) 검사, 무대 중 관객 명령 차단, 백엔드 호출
+- 동작 실행: 카탈로그·허용목록(패드) 검사, 무대 중 관객 명령 차단, 백엔드 호출. LLM 경로는 제거됐고
+  source="llm" 은 항상 거부한다
 - dance 스케줄: 미래의 절대 시각을 정해 두고 동작은 서버 Timer 가, 음원은 display 가 각자 맞춘다.
   세대 번호(_dance_gen)로 옛 무대의 늦은 콜백을 무력화한다
 - 백엔드 능력(prepare · motion_duration)은 core.ports 의 Protocol 로 묻는다
@@ -29,22 +30,10 @@ from collections import deque
 from core.ports import SupportsDuration, SupportsPrepare, Transport
 
 
-def llm_motions(items, ready_only=False):
-    """LLM 에게 노출할 것만. restricted 는 llm 플래그와 무관하게 제외한다.
-
-    ready_only=True 면 학습이 끝난 것(status: ready)만 남긴다. 로봇에 붙일 때 쓴다.
-    status 가 없으면 ready 로 본다.
-    """
-    out = [m for m in items if m.get("llm") and m.get("safety") != "restricted"]
-    if ready_only:
-        out = [m for m in out if m.get("status", "ready") == "ready"]
-    return out
-
-
 class Stage:
     def __init__(self, backend: Transport, *, catalog, load_presets, media_files, clip_seconds,
-                 clip_exists, session_log, ready_only=False, access_token=None, llm_allowlist=None,
-                 pad_allowlist=None, pad_llm_exclude=None, api_allowlist=None):
+                 clip_exists, session_log, ready_only=False, access_token=None,
+                 pad_allowlist=None, api_allowlist=None):
         """이 클래스는 파일도 어댑터도 모른다 — 필요한 것을 인자로 받는다.
 
         catalog        (items, by_state) — 동작 카탈로그
@@ -66,20 +55,17 @@ class Stage:
         self._primary_backend = backend
         self.ready_only = ready_only
         self.items, self.by_state = catalog
-        self.allowed = {m["state"] for m in llm_motions(self.items, ready_only)}
-        # 관객·모델에게 여는 목록은 api_allowlist 를 넘을 수 없다. **정책에서 온 값**으로 자른다.
+        # 음성/LLM 요청 경로는 제거됐다. source="llm" 은 아래 _play() 에서 항상 거부한다.
+        self.allowed = set()
+        # 관객에게 여는 목록은 api_allowlist 를 넘을 수 없다. **정책에서 온 값**으로 자른다.
         # 예전에는 backend.api_allowlist 속성이 있을 때만 잘랐다. 그래서 RcBackend 는 그 속성을 일부러
         # 갖지 않아야만 올바르게 동작했고(있으면 패드가 조용히 줄어든다), 누가 일관성을 위해 추가하면
         # 사고가 났다. 이제 UI 목록은 백엔드가 무엇을 갖고 있는지와 무관하다 — RC 로 토글해도 목록이
         # 그대로인 것(2026-08-18 사용자 확정)이 구조로 보장된다.
         # None 이면 안 자른다: 정책을 모르는 호출(테스트의 State(MockBackend()) 등)은 옛 동작 그대로다.
         api = set(api_allowlist) if api_allowlist is not None else None
-        if api is not None:
-            self.allowed &= api
-        if llm_allowlist is not None:
-            self.allowed &= set(llm_allowlist)
-        # 관객용(/pad) 버튼 목록. self.allowed 와 같은 방식으로 교집합을 취해
-        # 카탈로그·api 밖 항목이 오타 하나로 조용히 통과하는 일이 없게 한다.
+        # 관객용(/pad) 버튼 목록. 카탈로그·api 밖 항목이 오타 하나로 조용히 통과하는 일이 없게
+        # 교집합을 취한다.
         self.pad_allowed = set(pad_allowlist or ())
         self.pad_allowed &= set(self.by_state)
         if api is not None:
@@ -87,7 +73,6 @@ class Stage:
         # 패드 그리드 번호 = 목록 순서 (2026-08-18 사용자 확정 스펙).
         # set 은 순서를 잃으므로 원본 순서를 따로 보존해 API 로 내보낸다.
         self.pad_order = [s for s in (pad_allowlist or ()) if s in self.pad_allowed]
-        self.pad_llm_exclude = set(pad_llm_exclude or ())
         self.session_log = session_log
         self.log = deque(maxlen=200)
         # display(무대 화면)가 폴링으로 읽는 현재 동작. 자막 버퍼는 음성과 함께 제거됨.
@@ -234,10 +219,10 @@ class Stage:
         if info is None:
             return self.record(ok=False, motion=motion, ko="?", reason=reason,
                                source=source, msg="카탈로그에 없는 동작")
-        # LLM 경로만 화이트리스트를 강제한다. 운영자 버튼은 사람이 누른 것이라 허용.
-        if source == "llm" and motion not in self.allowed:
+        # LLM 경로는 제거됐다. 운영자 버튼은 사람이 누른 것이라 허용한다.
+        if source == "llm":
             return self.record(ok=False, motion=motion, ko=info["ko"], reason=reason,
-                               source=source, msg="LLM 에게 허용되지 않은 동작")
+                               source=source, msg="LLM 경로는 현재 운영하지 않습니다")
         # 관객용 아이패드도 사람이 누르는 것이지만 그 사람이 운영자가 아니다.
         if source == "pad" and motion not in self.pad_allowed:
             return self.record(ok=False, motion=motion, ko=info["ko"], reason=reason,
@@ -301,6 +286,13 @@ class Stage:
             return {"ok": False, "msg": f"음원 파일이 없습니다: {media}"}
         if motion and motion not in self.by_state:
             return {"ok": False, "msg": f"카탈로그에 없는 동작: {motion}"}
+        # 게이트웨이가 준비 안 된 채로 무대를 시작하면 영상만 돌고 로봇은 안 움직인다
+        # (SD API Arm 안 올림 등). stop_dance 는 로봇을 안 건드리는 설계라 한 번 시작되면
+        # 되돌릴 수 없으므로, 시작 시점에 막는다. mock 은 로봇 미연결 개발용이라 통과.
+        if motion:
+            gw = self.backend.status().get("gateway")
+            if gw not in ("ready", "mock"):
+                return {"ok": False, "msg": f"로봇이 명령을 받을 준비가 안 됐습니다 (gateway: {gw})"}
         # 숫자 필드는 타이머를 걸기 **전에** 전부 파싱한다. 타이머를 먼저 걸면 파싱
         # 오류 시 "시작 실패"로 보이는데 2초 뒤 로봇만 움직인다 (리뷰 지적).
         try:

@@ -36,8 +36,8 @@ class WiringTest(unittest.TestCase):
     def test_init_takes_what_callers_pass(self):
         """main() 과 테스트가 이 이름들로 부른다. Stage 가 키워드 전용으로 바뀌어도 이 표면은 그대로여야 한다."""
         params = list(inspect.signature(server.State.__init__).parameters)
-        self.assertEqual(params, ["self", "backend", "ready_only", "access_token", "llm_allowlist",
-                                  "session_log", "pad_allowlist", "pad_llm_exclude", "api_allowlist"])
+        self.assertEqual(params, ["self", "backend", "ready_only", "access_token",
+                                  "session_log", "pad_allowlist", "api_allowlist"])
 
 
 if __name__ == "__main__":

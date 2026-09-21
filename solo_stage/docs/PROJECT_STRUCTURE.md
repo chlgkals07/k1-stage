@@ -8,22 +8,17 @@ solo_stage/
 ├── README.md                 # 짧은 진입점
 ├── docs/                     # 현재 문서와 인수인계
 ├── archive/                  # 과거 코드·설정 스냅샷 (gitignore — 로컬에만)
-├── robot/                    # 로봇 적용 파일 매니페스트
 ├── static/                   # 웹 UI 4장 — pad · display · operator · dance
 ├── media/                    # 무대 음원·안무 영상 (gitignore — 로컬에만)
 ├── motions.yaml              # 동작 카탈로그
-├── gateway_config.yaml       # api·llm allowlist, stop/entry state, ROS endpoint
+├── gateway_config.yaml       # api_allowlist, stop/entry state, ROS endpoint
 │                             # (패드 12칸·무대 프리셋은 ../config/venues/<행사>/ — 행사마다 바뀌는 것)
 ├── server.py                 # HTTPS UI, backend 선택, State 배선 (상태기계·무대 싱크는 core/stage.py)
-├── relay_backend.py          # PC→robot HTTPS relay
-├── robot_backend.py          # robot ROS 2 transport
-├── rc_backend.py · rc_serial.py  # RC 폴백 경로 (PC→USB→라디오→ELRS)
-├── gateway.py                # 실행 정책·lifecycle·정지·cooldown
+├── runtime/                  # 백엔드·게이트웨이·보조: relay_backend · robot_backend · rc_backend · rc_serial ·
+│                             #   gateway(실행 정책·lifecycle·정지·cooldown) · clip_len · session_log
 ├── core -> ../core           # 저장소 루트 core/ 로 가는 링크. 도메인(stage) · 백엔드 계약(ports) · 설정 검증(catalog)
-├── clip_len.py               # sim 클립 길이 → 잠금 타이밍 기준
-├── session_log.py            # JSONL 세션 로그
 ├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal …)
-└── test_*.py                 # Python 단위 테스트 (194개)
+└── tests/test_*.py           # Python 단위 테스트 (195개)
 ```
 
 비밀값은 리포지토리에 두지 않는다 — `~/.k1/secrets.env` (chmod 600).
@@ -35,7 +30,6 @@ solo_stage/
 - `archive/`: 실행하지 않는 과거 백업이다. 복구나 비교할 때만 본다. **gitignore 대상이라
   이 저장소에는 없고 작업 PC에만 있다** — git 이전 시절에 `*.bak.<주제>_<날짜>` 규칙으로
   남기던 것의 잔재다. 지금 이력은 git 이 들고 있으므로 새 스냅샷을 여기 쌓지 않는다.
-- `robot/`: 로봇 ROS 패키지를 중복 보관하지 않고 관리본과 배포 파일을 안내한다.
 - `static/`: 별도 frontend 빌드 없이 `server.py`가 그대로 제공하는 웹 UI다.
 
 ## 로봇 쪽 배포본
@@ -45,7 +39,7 @@ solo_stage/
 `mv` 하지 않은 채 `run.sh`의 `ROBOT_DIR`만 고치면 빈 디렉터리에 배포되고 gateway 는 옛
 코드를 계속 돌린다. 둘은 반드시 같이 바꾼다.
 
-PC와 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 13개: 서버·백엔드, 정책·카탈로그 yaml, 그리고 `core/` 세 개).
+PC와 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 14개: 서버, `runtime/` 여덟 개, 정책·카탈로그 yaml, 그리고 `core/` 세 개).
 목록은 `run.sh` 의 `DEPLOY_FILES` 가 정본이다 — 여기에 베껴 적으면 또 썩는다(실제로 코드는 10개인데 문서는 6개였다).
 `server.py` 가 import 하는 모듈이 목록에서 빠지면 로봇에서 gateway 가 안 뜨는데, `test_server_tools` 의
 `test_deploy_list_covers_imports` 가 그걸 지킨다.

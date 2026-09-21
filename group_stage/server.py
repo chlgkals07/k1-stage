@@ -6,8 +6,7 @@
 
   단일 로봇·Wi-Fi 운영은 정본 solo_stage 을 쓴다. 이 앱은 RC 전용이다.
 
-음성·LLM 경로는 2026-08-18 에 제거했다. 재개발은 voice-llm-dev 브랜치에서 한다
-(`docs/voice/`). 이 파일에 남은 llm_allowlist·source=="llm" 검사는 그때 쓸 구조다.
+음성·LLM 경로는 제거됐다. `source="llm"` 요청은 안전하게 거부한다.
 
 표준 라이브러리 + pyyaml 만 쓴다.
   python3 server.py            # http 8000 (mock)
@@ -70,7 +69,7 @@ MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".mp4", ".webm", ".mov"}
 # 배포되는 파일이라 앱 폴더에 그대로 둔다.
 ROOT = HERE.parent
 VENUES = ROOT / "config" / "venues"
-DEFAULT_VENUE = "default"
+DEFAULT_VENUE = "20260922-bank"
 PRESETS = VENUES / DEFAULT_VENUE / "presets.json"   # main() 이 --venue 로 바꾼다
 
 
@@ -203,8 +202,8 @@ class State(Stage):
     /dance 는 실행 중에 프리셋을 저장한다. 시작할 때 한 번 읽은 값을 들고 있으면 안 된다.
     """
 
-    def __init__(self, backend: Transport, ready_only=False, access_token=None, llm_allowlist=None,
-                 session_log=None, pad_allowlist=None, pad_llm_exclude=None, api_allowlist=None):
+    def __init__(self, backend: Transport, ready_only=False, access_token=None,
+                 session_log=None, pad_allowlist=None, api_allowlist=None):
         super().__init__(
             backend,
             catalog=load_catalog(),
@@ -213,8 +212,8 @@ class State(Stage):
             clip_seconds=lambda motion: clip_len.clip_duration(CLIPS, motion),
             clip_exists=lambda state: (CLIPS / f"{state}.mp4").is_file(),
             session_log=session_log or SessionLog(None, enabled=False),
-            ready_only=ready_only, access_token=access_token, llm_allowlist=llm_allowlist,
-            pad_allowlist=pad_allowlist, pad_llm_exclude=pad_llm_exclude, api_allowlist=api_allowlist)
+            ready_only=ready_only, access_token=access_token,
+            pad_allowlist=pad_allowlist, api_allowlist=api_allowlist)
 
     def rescan_rc(self):
         """USB 재탐색 — 지금 꽂혀 있는 Pocket 전부와 다시 연결한다."""
@@ -630,9 +629,7 @@ def main():
         ready_only=args.ready_only or not args.mock,
         access_token=args.gateway_token or None,
         api_allowlist=gateway_config["policy"]["api_allowlist"],
-        llm_allowlist=gateway_config["policy"].get("llm_allowlist"),
         pad_allowlist=venue["pad_grid"] if venue else None,
-        pad_llm_exclude=gateway_config["policy"].get("pad_llm_exclude"),
         session_log=session_log,
     )
     Handler.theme = args.theme

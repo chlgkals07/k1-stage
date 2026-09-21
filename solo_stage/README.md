@@ -63,20 +63,19 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 | 안전 게이트 | `safety: restricted`는 관객·모델 경로에서 거부 |
 | RC 매핑 | `rc_list` — 로봇 다이얼 2뱅크 × 20슬롯의 실배포 덤프 |
 
-현재 카탈로그는 **136개**, 그중 `restricted`가 17개다.
+현재 카탈로그는 **16개**(9/22 행사용으로 줄인 것 — 전체 139개는 `config/venues/20260831-opening/motions.full.yaml`), 그중 `restricted`가 1개다.
 
-### 허용목록이 세 개인 이유
+### 허용목록이 두 개인 이유
 
 카탈로그에 있다고 실행되지는 않는다. `gateway_config.yaml`이 최종 게이트다.
 
 | 목록 | 뜻 | 현재 |
 |---|---|---|
-| `api_allowlist` | gateway가 실행을 허용하는 전부. **운영자 수동 버튼**이 여기서 나온다 | **78개** |
+| `api_allowlist` | gateway가 실행을 허용하는 전부. **운영자 수동 버튼**이 여기서 나온다 | **14개** |
 | `pad_grid` (venue) | 그중 **관객 아이패드에 여는 것**. 행사 연출이라 `config/venues/` 에 있다 | **12개** |
-| `llm_allowlist` | 그중 **모델이 스스로 고를 수 있는 것** | **21개** |
 
-사람이 E-stop을 두고 버튼으로 부르는 것, 관객이 아무거나 누르는 것, 모델이 대화 중 고르는
-것은 위험도가 다르다. 새 동작은 **수동으로 먼저 실물 검증한 뒤** 패드·모델에 승격한다.
+사람이 E-stop을 두고 버튼으로 부르는 것과 관객이 아무거나 누르는 것은 위험도가 다르다. 새 동작은
+**수동으로 먼저 실물 검증한 뒤** 패드에 승격한다. 모델(LLM) 경로는 제거됐고 `source="llm"` 은 거부된다.
 
 허용목록에 있어도 `motions.yaml`에 카탈로그 항목이 없으면 버튼이 뜨지 않고 요청도 거부된다.
 로봇에 policy 자체가 없어도 거부된다 — 실제 로드 목록은
@@ -90,7 +89,7 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 
 현장에서 조절하려면 세 값이 같은 뜻이므로 함께 움직인다:
 `static/pad.html`의 `+2000` · `server.py`의 `EXEC_IDLE_MARGIN_SEC` ·
-`rc_backend.py`의 `BUSY_MARGIN_SEC`. 근거는
+`runtime/rc_backend.py`의 `BUSY_MARGIN_SEC`. 근거는
 [docs/STATUS.md §4](docs/STATUS.md#잠금-타이밍-구조).
 
 ## 파일
@@ -98,16 +97,16 @@ E-stop을 쓴다** — 항상 최우선이고 네트워크와 무관하다.
 | 파일 | 역할 |
 |---|---|
 | `motions.yaml` | 동작 카탈로그 + RC 매핑 |
-| `gateway_config.yaml` | 허용목록 3종, 정지 목표 상태, ROS 엔드포인트 |
+| `gateway_config.yaml` | `api_allowlist`, 정지 목표 상태, ROS 엔드포인트 |
 | `server.py` | 화면 서빙, stage 상태기계, 무대 스케줄, 백엔드 선택 |
-| `relay_backend.py` | PC → 로봇 HTTPS relay |
-| `robot_backend.py` · `gateway.py` | 로봇 쪽 ROS 게이트웨이와 실행 정책 |
-| `rc_backend.py` · `rc_serial.py` | 유선 RC 경로 |
-| `clip_len.py` | sim 클립 길이 측정 |
+| `runtime/relay_backend.py` | PC → 로봇 HTTPS relay |
+| `runtime/robot_backend.py` · `runtime/gateway.py` | 로봇 쪽 ROS 게이트웨이와 실행 정책 |
+| `runtime/rc_backend.py` · `runtime/rc_serial.py` | 유선 RC 경로 |
+| `runtime/clip_len.py` · `runtime/session_log.py` | sim 클립 길이 측정 · 세션 로그 |
 | `run.sh` | 실행 진입점. 점검·배포·기동·정리 |
-| `test_*.py` | 단위 테스트 **194개** |
+| `tests/test_*.py` | 단위 테스트 **195개** |
 
-로봇과 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 13개). `run.sh`가 md5로 대조한다.
+로봇과 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 14개). `run.sh`가 md5로 대조한다.
 
 ## 문서
 

@@ -19,6 +19,25 @@ from server import Handler, MockBackend, State
 
 TOKEN = "dance-test-token"
 BLOB = bytes(range(256)) * 8      # 2048 바이트
+_MEDIA_TMPDIR = None
+_ORIG_MEDIA = None
+
+
+def setUpModule():
+    """저작권 미디어 없이도 모든 dance 테스트를 실제 운영 파일과 격리해 실행한다."""
+    global _MEDIA_TMPDIR, _ORIG_MEDIA
+    _MEDIA_TMPDIR = tempfile.TemporaryDirectory()
+    _ORIG_MEDIA = server.MEDIA
+    server.MEDIA = Path(_MEDIA_TMPDIR.name)
+    for name in ("응원단 fade_out.mp4", "straykids.mp4", "bad.mp4"):
+        (server.MEDIA / name).touch()
+
+
+def tearDownModule():
+    global _MEDIA_TMPDIR
+    server.MEDIA = _ORIG_MEDIA
+    _MEDIA_TMPDIR.cleanup()
+    _MEDIA_TMPDIR = None
 
 # 이 파일의 테스트가 쓰는 프리셋은 여기서 정의한다 — 프로덕션 venue 의 이름·오프셋에 기대지 않는다.
 # 예전엔 "snucheer-api" 와 그 오프셋 -1500 을 운영 파일에서 그대로 읽었고, 주석 한 줄
@@ -286,6 +305,26 @@ class DanceScheduleTest(unittest.TestCase):
         self.assertTrue(out["ok"], out)
         self.state.play("MimicWaveHand", source="manual")
         self.assertEqual(self.state.conversation_view()["stage"], "dance")
+
+    def test_start_dance_blocked_when_gateway_not_ready(self):
+        """SD API Arm 안 올린 채로 무대를 누르면 영상만 돌고 로봇은 안 움직이던 사고
+        (2026-09-20) — 게이트웨이가 준비되지 않았으면 무대 자체를 시작하지 않는다."""
+        class NotReadyBackend(server.MockBackend):
+            def status(self):
+                return {"gateway": "offline"}
+        state = server.State(NotReadyBackend())
+        out = state.start_dance("snucheer-api")
+        self.assertFalse(out["ok"])
+        self.assertIsNone(state._dance_timer)
+
+    def test_start_dance_without_motion_ignores_gateway(self):
+        """음원만 보정하는 inline preset(동작 없음)은 로봇 상태와 무관하게 통과해야 한다."""
+        class NotReadyBackend(server.MockBackend):
+            def status(self):
+                return {"gateway": "offline"}
+        state = server.State(NotReadyBackend())
+        out = state.start_dance(preset={"motion": "", "media": ""})
+        self.assertTrue(out["ok"])
 
 
 class DanceProtectionTest(unittest.TestCase):

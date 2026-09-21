@@ -54,7 +54,7 @@ class FakeTransport:
         return {"ok": True, "status": "queued", "motion": "Velocity", "request_id": None, "msg": "stop"}
 
     def status(self):
-        return {}
+        return {"gateway": "ready"}       # 준비된 백엔드. 준비 안 된 경우는 아래 NotReady 가 시험한다
 
     def stop(self):
         pass
@@ -211,6 +211,33 @@ class StartDanceTest(StageCase):
         self.assertEqual(st.backend.submitted, [])
         st._fire_dance_motion("MimicB", st._dance_gen)
         self.assertEqual(st.backend.submitted, [("MimicB", "manual")])
+
+    def test_a_dance_is_refused_when_the_gateway_is_not_ready(self):
+        """SD API Arm 을 안 올린 채 무대를 누르면 영상만 돌고 로봇은 안 움직인다(2026-09-20 실제로 겪음).
+        stop_dance 는 로봇을 안 건드리는 설계라 한 번 시작되면 되돌릴 수 없으므로 시작 시점에 막는다."""
+        class NotReady(FakeTransport):
+            def status(self):
+                return {"gateway": "offline"}
+        st = self.build(presets={"p": self.PRESET}, backend=NotReady())
+        out = st.start_dance("p")
+        self.assertFalse(out["ok"])
+        self.assertIn("준비", out["msg"])
+        self.assertIsNone(st._dance_timer)
+        self.assertEqual(st.stage, "idle")
+
+    def test_the_gateway_check_is_skipped_for_mock_and_for_a_dance_without_a_motion(self):
+        class Named(FakeTransport):
+            def __init__(self, gateway):
+                super().__init__()
+                self._gw = gateway
+
+            def status(self):
+                return {"gateway": self._gw}
+        mock = self.build(presets={"p": self.PRESET}, backend=Named("mock"))
+        self.assertTrue(mock.start_dance("p")["ok"])                       # 로봇 미연결 개발용은 통과
+        audio_only = self.build(backend=Named("offline"))
+        out = audio_only.start_dance(preset={"motion": "", "media": "a.mp4", "media_len_sec": 5})
+        self.assertTrue(out["ok"], out)                                     # 동작이 없으면 로봇 상태와 무관
 
     def test_stop_dance_never_touches_the_robot(self):
         st = self.build(presets={"p": self.PRESET})

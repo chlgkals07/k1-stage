@@ -1,0 +1,26 @@
+# 2026-09-22 산업은행 본점 시연. 사람이 고치는 파일이다 — 주석을 마음껏 달아라.
+# 서버가 쓰는 값(/dance 에서 저장하는 프리셋)은 옆의 presets.json 에 따로 쌓인다.
+#
+# 통신 사전 협의와 RC-only 운영안은 solo_stage/docs/BANK_EVENT_20260922.md 에 있다.
+name: 2026-09-22 산업은행 본점 시연
+date: 2026-09-22
+notes: |
+  main 의 9/22 행사용 리허설 동작 세트에서 가져온 값이다 (카탈로그 16 · api_allowlist 14 · 프리셋 6).
+  오프셋은 현장에서 반드시 재보정한다 — 스피커·TV·로봇 경로가 장소마다 다르다.
+
+# 관객 패드 12칸. 순서 = 그리드 번호 (BAD 가 12번째).
+# 안전 정책이 아니라 이번 행사의 연출이라 정책(gateway_config.yaml)에 두지 않는다.
+# 여기 있다고 실행되는 게 아니다 — 서버가 api_allowlist 와 교집합을 낸다.
+pad_grid:
+  - MimicBowNavel                  # 01 배꼽 인사
+  - MimicShadowBoxing              # 02 섀도우 복싱
+  - MimicDanceJazzHands            # 03 재즈핸즈
+  - MimicWaveHand                  # 04 손 흔들기
+  - MimicBowCourtly                # 05 궁정식 인사
+  - MimicNewMacarena001A545        # 06 마카레나
+  - MimicNewKnightlyBowR001A429    # 07 기사식 인사
+  - MimicSquat                     # 08 스쿼트
+  - MimicChefsKiss                 # 09 손키스
+  - MimicPushUp                    # 10 팔굽혀펴기
+  - MimicNewRockOut002A487         # 11 락아웃
+  - MimicBadChestpopVer2           # 12 BAD

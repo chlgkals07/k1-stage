@@ -146,6 +146,19 @@ class ValidateTest(unittest.TestCase):
         self.assertIn("A:200", text)          # 같은 동작이 두 자리
         self.assertIn("겹친다", text)          # 한 뱅크에서 슬롯 번호가 겹침
 
+    def test_a_state_listed_twice_in_the_catalog_warns(self):
+        """같은 state 가 두 번이면 load_catalog 가 뒤의 것으로 조용히 덮어쓴다."""
+        doc = dict(CATALOG, motions=CATALOG["motions"] + [{"state": "MimicWave", "ko": "또 하나"}])
+        out = validate(doc, POLICY, good_venue(), require_media=False)
+        self.assertEqual([(p.level, p.where) for p in out], [(WARN, "catalog.MimicWave")])
+
+    def test_an_archived_venue_is_refused_whatever_it_contains(self):
+        """옛 행사가 가리키던 동작이 지금 카탈로그에서 줄었을 수 있다(main 이 9/22 를 위해 139→16). 그런 venue 로
+        무대를 띄우면 안 되므로 내용이 멀쩡해 보여도 FATAL 이다."""
+        out = validate(CATALOG, POLICY, good_venue(archived=True), require_media=False)
+        self.assertEqual([(p.level, p.where) for p in out], [(FATAL, "venue")])
+        self.assertIn("archived", out[0].msg)
+
     def test_never_raises_on_garbage_preset(self):
         v = good_venue(presets={"a": "not a dict", "b": None})
         out = validate(CATALOG, POLICY, v)
@@ -173,6 +186,12 @@ class LoadVenueTest(unittest.TestCase):
         """새 행사 폴더는 프리셋이 없이 시작한다. /dance 에서 저장하면 그때 생긴다."""
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(load_venue(self.make(tmp, "pad_grid: [MimicWave]\n"))["presets"], {})
+
+    def test_archived_flag_is_read(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIs(load_venue(self.make(tmp, "pad_grid: []\narchived: true\n"))["archived"], True)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIs(load_venue(self.make(tmp, "pad_grid: []\n"))["archived"], False)
 
     def test_name_falls_back_to_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -205,32 +224,60 @@ class RealFilesTest(unittest.TestCase):
         cls.cat = yaml.safe_load((ROOT / "solo_stage" / "motions.yaml").read_text())
         cls.policy = yaml.safe_load((ROOT / "solo_stage" / "gateway_config.yaml").read_text())["policy"]
 
-    def test_every_venue_in_repo_has_no_fatal(self):
-        venues = sorted(p for p in (ROOT / "config" / "venues").iterdir() if p.is_dir())
-        self.assertTrue(venues, "venue 가 하나도 없다")
-        for d in venues:
-            with self.subTest(d.name):
-                bad = [str(p) for p in validate(self.cat, self.policy, load_venue(d), require_media=False)
-                       if p.level == FATAL]
-                self.assertEqual(bad, [])
+    def venues(self):
+        return sorted(p for p in (ROOT / "config" / "venues").iterdir() if p.is_dir())
 
-    def test_default_pad_grid_is_the_twelve_from_the_opening(self):
-        """정책에서 venue 로 옮긴 목록. 순서까지 8/18 사용자 확정본과 같아야 한다."""
-        grid = load_venue(ROOT / "config" / "venues" / "default")["pad_grid"]
-        self.assertEqual(len(grid), 12)
-        self.assertEqual(grid[0], "MimicBowNavel")
-        self.assertEqual(grid[-1], "MimicGuapVer2")
+    def test_every_active_venue_has_no_fatal_and_every_archived_one_is_refused(self):
+        seen = {"active": 0, "archived": 0}
+        for d in self.venues():
+            venue = load_venue(d)
+            problems = validate(self.cat, self.policy, venue, require_media=False)
+            with self.subTest(d.name):
+                fatal = [str(p) for p in problems if p.level == FATAL]
+                if venue["archived"]:
+                    seen["archived"] += 1
+                    self.assertEqual(len(fatal), 1, fatal)        # 보관됐다는 사실 하나뿐
+                else:
+                    seen["active"] += 1
+                    self.assertEqual(fatal, [])
+        self.assertGreaterEqual(seen["active"], 1, "기동할 수 있는 venue 가 하나도 없다")
+
+    def test_default_venue_is_the_bank_event_and_matches_mains_rehearsal_set(self):
+        """main 이 9/22 행사용으로 정한 패드 12칸(BAD 가 12번째)과 프리셋 6개. 순서가 곧 그리드 번호다."""
+        v = load_venue(ROOT / "config" / "venues" / "20260922-bank")
+        self.assertFalse(v["archived"])
+        self.assertEqual(len(v["pad_grid"]), 12)
+        self.assertEqual((v["pad_grid"][0], v["pad_grid"][-1]), ("MimicBowNavel", "MimicBadChestpopVer2"))
+        self.assertEqual(sorted(v["presets"]), ["badchestpopv2-api", "badchestpopv2-rc", "snucheer-api",
+                                                "snucheer-rc", "straykids-api", "straykids-rc"])
+
+    def test_the_opening_venue_keeps_the_full_lists_that_main_trimmed(self):
+        """main 은 9/22 를 위해 카탈로그를 139→16, 허용을 79→14 로 줄였다. 그 전체 목록이 이력으로 남아 있어야
+        다음 행사에서 동작을 되살릴 수 있다. 서버는 이 파일들을 읽지 않는다."""
+        d = ROOT / "config" / "venues" / "20260831-opening"
+        self.assertTrue(load_venue(d)["archived"])
+        full = yaml.safe_load((d / "motions.full.yaml").read_text())
+        # 항목은 139개인데 서로 다른 state 는 138개다 — MimicCartwheelin 이 두 번 있다(위 validate 가 알리는 그것)
+        self.assertEqual(len(full["motions"]) + len(full["control_states"]), 139)
+        self.assertEqual(len(catalog.catalog_states(full)), 138)
+        self.assertEqual(len(yaml.safe_load((d / "gateway_config.full.yaml").read_text())["policy"]["api_allowlist"]), 79)
+        self.assertIn("MimicGuapVer2", load_venue(d)["pad_grid"])     # 지금 카탈로그에는 없는 동작
 
     def test_policy_no_longer_carries_pad_allowlist(self):
         """두 곳에 있으면 어느 쪽이 이기는지 아무도 모른다."""
         self.assertNotIn("pad_allowlist", self.policy)
 
-    def test_apps_share_identical_catalog_and_policy(self):
-        """앱 폴더에 남긴 사본(로봇에 평평하게 배포돼서 못 옮겼다)이 갈라지면 드리프트다."""
-        for name in ("motions.yaml", "gateway_config.yaml"):
-            with self.subTest(name):
-                self.assertEqual((ROOT / "solo_stage" / name).read_bytes(),
-                                 (ROOT / "group_stage" / name).read_bytes())
+    def test_the_default_venue_name_is_the_same_everywhere(self):
+        """기본 venue 이름이 세 곳에 적혀 있다(두 앱의 server.py 와 preflight). 어긋나면 preflight 는 통과하는데
+        서버는 다른 venue 로 뜬다."""
+        import re
+        names = {
+            "solo": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "solo_stage" / "server.py").read_text()).group(1),
+            "group": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "group_stage" / "server.py").read_text()).group(1),
+            "preflight": re.search(r'"--venue", default="([^"]+)"', (ROOT / "tools" / "preflight.py").read_text()).group(1),
+        }
+        self.assertEqual(len(set(names.values())), 1, names)
+        self.assertTrue((ROOT / "config" / "venues" / names["solo"]).is_dir())
 
 
 if __name__ == "__main__":

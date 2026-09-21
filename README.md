@@ -56,9 +56,10 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 2. RC의 SD(CH8)가 API 권한의 물리 허가다. 내리면 PC가 무슨 말을 해도 안 움직인다.
    반대로 **RC 모드에서는 SD를 내려야** 명령이 먹는다 — API 권한일 때 로봇은 teleop
    전이를 무시하기 때문이다.
-3. 허용목록이 셋이고 서로 다르다. `api_allowlist` 78개가 운영자 수동 버튼이 부를 수 있는
-   전부이고, 그 부분집합인 12개(venue 의 `pad_grid`)만 관객 패드에 연다(`llm_allowlist` 21개는
-   모델 경로용). 새 동작은 수동으로 먼저 실물 검증한 뒤 승격한다.
+3. 허용목록이 둘이고 서로 다르다. `api_allowlist` 14개가 운영자 수동 버튼이 부를 수 있는
+   전부이고, 그 부분집합인 12개(venue 의 `pad_grid`)만 관객 패드에 연다. 모델(LLM) 경로는
+   9/22 행사용으로 제거됐다(`source="llm"` 은 거부). 새 동작은 수동으로 먼저 실물 검증한 뒤 승격한다.
+   (행사 전 전체 목록 139/79 는 `config/venues/20260831-opening/` 에 보관돼 있다.)
 4. 대기 중 물리 스위치는 SC 상단 + SB 중앙에 둔다. **SC 중앙에 두지 않는다** —
    그 위치가 곧 "권한을 잃으면 ReadyPose"이고, 균형 정책 없는 자세라 가장 넘어지기 쉽다.
 
@@ -74,7 +75,7 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 
 ```
 k1-stage/
-├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 194 tests
+├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 195 tests
 ├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 153 tests
 ├── web/           두 앱이 같이 쓰는 프론트 — 관객 화면 2장 · k1.js · base/tool.css · themes/
 ├── core/          도메인 — 무대 상태기계(stage) · 백엔드 계약(ports) · 설정 검증(catalog). 어댑터를 모른다

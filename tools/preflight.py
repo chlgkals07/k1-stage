@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """출발 전 점검 — 설정 파일의 어긋남을 노트북에서 찾는다.
 
-    python3 tools/preflight.py                         # solo_stage · default venue
+    python3 tools/preflight.py                         # solo_stage · 기본 venue(20260922-bank)
     python3 tools/preflight.py --venue 20260922-bank --app group_stage
 
 서버 부팅이 부르는 것과 **같은 함수**(core/catalog.validate)를 쓴다. 두 벌이면 "preflight 는
@@ -24,27 +24,10 @@ sys.path.insert(0, str(ROOT))
 
 from core import catalog  # noqa: E402
 
-# 두 앱이 같은 사본을 가져야 하는 파일. 로봇에 평평하게 배포돼 앱 폴더에 남아 있는 것들이다.
-# 한쪽만 고치면 드리프트다 — 8/31 에 display.html 이 그렇게 갈렸다.
-SHARED_COPIES = ("motions.yaml", "gateway_config.yaml")
-
-
-def check_apps_agree(apps):
-    out = []
-    first, rest = apps[0], apps[1:]
-    for name in SHARED_COPIES:
-        base = (ROOT / first / name).read_bytes()
-        for other in rest:
-            if (ROOT / other / name).read_bytes() != base:
-                out.append(catalog.Problem(
-                    catalog.FATAL, f"{first} ↔ {other}  {name}",
-                    "두 앱의 사본이 다르다 — 한쪽만 고쳐졌다. 어느 쪽이 맞는지 정하고 맞춰라"))
-    return out
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--venue", default="default", help="config/venues/ 의 폴더명")
+    # 각 앱 server.py 의 DEFAULT_VENUE 와 같아야 한다 — tests/test_catalog.py 가 지킨다
+    ap.add_argument("--venue", default="20260922-bank", help="config/venues/ 의 폴더명")
     ap.add_argument("--app", default="solo_stage", choices=("solo_stage", "group_stage"),
                     help="이번에 띄울 앱 — 음원·클립을 이 앱 폴더에서 찾는다")
     args = ap.parse_args()
@@ -59,10 +42,11 @@ def main():
     cat_doc = yaml.safe_load((app_dir / "motions.yaml").read_text())
     policy = yaml.safe_load((app_dir / "gateway_config.yaml").read_text())["policy"]
 
-    problems = check_apps_agree(["solo_stage", "group_stage"])
-    problems += catalog.validate(cat_doc, policy, venue,
-                                 clips_dir=app_dir / "static" / "clips",
-                                 media_dir=app_dir / "media", require_media=True)
+    # 두 앱의 카탈로그·정책 사본이 같은지는 여기서 안 본다: main 의 solo(16/14)와 group(139/79)이
+    # 의도적으로 다르다. Phase 2 에서 group 이 solo 에 합쳐지면 사본 자체가 사라진다.
+    problems = catalog.validate(cat_doc, policy, venue,
+                                clips_dir=app_dir / "static" / "clips",
+                                media_dir=app_dir / "media", require_media=True)
 
     print(f"venue  {venue['name']}  ({args.venue})")
     print(f"앱     {args.app}\n")

@@ -10,13 +10,11 @@ from runtime.rc_backend import RcBackend, load_rc_map
 HERE = pathlib.Path(__file__).parent.parent
 MOTIONS = HERE / "motions.yaml"
 
-# rc_list 실측 앵커 (2026-08-18 로봇 백업 k1_config 기준)
-KNOWN_A = "MimicNewWelcoming001A142"   # 뱅크 A, code 200 → slot 1
-KNOWN_B = "MimicSnuCheer"              # 뱅크 B, code 203 → slot 4
-KNOWN_B_SLOT = 4
-KNOWN_NOTE_DUR = "MimicNewMacarena001A545"   # note "29.5s..." (구 rc_list에서 승계)
-NOT_ON_DIAL = "MimicBillyJean"         # 카탈로그엔 있으나 다이얼에 없음
-# 패드 12개는 전부 다이얼에 있어야 한다 (2026-08-18: GuapVer2 를 뱅크B 슬롯3 으로 교체)
+# 이번 무대 RC 배포 목표 앵커. 최신 로봇 selector 백업으로 실기 전에 대조한다.
+KNOWN_A = "MimicBowNavel"               # 뱅크 A, code 200 → slot 1
+KNOWN_B = "MimicNewSnuCheerHeadShort"   # 뱅크 B, code 202 → slot 3
+KNOWN_B_SLOT = 3
+NOT_ON_DIAL = "MimicBillyJean"
 
 
 class FakeSerial:
@@ -71,16 +69,14 @@ class TestRcMap(unittest.TestCase):
         self.assertEqual(mapping[KNOWN_B]["bank"], "B")
         self.assertEqual(mapping[KNOWN_B]["slot"], KNOWN_B_SLOT)
 
-    def test_duration_from_note(self):
+    def test_default_duration_without_clip_or_note(self):
         mapping, _ = load_rc_map(MOTIONS)
-        self.assertAlmostEqual(mapping[KNOWN_NOTE_DUR]["duration_sec"], 29.5)
-        # note 없는 항목은 기본값
         self.assertEqual(mapping[KNOWN_A]["duration_sec"],
                          rc_backend.DEFAULT_DURATION_SEC)
 
     def test_cooldowns_loaded(self):
         _, cooldowns = load_rc_map(MOTIONS)
-        self.assertEqual(cooldowns.get("MimicBadChestpopVer2"), 8.0)
+        self.assertEqual(cooldowns, {})
 
 
 class TestRcBackend(unittest.TestCase):
@@ -266,7 +262,7 @@ class TestServerIntegration(unittest.TestCase):
                         "request_id": None, "msg": ""}
 
             def status(self):
-                return {}
+                return {"gateway": "ready"}
 
             def stop(self):
                 pass
@@ -308,7 +304,7 @@ class TestServerIntegration(unittest.TestCase):
                         "request_id": None, "msg": ""}
 
             def status(self):
-                return {}
+                return {"gateway": "ready"}
 
             def stop(self):
                 pass

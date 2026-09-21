@@ -242,7 +242,7 @@ class TestServerIntegration(unittest.TestCase):
                         "request_id": None, "msg": ""}
 
             def status(self):
-                return {}
+                return {"gateway": "ready"}
 
             def stop(self):
                 pass
@@ -284,7 +284,7 @@ class TestServerIntegration(unittest.TestCase):
                         "request_id": None, "msg": ""}
 
             def status(self):
-                return {}
+                return {"gateway": "ready"}
 
             def stop(self):
                 pass

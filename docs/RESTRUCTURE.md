@@ -553,6 +553,26 @@ class Stage:
 - `Stage` 가 아직 `time.time()` 을 직접 부른다(시계 주입 안 함). TTL 시험은 `stage_set_at` 을 과거로 돌려서 한다. 시계를 주입하면 더
   깔끔하지만 그건 로직 변경이라 안 했다
 
+### ✅ 6.5단계 — `main` 의 구조·데이터·의미 변경을 파일로 읽어 와 같은 경로에 맞춤 (`rebuild` 브랜치, 완료)
+
+`main`(9/22 행사용, 불가침)이 그 사이 `solo_stage/{runtime,tests,tools}` 배치와 데이터 축소, LLM 제거,
+게이트웨이 준비 확인을 넣었다. `main` 을 출발점으로 쓰지 않고 **파일만 읽어 와서** 같은 경로로 맞췄다
+(`git show origin/main:<경로>` · 3-way `git merge-file`). 나중에 `main` 최종본을 합칠 때 이동이 자동 정렬된다.
+
+- **레이아웃:** `solo_stage/{runtime,tests,tools}` — 순수 이동 21개 파일 96–100%
+- **의미 변경 3가지를 `core/stage.py` 에 반영:** LLM 경로 제거(`source="llm"` 거부) · `start_dance` 게이트웨이 준비 확인
+  (mock 과 동작 없는 프리셋은 통과) · `State` 생성자에서 `llm_allowlist`/`pad_llm_exclude` 제거
+- **데이터:** 카탈로그 16 · `api_allowlist` 14 · 프리셋 6 을 그대로 채택. 행사 전 전체는 `config/venues/20260831-opening/`
+  (139/79/8, `archived: true` 라 기동 불가·검증 제외). 기본 venue 는 `20260922-bank`
+- **발견:** 옛 전체 카탈로그에 `MimicCartwheelin` 이 두 번(옆돌기 연속 / 카트휠린) 있어 `{state: 항목}` 로더가 앞의 것을
+  조용히 덮어썼다. `validate()` 가 이제 중복 state 를 WARN 으로 알린다
+- **`group_stage` 에 번지는 변화(7단계에서 정리):** LLM 거부 · 게이트웨이 준비 확인 · 8→6 프리셋(같은 venue 공유)
+- **검증:** 루트 50 · solo 195 · group 153 초록 / 정답지 재생 — `origin/main` 의 solo(분리 워크트리)와 같은 시나리오
+  52호출(pad·manual·llm 소스, 카탈로그 밖·restricted, 무대 시작/정지/충돌, 미지정 프리셋)의 응답이 **전부 동일** /
+  로봇 배포 재현 — `run.sh` 의 14개만 풀어 ROS 만 가짜로 두고 `--robot` 이 카탈로그 16 으로 기동 /
+  `preflight` 는 이 Mac 에 음원(저작권물)이 없어 FATAL 6 — 가드가 의도대로 동작
+- `main`/`origin/main` = `ccfa40a` 불변
+
 ### 7단계 — `app.py --mode` 로 두 앱 통합
 
 이 시점엔 차이가 배선 20줄이다.

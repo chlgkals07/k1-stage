@@ -141,12 +141,11 @@ class ProtocolDefinitionTest(unittest.TestCase):
 
 
 class UiListsDoNotDependOnTheBackendTest(unittest.TestCase):
-    """지뢰 제거. 관객 패드·LLM 목록은 정책과 venue 에서만 온다."""
+    """지뢰 제거. 관객 패드 목록은 정책과 venue 에서만 온다."""
 
     def state(self, backend):
         return server.State(backend, ready_only=True, pad_allowlist=GRID,
-                            api_allowlist=POLICY["api_allowlist"],
-                            llm_allowlist=POLICY.get("llm_allowlist"))
+                            api_allowlist=POLICY["api_allowlist"])
 
     def test_lists_are_identical_whatever_the_backend_is(self):
         """RC 로 토글해도 패드 12개가 그대로여야 한다 (2026-08-18 사용자 확정)."""
