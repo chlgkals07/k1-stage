@@ -14,8 +14,8 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-import server
-from server import Handler, MockBackend, State
+import app
+from app import Handler, MockBackend, State
 
 TOKEN = "dance-test-token"
 BLOB = bytes(range(256)) * 8      # 2048 바이트
@@ -27,15 +27,15 @@ def setUpModule():
     """저작권 미디어 없이도 모든 dance 테스트를 실제 운영 파일과 격리해 실행한다."""
     global _MEDIA_TMPDIR, _ORIG_MEDIA
     _MEDIA_TMPDIR = tempfile.TemporaryDirectory()
-    _ORIG_MEDIA = server.MEDIA
-    server.MEDIA = Path(_MEDIA_TMPDIR.name)
+    _ORIG_MEDIA = app.MEDIA
+    app.MEDIA = Path(_MEDIA_TMPDIR.name)
     for name in ("응원단 fade_out.mp4", "straykids.mp4", "bad.mp4"):
-        (server.MEDIA / name).touch()
+        (app.MEDIA / name).touch()
 
 
 def tearDownModule():
     global _MEDIA_TMPDIR
-    server.MEDIA = _ORIG_MEDIA
+    app.MEDIA = _ORIG_MEDIA
     _MEDIA_TMPDIR.cleanup()
     _MEDIA_TMPDIR = None
 
@@ -62,19 +62,19 @@ def setUpModule():
     """저작권 미디어도 운영 프리셋도 없이, 실제 운영 파일과 격리해 모든 dance 테스트를 돌린다."""
     global _MODULE_TMP, _ORIG
     _MODULE_TMP = tempfile.TemporaryDirectory()
-    _ORIG = (server.MEDIA, server.PRESETS)
+    _ORIG = (app.MEDIA, app.PRESETS)
     root = Path(_MODULE_TMP.name)
     (root / "media").mkdir()
-    server.MEDIA = root / "media"
+    app.MEDIA = root / "media"
     for preset in FIXTURE_PRESETS.values():
-        (server.MEDIA / preset["media"]).touch()
-    server.PRESETS = root / "presets.json"
-    server.PRESETS.write_text(json.dumps(FIXTURE_PRESETS, ensure_ascii=False))
+        (app.MEDIA / preset["media"]).touch()
+    app.PRESETS = root / "presets.json"
+    app.PRESETS.write_text(json.dumps(FIXTURE_PRESETS, ensure_ascii=False))
 
 
 def tearDownModule():
     global _MODULE_TMP
-    server.MEDIA, server.PRESETS = _ORIG
+    app.MEDIA, app.PRESETS = _ORIG
     _MODULE_TMP.cleanup()
     _MODULE_TMP = None
 
@@ -82,12 +82,12 @@ def tearDownModule():
 class DanceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.track = server.MEDIA / "_test_track.mp3"
+        cls.track = app.MEDIA / "_test_track.mp3"
         cls.track.write_bytes(BLOB)
         # 실제 프리셋 파일을 건드리지 않는다.
         cls.tmpdir = tempfile.TemporaryDirectory()
-        cls.orig_presets = server.PRESETS
-        server.PRESETS = Path(cls.tmpdir.name) / "presets.json"
+        cls.orig_presets = app.PRESETS
+        app.PRESETS = Path(cls.tmpdir.name) / "presets.json"
         state = State(MockBackend())
         state.access_token = TOKEN
         Handler.state = state
@@ -99,7 +99,7 @@ class DanceTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.track.unlink(missing_ok=True)
-        server.PRESETS = cls.orig_presets
+        app.PRESETS = cls.orig_presets
         cls.tmpdir.cleanup()
         cls.httpd.shutdown()
         cls.httpd.server_close()
@@ -178,7 +178,7 @@ class DanceTest(unittest.TestCase):
 
     def test_unknown_and_traversal_paths_are_404(self):
         cookie = self.cookie()
-        for path in ("/media/nope.mp3", "/media/..%2Fserver.py", "/media/server.py"):
+        for path in ("/media/nope.mp3", "/media/..%2Fapp.py", "/media/app.py"):
             with self.subTest(path=path):
                 self.assertEqual(self.request(path, cookie)[0], 404)
 
@@ -225,9 +225,9 @@ class StageTest(unittest.TestCase):
 
     def setUp(self):
         import yaml
-        cfg = yaml.safe_load((Path(__file__).parent.parent / "gateway_config.yaml").read_text())
-        self.state = server.State(server.MockBackend(),
-                                  pad_allowlist=server.load_venue()["pad_grid"])
+        cfg = yaml.safe_load(app.GATEWAY_CONFIG.read_text())
+        self.state = app.State(app.MockBackend(),
+                                  pad_allowlist=app.load_venue()["pad_grid"])
 
     def test_view_exposes_stage_and_server_clock(self):
         v = self.state.conversation_view()
@@ -263,7 +263,7 @@ class DanceScheduleTest(unittest.TestCase):
     """폴링 지연과 무관하게 절대 시각으로 싱크를 맞춘다."""
 
     def setUp(self):
-        self.state = server.State(server.MockBackend())
+        self.state = app.State(app.MockBackend())
 
     def tearDown(self):
         if self.state._dance_timer:
@@ -309,20 +309,20 @@ class DanceScheduleTest(unittest.TestCase):
     def test_start_dance_blocked_when_gateway_not_ready(self):
         """SD API Arm 안 올린 채로 무대를 누르면 영상만 돌고 로봇은 안 움직이던 사고
         (2026-09-20) — 게이트웨이가 준비되지 않았으면 무대 자체를 시작하지 않는다."""
-        class NotReadyBackend(server.MockBackend):
+        class NotReadyBackend(app.MockBackend):
             def status(self):
                 return {"gateway": "offline"}
-        state = server.State(NotReadyBackend())
+        state = app.State(NotReadyBackend())
         out = state.start_dance("snucheer-api")
         self.assertFalse(out["ok"])
         self.assertIsNone(state._dance_timer)
 
     def test_start_dance_without_motion_ignores_gateway(self):
         """음원만 보정하는 inline preset(동작 없음)은 로봇 상태와 무관하게 통과해야 한다."""
-        class NotReadyBackend(server.MockBackend):
+        class NotReadyBackend(app.MockBackend):
             def status(self):
                 return {"gateway": "offline"}
-        state = server.State(NotReadyBackend())
+        state = app.State(NotReadyBackend())
         out = state.start_dance(preset={"motion": "", "media": ""})
         self.assertTrue(out["ok"])
 
@@ -332,7 +332,7 @@ class DanceProtectionTest(unittest.TestCase):
 
     def setUp(self):
         import yaml
-        cfg = yaml.safe_load((Path(__file__).parent.parent / "gateway_config.yaml").read_text())
+        cfg = yaml.safe_load(app.GATEWAY_CONFIG.read_text())
         self.backend = MockBackend()
         self.backend.stop_calls = []
         real_stop = self.backend.stop_motion
@@ -340,9 +340,9 @@ class DanceProtectionTest(unittest.TestCase):
             self.backend.stop_calls.append((source, reason))
             return real_stop(source, reason)
         self.backend.stop_motion = counting_stop
-        self.state = server.State(self.backend,
-                                  pad_allowlist=server.load_venue()["pad_grid"])
-        server.Handler.state = self.state
+        self.state = app.State(self.backend,
+                                  pad_allowlist=app.load_venue()["pad_grid"])
+        app.Handler.state = self.state
 
     def tearDown(self):
         if self.state._dance_timer:
@@ -378,7 +378,7 @@ class DanceGenerationTest(unittest.TestCase):
             self.fired.append(motion)
             return real(motion, source, reason)
         self.backend.submit = counting
-        self.state = server.State(self.backend)
+        self.state = app.State(self.backend)
 
     def tearDown(self):
         if self.state._dance_timer:
@@ -438,20 +438,20 @@ class DanceCaptionTest(unittest.TestCase):
 
     def test_saving_offset_does_not_wipe_caption(self):
         """/dance 보정 화면은 숫자·파일 필드만 보낸다. 제목·출처가 날아가면 안 된다."""
-        import server
-        original = server.PRESETS
+        import app
+        original = app.PRESETS
         with tempfile.TemporaryDirectory() as tmp:
-            server.PRESETS = Path(tmp) / "presets.json"
+            app.PRESETS = Path(tmp) / "presets.json"
             try:
-                server.save_preset("x", {"motion": "MimicWaveHand", "media": "",
+                app.save_preset("x", {"motion": "MimicWaveHand", "media": "",
                                          "title": "ATEEZ - Bad", "credit": "ATEEZ 'Bad' 안무 영상"})
-                after = server.save_preset("x", {"motion": "MimicWaveHand", "media": "",
+                after = app.save_preset("x", {"motion": "MimicWaveHand", "media": "",
                                                  "offset_ms": 250})
                 self.assertEqual(after["x"]["title"], "ATEEZ - Bad")
                 self.assertEqual(after["x"]["credit"], "ATEEZ 'Bad' 안무 영상")
                 self.assertEqual(after["x"]["offset_ms"], 250)
             finally:
-                server.PRESETS = original
+                app.PRESETS = original
 
     def test_inline_preset_without_caption_borrows_from_saved(self):
         """/dance 보정 화면은 자막 없는 inline preset 을 보낸다.
@@ -459,16 +459,16 @@ class DanceCaptionTest(unittest.TestCase):
         같은 음원 파일의 저장본에서 제목·출처를 끌어와야 한다. 안 하면 무대에
         동작 약칭("체스트팝 v2")이 뜬다 — 현장에서 실제로 그렇게 떴다.
         """
-        import server
+        import app
         # 조용히 건너뛰지 않는다: 예전엔 음원이 없으면 skipTest 로 빠져 아무것도 검사하지 못한 채
         # 초록이었다. 픽스처가 이 파일을 항상 만들어 주므로, 없으면 그게 실패다.
         media = FIXTURE_PRESETS[FX_MEDIA_FIRST]["media"]
-        self.assertIn(media, server.media_files())
-        original = server.PRESETS
+        self.assertIn(media, app.media_files())
+        original = app.PRESETS
         with tempfile.TemporaryDirectory() as tmp:
-            server.PRESETS = Path(tmp) / "p.json"
+            app.PRESETS = Path(tmp) / "p.json"
             try:
-                server.save_preset("x", {"motion": "MimicWaveHand", "media": media,
+                app.save_preset("x", {"motion": "MimicWaveHand", "media": media,
                                          "title": "ATEEZ - Bad", "credit": "ATEEZ 'Bad' 안무 영상"})
                 state = State(MockBackend())
                 out = state.start_dance(preset={"motion": "MimicWaveHand", "media": media,
@@ -479,7 +479,7 @@ class DanceCaptionTest(unittest.TestCase):
                 self.assertEqual(sd["credit"], "ATEEZ 'Bad' 안무 영상")
                 state.stop_dance()
             finally:
-                server.PRESETS = original
+                app.PRESETS = original
 
 if __name__ == "__main__":
     unittest.main()

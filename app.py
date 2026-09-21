@@ -39,26 +39,20 @@ from core.ports import Transport
 from core.stage import Stage
 
 HERE = Path(__file__).parent
-CATALOG = HERE / "motions.yaml"
+# 모드별 데이터(카탈로그·정책)는 config/<모드>/ 에 있다. 지금은 solo 하나다.
+CONFIG = HERE / "config" / "solo"
+CATALOG = CONFIG / "motions.yaml"
+GATEWAY_CONFIG = CONFIG / "gateway_config.yaml"
 CERT = HERE / ".cert.pem"
 KEY = HERE / ".key.pem"
 # 동작 sim 렌더 클립. tools/render_motion.py 가 굽고 /display 가 튼다.
-CLIPS = HERE / "static" / "clips"
+CLIPS = HERE / "clips"
 # /dance 가 재생할 음원·영상. media/ 에 파일만 넣으면 목록에 뜬다.
 MEDIA = HERE / "media"
-# 공유 프론트. 저장소 루트의 web/ 를 두 앱이 함께 쓴다 (한 벌만 유지).
-# themes/<이름>/ 이 관객 화면의 디자인 자산을 들고 있고, 활성 테마는 --theme 로 고른다.
-WEB = HERE.parent / "web"
+# 화면은 전부 web/ 에 있다. themes/<이름>/ 이 관객 화면의 디자인 자산을 들고 있고,
+# 활성 테마는 --theme 로 고른다.
+WEB = HERE / "web"
 THEMES = WEB / "themes"
-# 관객 화면(display · pad)은 두 앱이 web/ 한 벌을 같이 쓴다. 운영자 화면
-# (operator · dance)은 아직 앱마다 다르다 — operator 는 RC 토글과 플릿 재탐색으로
-# 갈리고, dance 는 프리셋 유실 수정이 group 에만 있다(main 에서 포팅할 것).
-# 여기 목록이 비면 static/ 이 사라지고 화면 넷이 전부 web/ 에 있게 된다.
-SHARED_PAGES = {"display.html", "pad.html"}
-
-
-def page_dir(page):
-    return WEB if page in SHARED_PAGES else HERE / "static"
 
 MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".mp4", ".webm", ".mov"}
 # 행사별 설정은 config/venues/<이름>/ 에 있다 — 두 앱이 같이 쓴다.
@@ -67,8 +61,7 @@ MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".mp4", ".webm", ".mov"}
 # 오프셋은 코드가 아니라 그 장소의 물리량이다. 재보정한 값이 다음 행사의 출발점이 되도록
 # 폴더째 커밋한다. 정책(gateway_config.yaml)과 카탈로그(motions.yaml)는 로봇에 평평하게
 # 배포되는 파일이라 앱 폴더에 그대로 둔다.
-ROOT = HERE.parent
-VENUES = ROOT / "config" / "venues"
+VENUES = HERE / "config" / "venues"
 DEFAULT_VENUE = "20260922-bank"
 PRESETS = VENUES / DEFAULT_VENUE / "presets.json"   # main() 이 --venue 로 바꾼다
 
@@ -226,7 +219,7 @@ class State(Stage):
             if on:
                 if self.backend.name == "rc":
                     return {"ok": True, "backend": "rc", "msg": "이미 RC 모드입니다"}
-                rc = RcBackend(HERE / "motions.yaml", HERE / "gateway_config.yaml")
+                rc = RcBackend(CATALOG, GATEWAY_CONFIG, clips_dir=CLIPS)
                 ok, msg = rc.connect_check()
                 if not ok:
                     rc.stop()
@@ -411,7 +404,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(403, {"error": "gateway authorization required"})
             page = {"/operator": "operator.html", "/display": "display.html",
                     "/pad": "pad.html", "/dance": "dance.html"}.get(path, "pad.html")
-            return self._send(200, (page_dir(page) / page).read_bytes(),
+            return self._send(200, (WEB / page).read_bytes(),
                               "text/html; charset=utf-8", headers)
         if not self._authorized():
             return self._send(403, {"error": "gateway authorization required"})
@@ -639,15 +632,15 @@ def main():
         ap.error("--relay 는 --relay-token 또는 K1_RELAY_TOKEN 이 필요합니다")
 
     port = args.port or (8443 if args.https else 8000)
-    gateway_config = yaml.safe_load((HERE / "gateway_config.yaml").read_text())
+    gateway_config = yaml.safe_load(GATEWAY_CONFIG.read_text())
     if args.robot:
-        backend = RobotBackend(HERE / "gateway_config.yaml")
+        backend = RobotBackend(GATEWAY_CONFIG)
     elif args.relay:
         policy = gateway_config["policy"]
         backend = RelayBackend(args.relay, args.relay_token, policy["api_allowlist"],
                                policy.get("relay_timeout_sec", 2.0))
     elif args.rc:
-        backend = RcBackend(HERE / "motions.yaml", HERE / "gateway_config.yaml")
+        backend = RcBackend(CATALOG, GATEWAY_CONFIG, clips_dir=CLIPS)
     else:
         backend = MockBackend()
     if args.robot:

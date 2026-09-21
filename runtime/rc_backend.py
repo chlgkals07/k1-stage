@@ -97,10 +97,11 @@ def load_rc_map(motions_path):
 class RcBackend:
     name = "rc"
 
-    def __init__(self, motions_path, gateway_config_path=None, serial=None):
+    def __init__(self, motions_path, gateway_config_path=None, serial=None, clips_dir=None):
         motions_path = Path(motions_path)
         self.rc_map, self._cooldowns = load_rc_map(motions_path)
-        self._clips = motions_path.parent / "static" / "clips"
+        # 클립 길이가 잠금 시간의 기준이다. app.py 가 CLIPS 를 넘긴다 — 안 넘기면 카탈로그 옆 clips/.
+        self._clips = Path(clips_dir) if clips_dir else motions_path.parent / "clips"
         # 운영자 화면은 수동 실행 목록을 /status 의 api_allowlist 에서 읽는다. 그 값을 primary 와
         # 같게 실어 보낸다 — 이게 없으면 RC 모드로 켜는 순간 수동 실행 버튼이 통째로 사라진다.
         # (예전에는 이 이름의 **속성**을 일부러 두지 않아야 했다. State 가 backend.api_allowlist 가

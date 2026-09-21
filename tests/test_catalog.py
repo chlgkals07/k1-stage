@@ -221,8 +221,8 @@ class RealFilesTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cat = yaml.safe_load((ROOT / "solo_stage" / "motions.yaml").read_text())
-        cls.policy = yaml.safe_load((ROOT / "solo_stage" / "gateway_config.yaml").read_text())["policy"]
+        cls.cat = yaml.safe_load((ROOT / "config" / "solo" / "motions.yaml").read_text())
+        cls.policy = yaml.safe_load((ROOT / "config" / "solo" / "gateway_config.yaml").read_text())["policy"]
 
     def venues(self):
         return sorted(p for p in (ROOT / "config" / "venues").iterdir() if p.is_dir())
@@ -272,7 +272,7 @@ class RealFilesTest(unittest.TestCase):
         서버는 다른 venue 로 뜬다."""
         import re
         names = {
-            "solo": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "solo_stage" / "server.py").read_text()).group(1),
+            "solo": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "app.py").read_text()).group(1),
             "group": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "group_stage" / "server.py").read_text()).group(1),
             "preflight": re.search(r'"--venue", default="([^"]+)"', (ROOT / "tools" / "preflight.py").read_text()).group(1),
         }

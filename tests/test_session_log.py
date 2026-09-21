@@ -7,7 +7,7 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-from server import Handler, MockBackend, State
+from app import Handler, MockBackend, State
 from runtime.session_log import SessionLog
 
 TOKEN = "log-test-token"

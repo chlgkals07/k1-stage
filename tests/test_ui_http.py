@@ -7,8 +7,8 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-import server
-from server import HERE, Handler, MockBackend, State
+import app
+from app import HERE, Handler, MockBackend, State
 from tests.test_clip_len import fake_mp4
 
 
@@ -19,9 +19,9 @@ class UiHttpTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.clips_tmpdir = tempfile.TemporaryDirectory()
-        cls.orig_clips = server.CLIPS
-        server.CLIPS = Path(cls.clips_tmpdir.name)
-        (server.CLIPS / "MimicWaveHand.mp4").write_bytes(fake_mp4(4.0))
+        cls.orig_clips = app.CLIPS
+        app.CLIPS = Path(cls.clips_tmpdir.name)
+        (app.CLIPS / "MimicWaveHand.mp4").write_bytes(fake_mp4(4.0))
         state = State(MockBackend())
         state.access_token = TOKEN
         Handler.state = state
@@ -32,7 +32,7 @@ class UiHttpTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        server.CLIPS = cls.orig_clips
+        app.CLIPS = cls.orig_clips
         cls.clips_tmpdir.cleanup()
         cls.httpd.shutdown()
         cls.httpd.server_close()
@@ -166,7 +166,7 @@ class UiHttpTest(unittest.TestCase):
         _, headers, _ = self.request("/?token=" + TOKEN)
         cookie = headers["Set-Cookie"].split(";", 1)[0]
         body = json.loads(self.request("/motions", cookie)[2])
-        from server import CLIPS
+        from app import CLIPS
         for state in body["clips"]:
             self.assertTrue((CLIPS / f"{state}.mp4").is_file(), state)
         self.assertEqual(sorted(body["clips"]),
@@ -180,7 +180,7 @@ class UiHttpTest(unittest.TestCase):
 
     def any_clip(self):
         """클립은 부분 존재가 정상 — 디스크에 실재하는 것으로 검증한다."""
-        from server import CLIPS
+        from app import CLIPS
         clips = sorted(CLIPS.glob("*.mp4"))
         self.assertTrue(clips, "클립이 하나도 없다 — 이 테스트군은 최소 1개를 전제한다")
         return clips[0].stem
@@ -207,7 +207,7 @@ class UiHttpTest(unittest.TestCase):
 
     def test_path_traversal_is_blocked(self):
         """카탈로그 이름과 대조하므로 파일 밖으로 나갈 수 없다."""
-        for attack in ("/clips/../server.py", "/clips/..%2Fserver.py",
+        for attack in ("/clips/../app.py", "/clips/..%2Fapp.py",
                        "/clips/../../etc/passwd"):
             self.assertEqual(self.request(attack, self.cookie())[0], 404, attack)
 
@@ -221,9 +221,9 @@ class UiHttpTest(unittest.TestCase):
 
     def test_web_path_traversal_is_blocked(self):
         """/web/ 는 경로를 그대로 받으므로 저장소 밖으로 못 나가는지가 여기 달렸다."""
-        for attack in ("/web/../server.py", "/web//etc/passwd",
-                       "/web/themes/../../solo_stage/server.py",
-                       "/web/..%2Fserver.py"):
+        for attack in ("/web/../app.py", "/web//etc/passwd",
+                       "/web/themes/../../app.py",
+                       "/web/..%2Fapp.py"):
             self.assertEqual(self.request(attack, self.cookie())[0], 404, attack)
 
     def test_web_requires_token(self):
@@ -236,13 +236,13 @@ class UiHttpTest(unittest.TestCase):
         self.assertIn('href="/theme/display.css"', body)
         self.assertNotIn("<style>", body)
 
-    def test_display_is_served_from_shared_web(self):
+    def test_all_pages_are_served_from_web(self):
         """화면 원본이 web/ 한 벌이다. 앱 안에 사본이 생기면 또 갈린다 —
         8/31 에 display.html 두 벌이 서로 다른 화면이 된 그 경로다."""
-        from server import WEB, SHARED_PAGES, page_dir
-        self.assertIn("display.html", SHARED_PAGES)
-        self.assertEqual(page_dir("display.html"), WEB)
-        self.assertFalse((HERE / "static" / "display.html").exists())
+        from app import WEB
+        for page in ("display.html", "pad.html", "operator.html", "dance.html"):
+            self.assertTrue((WEB / page).is_file(), page)
+        self.assertFalse((HERE / "static").exists())   # web/ 한 벌만 있다
         body = self.request("/display?token=" + TOKEN)[2].decode()
         self.assertIn("from '/web/k1.js'", body)
 

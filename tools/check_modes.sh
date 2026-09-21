@@ -56,9 +56,9 @@ robot = sorted({n for n in names if n.startswith("Mimic") or n in CONTROL})
 if not robot:
     sys.exit("list_modes 출력에서 모드 이름을 찾지 못했다. 원문을 확인하라.")
 
-doc = yaml.safe_load(open(f"{here}/motions.yaml"))
+doc = yaml.safe_load(open(f"{here}/config/solo/motions.yaml"))
 catalog = {m["state"]: m for m in (doc.get("motions") or []) + (doc.get("control_states") or [])}
-policy = yaml.safe_load(open(f"{here}/gateway_config.yaml"))["policy"]
+policy = yaml.safe_load(open(f"{here}/config/solo/gateway_config.yaml"))["policy"]
 api = set(policy["api_allowlist"])
 
 loaded_ok = [n for n in robot if n in catalog]

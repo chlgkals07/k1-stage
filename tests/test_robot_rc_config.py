@@ -14,7 +14,7 @@ SPEC.loader.exec_module(verify_robot_rc_config)
 
 class RobotRcConfigTest(unittest.TestCase):
     def setUp(self):
-        self.motions = yaml.safe_load((Path(__file__).parent.parent / "motions.yaml").read_text())
+        self.motions = yaml.safe_load((Path(__file__).parent.parent / "config" / "solo" / "motions.yaml").read_text())
         self.config = {"selectors": {}}
         for bank, selector in verify_robot_rc_config.SELECTOR_KEY.items():
             slots = self.motions["rc_list"]["banks"][bank]["slots"]

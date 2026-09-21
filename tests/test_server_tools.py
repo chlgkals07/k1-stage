@@ -6,10 +6,11 @@ from unittest.mock import patch
 
 import yaml
 
-import server
-from server import State
+import app
+from app import State
 
-GATEWAY_CONFIG = Path(__file__).parent.parent / "gateway_config.yaml"
+ROOT = Path(__file__).parent.parent
+GATEWAY_CONFIG = ROOT / "config" / "solo" / "gateway_config.yaml"
 
 
 class Backend:
@@ -57,7 +58,7 @@ class ServerToolsTest(unittest.TestCase):
         operator.html 이 `catalog.filter(m => allowed.has(m.state))` 로 버튼을 만들고
         State.play() 도 카탈로그에 없는 state 를 거부하므로, 둘이 어긋나면 실행이 안 된다.
         """
-        _, by_state = server.load_catalog()
+        _, by_state = app.load_catalog()
         policy = yaml.safe_load(GATEWAY_CONFIG.read_text())["policy"]
         missing = [s for s in policy["api_allowlist"] if s not in by_state]
         self.assertEqual(missing, [], f"카탈로그에 없는 allowlist 항목: {missing}")
@@ -70,7 +71,7 @@ class ServerToolsTest(unittest.TestCase):
 
     def test_every_api_motion_has_a_category(self):
         """카테고리가 없으면 운영자 화면에서 '분류 없음' 으로 밀린다."""
-        _, by_state = server.load_catalog()
+        _, by_state = app.load_catalog()
         api = yaml.safe_load(GATEWAY_CONFIG.read_text())["policy"]["api_allowlist"]
         missing = [s for s in api if not by_state[s].get("category")]
         self.assertEqual(missing, [], f"category 누락: {missing}")
@@ -85,8 +86,8 @@ class PadAllowlistTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.policy = yaml.safe_load(GATEWAY_CONFIG.read_text())["policy"]
-        cls.pad = server.load_venue()["pad_grid"]
-        cls.items, cls.by_state = server.load_catalog()
+        cls.pad = app.load_venue()["pad_grid"]
+        cls.items, cls.by_state = app.load_catalog()
 
     def test_pad_is_subset_of_api_and_catalog(self):
         api = set(self.policy["api_allowlist"])
@@ -108,7 +109,7 @@ class PadAllowlistTest(unittest.TestCase):
     def test_clips_are_all_known_states(self):
         """클립은 "최종 렌더만" 정책(2026-08-18) — 부분 존재가 정상이다.
         지키는 건 고아 방지뿐: 존재하는 클립은 전부 카탈로그 state 여야 한다."""
-        for f in server.CLIPS.glob("*.mp4"):
+        for f in app.CLIPS.glob("*.mp4"):
             self.assertIn(f.stem, self.by_state, f.name)
 
     def _state(self):
@@ -142,7 +143,7 @@ class PadAllowlistTest(unittest.TestCase):
 
 
 class DeployListTest(unittest.TestCase):
-    """로봇 배포 목록이 server.py 의 의존을 다 덮는지.
+    """로봇 배포 목록이 app.py 의 의존을 다 덮는지.
 
     2026-08-13 에 relay_backend.py 가 목록에 없어 로봇 gateway 가 아예 뜨지 않았다.
     py_compile 은 import 를 실행하지 않아 못 잡는다. 여기서 목록으로 잡는다.
@@ -150,7 +151,7 @@ class DeployListTest(unittest.TestCase):
 
     def test_deploy_list_covers_imports(self):
         import re
-        root = GATEWAY_CONFIG.parent
+        root = ROOT
         deploy = set(re.search(r"DEPLOY_FILES=\((.*?)\)",
                                (root / "run.sh").read_text(), re.S).group(1).split())
         needed = {p.relative_to(root).as_posix() for p in (root / "runtime").glob("*.py")}
@@ -160,18 +161,18 @@ class DeployListTest(unittest.TestCase):
     def test_deploy_list_covers_core_imports_transitively(self):
         """`from core.stage import …` 는 위 정규식(`from (\\w+) import`)에 안 걸린다 — 점 앞에서 끊긴다.
         그래서 core/stage.py 를 배포 목록에서 빼도 위 테스트는 초록이었다 (변이로 확인). 로봇에서
-        server.py 가 import 에러로 안 뜨는, 이 저장소에서 두 번 실제로 났던 그 사고다.
+        app.py 가 import 에러로 안 뜨는, 이 저장소에서 두 번 실제로 났던 그 사고다.
 
         core 는 앱 폴더의 링크로 보이고(../core), 로봇에는 core/ 가 진짜 디렉터리로 간다.
         core/stage.py 가 다시 core.ports 를 import 하므로 **전이적으로** 따라간다.
         """
         import re
-        root = GATEWAY_CONFIG.parent
+        root = ROOT
         deploy = set(re.search(r"DEPLOY_FILES=\((.*?)\)",
                                (root / "run.sh").read_text(), re.S).group(1).split())
         top_level = re.compile(r"^from core\.(\w+) import", re.M)   # 들여쓴 늦은 import 는 제외
-        todo = [m for m in top_level.findall((root / "server.py").read_text())]
-        self.assertTrue(todo, "server.py 가 core 를 하나도 import 하지 않는다 — 정규식이 깨졌거나 구조가 바뀌었다")
+        todo = [m for m in top_level.findall((root / "app.py").read_text())]
+        self.assertTrue(todo, "app.py 가 core 를 하나도 import 하지 않는다 — 정규식이 깨졌거나 구조가 바뀌었다")
         needed, seen = {"core/__init__.py"}, set()
         while todo:
             mod = todo.pop()
@@ -185,7 +186,7 @@ class DeployListTest(unittest.TestCase):
         self.assertIn("ports", seen)     # 그리고 stage 가 끌어오는 ports 까지 따라갔다
 
     def test_deploy_list_files_exist(self):
-        root = GATEWAY_CONFIG.parent
+        root = ROOT
         import re
         deploy = re.search(r"DEPLOY_FILES=\((.*?)\)",
                            (root / "run.sh").read_text(), re.S).group(1).split()
@@ -196,6 +197,6 @@ class DeployListTest(unittest.TestCase):
 class PadOrderTest(unittest.TestCase):
     def test_state_preserves_pad_grid_order(self):
         """그리드 번호 = 목록 순서 스펙. sorted() 가 끼어들면 배치가 뒤섞인다 (실제 발생)."""
-        grid = server.load_venue()["pad_grid"]
-        st = State(server.MockBackend(), pad_allowlist=grid)
+        grid = app.load_venue()["pad_grid"]
+        st = State(app.MockBackend(), pad_allowlist=grid)
         self.assertEqual(st.pad_order, grid)

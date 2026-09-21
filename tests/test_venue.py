@@ -1,7 +1,7 @@
 """서버가 venue 를 제대로 물고 있는지 — 부팅 거부, 프리셋 위치, 로봇 배포 안전성.
 
 검증 로직 자체(무엇이 FATAL 인가)는 저장소 루트 tests/test_catalog.py 가 본다.
-여기서는 그 함수를 server.py 가 올바른 자리에서 부르는지만 본다.
+여기서는 그 함수를 app.py 가 올바른 자리에서 부르는지만 본다.
 """
 
 import contextlib
@@ -15,25 +15,25 @@ from pathlib import Path
 
 import yaml
 
-import server
+import app
 
-HERE = Path(server.__file__).parent
+HERE = Path(app.__file__).parent
 # group 은 --mock 이 없으면 실제 라디오를 찾는다. solo 는 인자 없이 mock 이다.
 EXTRA_ARGS = ()
 
 
 def gateway_config():
-    return yaml.safe_load((HERE / "gateway_config.yaml").read_text())
+    return yaml.safe_load(app.GATEWAY_CONFIG.read_text())
 
 
 class BootCheckTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.orig = server.VENUES
-        server.VENUES = Path(self.tmp.name)
+        self.orig = app.VENUES
+        app.VENUES = Path(self.tmp.name)
 
     def tearDown(self):
-        server.VENUES = self.orig
+        app.VENUES = self.orig
         self.tmp.cleanup()
 
     def venue(self, name, pad_grid):
@@ -45,7 +45,7 @@ class BootCheckTest(unittest.TestCase):
     def boot(self, name, **kw):
         with contextlib.redirect_stdout(io.StringIO()) as out:
             try:
-                return server.check_venue(name, gateway_config(), **kw), out.getvalue()
+                return app.check_venue(name, gateway_config(), **kw), out.getvalue()
             except SystemExit as exc:
                 return exc, out.getvalue()
 
@@ -77,16 +77,16 @@ class BootCheckTest(unittest.TestCase):
 
     def test_default_venue_boots_without_media(self):
         """mock 개발 실행은 음원이 없어도 떠야 한다. 없으면 아무도 화면을 못 본다."""
-        server.VENUES = self.orig
-        venue, _ = self.boot(server.DEFAULT_VENUE, require_media=False)
+        app.VENUES = self.orig
+        venue, _ = self.boot(app.DEFAULT_VENUE, require_media=False)
         self.assertNotIsInstance(venue, SystemExit)
         self.assertEqual(len(venue["pad_grid"]), 12)
 
 
 class PresetLocationTest(unittest.TestCase):
     def test_default_presets_live_in_the_default_venue(self):
-        self.assertEqual(server.PRESETS, server.VENUES / server.DEFAULT_VENUE / "presets.json")
-        self.assertTrue(server.PRESETS.is_file())
+        self.assertEqual(app.PRESETS, app.VENUES / app.DEFAULT_VENUE / "presets.json")
+        self.assertTrue(app.PRESETS.is_file())
 
     def test_presets_are_not_kept_in_the_app_folder_anymore(self):
         """앱 폴더에 사본이 남으면 두 앱이 서로 다른 오프셋을 들고 무대에 나간다 (8/31 의 그 병)."""
@@ -98,11 +98,11 @@ class RobotDeployTest(unittest.TestCase):
         """로봇에는 core/stage.py · core/ports.py 가 간다(State 의 부모와 그 계약). core/catalog.py 는 안 간다.
 
         로봇(--robot)은 UI 가 없어 venue 를 안 쓴다. 그래서 catalog 는 최상단이 아니라 쓰는 자리에서
-        늦게 불러온다 — 최상단에서 import 하면 로봇에서 server.py 가 import 에러로 안 뜬다.
+        늦게 불러온다 — 최상단에서 import 하면 로봇에서 app.py 가 import 에러로 안 뜬다.
         배포 목록이 어긋났을 때 실제로 두 번 났던 사고와 같은 모양이다.
         (배포 목록이 이 임포트를 다 덮는지는 test_server_tools 가 본다.)
         """
-        source = (HERE / "server.py").read_text()
+        source = (HERE / "app.py").read_text()
         self.assertNotRegex(source, r"(?m)^from core import|^import core\b")   # 패키지 통째 import 금지
         top_level_core = set(re.findall(r"(?m)^from core\.(\w+) import", source))
         self.assertEqual(top_level_core - {"catalog"}, top_level_core)          # catalog 는 최상단 금지
@@ -111,7 +111,7 @@ class RobotDeployTest(unittest.TestCase):
 
     def test_robot_mode_skips_venue_entirely(self):
         """venue 검증은 `if not args.robot:` 안에서만 불린다. 주석이 아니라 구조를 본다."""
-        source = (HERE / "server.py").read_text()
+        source = (HERE / "app.py").read_text()
         guard = source.find("if not args.robot:")
         self.assertNotEqual(guard, -1, "로봇 가드(`if not args.robot:`)가 사라졌다")
         call = source.find("check_venue(args.venue", guard)
@@ -139,15 +139,15 @@ class MainBootTest(unittest.TestCase):
             pass
 
     def run_main(self, *argv):
-        orig = (sys.argv, server.QuietServer, server.PRESETS)
-        sys.argv = ["server.py", "--port", "0", "--no-log", *EXTRA_ARGS, *argv]
-        server.QuietServer = self._NoNetwork
+        orig = (sys.argv, app.QuietServer, app.PRESETS)
+        sys.argv = ["app.py", "--port", "0", "--no-log", *EXTRA_ARGS, *argv]
+        app.QuietServer = self._NoNetwork
         try:
             with contextlib.redirect_stdout(io.StringIO()) as out:
-                server.main()
+                app.main()
             return out.getvalue()
         finally:
-            sys.argv, server.QuietServer, server.PRESETS = orig
+            sys.argv, app.QuietServer, app.PRESETS = orig
 
     def test_boots_with_the_default_venue(self):
         printed = self.run_main()
@@ -159,18 +159,18 @@ class MainBootTest(unittest.TestCase):
             d.mkdir()
             grid = [m for m in gateway_config()["policy"]["api_allowlist"] if m.startswith("Mimic")][:12]
             (d / "venue.yaml").write_text("pad_grid: " + json.dumps(grid) + "\n")
-            orig = server.VENUES
-            server.VENUES = Path(tmp)
+            orig = app.VENUES
+            app.VENUES = Path(tmp)
             try:
-                sys_argv = ["server.py", "--port", "0", "--no-log", *EXTRA_ARGS, "--venue", "mine"]
-                orig_argv, orig_srv, orig_presets = sys.argv, server.QuietServer, server.PRESETS
-                sys.argv, server.QuietServer = sys_argv, self._NoNetwork
+                sys_argv = ["app.py", "--port", "0", "--no-log", *EXTRA_ARGS, "--venue", "mine"]
+                orig_argv, orig_srv, orig_presets = sys.argv, app.QuietServer, app.PRESETS
+                sys.argv, app.QuietServer = sys_argv, self._NoNetwork
                 with contextlib.redirect_stdout(io.StringIO()):
-                    server.main()
-                self.assertEqual(server.PRESETS, d / "presets.json")
+                    app.main()
+                self.assertEqual(app.PRESETS, d / "presets.json")
             finally:
-                sys.argv, server.QuietServer, server.PRESETS = orig_argv, orig_srv, orig_presets
-                server.VENUES = orig
+                sys.argv, app.QuietServer, app.PRESETS = orig_argv, orig_srv, orig_presets
+                app.VENUES = orig
 
     def test_unknown_venue_stops_the_boot(self):
         with self.assertRaises(SystemExit):

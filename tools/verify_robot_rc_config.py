@@ -69,7 +69,7 @@ def main(argv):
         print(__doc__.strip(), file=sys.stderr)
         return 2
     config_path = Path(argv[1])
-    motions_path = Path(argv[2]) if len(argv) == 3 else Path(__file__).parents[1] / "motions.yaml"
+    motions_path = Path(argv[2]) if len(argv) == 3 else Path(__file__).parents[1] / "config" / "solo" / "motions.yaml"
     try:
         problems, checked = verify(load_yaml(config_path), load_yaml(motions_path))
     except (OSError, yaml.YAMLError, TypeError, ValueError) as exc:

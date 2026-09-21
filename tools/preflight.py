@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """출발 전 점검 — 설정 파일의 어긋남을 노트북에서 찾는다.
 
-    python3 tools/preflight.py                         # solo_stage · 기본 venue(20260922-bank)
-    python3 tools/preflight.py --venue 20260922-bank --app group_stage
+    python3 tools/preflight.py                         # solo 모드 · 기본 venue(20260922-bank)
+    python3 tools/preflight.py --venue 20260922-bank --mode fleet
 
 서버 부팅이 부르는 것과 **같은 함수**(core/catalog.validate)를 쓴다. 두 벌이면 "preflight 는
 통과하는데 부팅은 실패하는" 날이 온다. 차이는 하나다 — 부팅은 FATAL 만 막고 WARN 은 5건까지만
@@ -26,30 +26,30 @@ from core import catalog  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    # 각 앱 server.py 의 DEFAULT_VENUE 와 같아야 한다 — tests/test_catalog.py 가 지킨다
+    # app.py 의 DEFAULT_VENUE 와 같아야 한다 — tests/test_catalog.py 가 지킨다
     ap.add_argument("--venue", default="20260922-bank", help="config/venues/ 의 폴더명")
-    ap.add_argument("--app", default="solo_stage", choices=("solo_stage", "group_stage"),
-                    help="이번에 띄울 앱 — 음원·클립을 이 앱 폴더에서 찾는다")
+    ap.add_argument("--mode", default="solo", choices=("solo", "fleet"),
+                    help="app.py --mode 와 같다 — 카탈로그·정책을 config/<모드>/ 에서 읽는다")
     args = ap.parse_args()
 
-    app_dir = ROOT / args.app
+    mode_dir = ROOT / "config" / args.mode
     try:
         venue = catalog.load_venue(ROOT / "config" / "venues" / args.venue)
     except catalog.VenueError as exc:
         print(f"venue '{args.venue}' 를 못 읽었다: {exc}")
         return 1
 
-    cat_doc = yaml.safe_load((app_dir / "motions.yaml").read_text())
-    policy = yaml.safe_load((app_dir / "gateway_config.yaml").read_text())["policy"]
+    cat_doc = yaml.safe_load((mode_dir / "motions.yaml").read_text())
+    policy = yaml.safe_load((mode_dir / "gateway_config.yaml").read_text())["policy"]
 
-    # 두 앱의 카탈로그·정책 사본이 같은지는 여기서 안 본다: main 의 solo(16/14)와 group(139/79)이
-    # 의도적으로 다르다. Phase 2 에서 group 이 solo 에 합쳐지면 사본 자체가 사라진다.
+    # 모드끼리 카탈로그·정책이 같은지는 여기서 안 본다: solo(16/14)와 fleet(139/79)은 의도적으로
+    # 다르다 — 로봇의 RC 다이얼 덤프가 다르기 때문이다(데이터이지 코드가 아니다).
     problems = catalog.validate(cat_doc, policy, venue,
-                                clips_dir=app_dir / "static" / "clips",
-                                media_dir=app_dir / "media", require_media=True)
+                                clips_dir=ROOT / "clips",
+                                media_dir=ROOT / "media", require_media=True)
 
     print(f"venue  {venue['name']}  ({args.venue})")
-    print(f"앱     {args.app}\n")
+    print(f"모드   {args.mode}\n")
 
     print("── 프리셋 짝 확인표 (코드가 못 잡는 '의도' 는 여기서 눈으로) ──")
     for name, p in venue["presets"].items():

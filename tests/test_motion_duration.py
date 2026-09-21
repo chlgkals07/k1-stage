@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from runtime import clip_len
-import server
+import app
 from runtime.rc_backend import BUSY_MARGIN_SEC, DEFAULT_DURATION_SEC, RcBackend
 from tests.test_clip_len import fake_mp4
 
@@ -50,7 +50,7 @@ class RcMotionDurationTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
         (root / "motions.yaml").write_text(SYNTHETIC_MOTIONS, encoding="utf-8")
-        self.clips = root / "static" / "clips"     # RcBackend 는 motions.yaml 옆에서 클립을 찾는다
+        self.clips = root / "clips"     # RcBackend 는 clips_dir 를 안 받으면 motions.yaml 옆 clips/ 에서 찾는다
         self.clips.mkdir(parents=True)
         self.backend = RcBackend(root / "motions.yaml", serial=FakeSerial())
 
@@ -88,14 +88,14 @@ class ExecIdleTest(unittest.TestCase):
     def setUp(self):
         clip_len._CACHE.clear()
         self.tmp = tempfile.TemporaryDirectory()
-        self.orig_clips = server.CLIPS
-        server.CLIPS = Path(self.tmp.name)
-        self.state = server.State(server.MockBackend())
+        self.orig_clips = app.CLIPS
+        app.CLIPS = Path(self.tmp.name)
+        self.state = app.State(app.MockBackend())
 
     def tearDown(self):
         if self.state._exec_idle_timer:
             self.state._exec_idle_timer.cancel()
-        server.CLIPS = self.orig_clips
+        app.CLIPS = self.orig_clips
         clip_len._CACHE.clear()
         self.tmp.cleanup()
 
@@ -104,16 +104,16 @@ class ExecIdleTest(unittest.TestCase):
         self.assertTrue(out["ok"], out)
 
     def test_pad_unlocks_after_clip_length_plus_margin(self):
-        (server.CLIPS / "MimicWaveHand.mp4").write_bytes(fake_mp4(4.0))
+        (app.CLIPS / "MimicWaveHand.mp4").write_bytes(fake_mp4(4.0))
         self.play()
         self.assertEqual(self.state.stage, "executing")
         self.assertAlmostEqual(self.state._exec_idle_timer.interval,
-                               4.0 + server.State.EXEC_IDLE_MARGIN_SEC)
+                               4.0 + app.State.EXEC_IDLE_MARGIN_SEC)
 
     def test_no_clip_uses_the_default_length(self):
         self.play()
         self.assertAlmostEqual(self.state._exec_idle_timer.interval,
-                               server.State.EXEC_IDLE_DEFAULT_SEC + server.State.EXEC_IDLE_MARGIN_SEC)
+                               app.State.EXEC_IDLE_DEFAULT_SEC + app.State.EXEC_IDLE_MARGIN_SEC)
 
     def test_the_timer_puts_the_screen_back_to_idle(self):
         self.play()

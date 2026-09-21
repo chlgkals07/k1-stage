@@ -11,7 +11,7 @@ mujoco 는 시스템 python3 에 없다. GEM-X 가상환경의 python 으로 실
 
     cd /home/robotis-ai/Projects/shape10
     MUJOCO_GL=egl GEM-X/.venv/bin/python \
-        /home/robotis-ai/Projects/shape3/solo_stage/tools/render_motion.py \
+        /home/robotis-ai/Projects/shape3/tools/render_motion.py \
         outputs/0043_casual_greeting_R_001__A428/prepared/casual_greeting_R_001__A428.csv \
         /tmp/casual_greeting.mp4
 

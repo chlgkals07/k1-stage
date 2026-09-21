@@ -8,7 +8,7 @@ from runtime import rc_backend
 from runtime.rc_backend import RcBackend, load_rc_map
 
 HERE = pathlib.Path(__file__).parent.parent
-MOTIONS = HERE / "motions.yaml"
+MOTIONS = HERE / "config" / "solo" / "motions.yaml"
 
 # 이번 무대 RC 배포 목표 앵커. 최신 로봇 selector 백업으로 실기 전에 대조한다.
 KNOWN_A = "MimicBowNavel"               # 뱅크 A, code 200 → slot 1
@@ -192,28 +192,28 @@ class TestRcBackend(unittest.TestCase):
 class TestServerIntegration(unittest.TestCase):
     def test_state_pad_allowed_with_rc_backend(self):
         import yaml
-        import server
+        import app
         b = make_backend()
-        cfg = yaml.safe_load(open(HERE / "gateway_config.yaml"))
-        pad_list = server.load_venue()["pad_grid"]
-        st = server.State(b, ready_only=True, pad_allowlist=pad_list)
+        cfg = yaml.safe_load(open(HERE / "config" / "solo" / "gateway_config.yaml"))
+        pad_list = app.load_venue()["pad_grid"]
+        st = app.State(b, ready_only=True, pad_allowlist=pad_list)
         # UI 동일성: RC 백엔드여도 패드 목록은 primary 와 동일 (12개 그대로)
         self.assertEqual(st.pad_allowed, set(pad_list) & set(st.by_state))
         self.assertEqual(len(st.pad_allowed), len(pad_list))
 
     def test_set_rc_mode_toggle(self):
-        import server
+        import app
 
         made = []
-        real_rc_backend = server.RcBackend
+        real_rc_backend = app.RcBackend
 
         def factory(*a, **k):
             b = RcBackend(MOTIONS, serial=FakeSerial())
             made.append(b)
             return b
 
-        st = server.State(server.MockBackend())
-        server.RcBackend = factory
+        st = app.State(app.MockBackend())
+        app.RcBackend = factory
         try:
             out = st.set_rc_mode(True)
             self.assertTrue(out["ok"], out)
@@ -228,24 +228,24 @@ class TestServerIntegration(unittest.TestCase):
             self.assertEqual(st.backend.name, "mock")
             self.assertIn(("close",), made[0].serial.calls)  # 포트 해제됨
         finally:
-            server.RcBackend = real_rc_backend
+            app.RcBackend = real_rc_backend
 
     def test_set_rc_mode_connect_failure_keeps_backend(self):
-        import server
-        real_rc_backend = server.RcBackend
-        server.RcBackend = lambda *a, **k: RcBackend(MOTIONS, serial=FakeSerial(fail=True))
-        st = server.State(server.MockBackend())
+        import app
+        real_rc_backend = app.RcBackend
+        app.RcBackend = lambda *a, **k: RcBackend(MOTIONS, serial=FakeSerial(fail=True))
+        st = app.State(app.MockBackend())
         try:
             out = st.set_rc_mode(True)
             self.assertFalse(out["ok"])
             self.assertTrue(out["msg"])
             self.assertEqual(st.backend.name, "mock")  # 실패 시 백엔드 불변
         finally:
-            server.RcBackend = real_rc_backend
+            app.RcBackend = real_rc_backend
 
     def test_dance_autostop_without_display(self):
         # display 종료 신호가 없어도 추정 길이 + 여유 뒤 무대가 스스로 내려간다
-        import server
+        import app
 
         class DurBackend:
             name = "rc"
@@ -267,10 +267,10 @@ class TestServerIntegration(unittest.TestCase):
             def stop(self):
                 pass
 
-        st = server.State(DurBackend())
-        old = (server.State.DANCE_LEAD_SEC, server.State.DANCE_AUTOSTOP_MARGIN_SEC)
-        server.State.DANCE_LEAD_SEC = 0.2
-        server.State.DANCE_AUTOSTOP_MARGIN_SEC = 0.2
+        st = app.State(DurBackend())
+        old = (app.State.DANCE_LEAD_SEC, app.State.DANCE_AUTOSTOP_MARGIN_SEC)
+        app.State.DANCE_LEAD_SEC = 0.2
+        app.State.DANCE_AUTOSTOP_MARGIN_SEC = 0.2
         try:
             res = st.start_dance(preset={"motion": KNOWN_B, "media": "",
                                          "offset_ms": 0, "seek": 0, "volume": 100})
@@ -279,12 +279,12 @@ class TestServerIntegration(unittest.TestCase):
             time.sleep(1.2)  # lead 0.2 + duration 0.2 + margin 0.2 + 여유
             self.assertEqual(st.effective_stage(), "idle")
         finally:
-            (server.State.DANCE_LEAD_SEC,
-             server.State.DANCE_AUTOSTOP_MARGIN_SEC) = old
+            (app.State.DANCE_LEAD_SEC,
+             app.State.DANCE_AUTOSTOP_MARGIN_SEC) = old
             st.stop_dance()
 
     def test_dance_prep_hook_fires_before_motion(self):
-        import server
+        import app
         events = []
 
         class HookBackend:
@@ -309,9 +309,9 @@ class TestServerIntegration(unittest.TestCase):
             def stop(self):
                 pass
 
-        st = server.State(HookBackend())
-        old_lead = server.State.DANCE_LEAD_SEC
-        server.State.DANCE_LEAD_SEC = 0.3  # prep 지연 = max(0, 0.3-1.5) = 즉시
+        st = app.State(HookBackend())
+        old_lead = app.State.DANCE_LEAD_SEC
+        app.State.DANCE_LEAD_SEC = 0.3  # prep 지연 = max(0, 0.3-1.5) = 즉시
         try:
             res = st.start_dance(preset={
                 "motion": KNOWN_B, "media": "", "offset_ms": 0,
@@ -319,7 +319,7 @@ class TestServerIntegration(unittest.TestCase):
             self.assertTrue(res["ok"], res)
             time.sleep(0.8)
         finally:
-            server.State.DANCE_LEAD_SEC = old_lead
+            app.State.DANCE_LEAD_SEC = old_lead
             st.stop_dance()
         kinds = [e[0] for e in events]
         self.assertEqual(kinds, ["prepare", "submit"])

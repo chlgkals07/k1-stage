@@ -27,17 +27,17 @@ CONTAINER=ai_sapiens
 # 옛 코드를 계속 돌린다. 바꾸려면 로봇에서 mv 한 뒤 이 값을 같이 고친다.
 ROBOT_DIR=/root/motion_llm
 SESSION=motion-gateway
-# server.py 가 import 하는 로컬 모듈은 전부 여기 있어야 한다. 하나 빠지면 로봇에서
+# app.py 가 import 하는 로컬 모듈은 전부 여기 있어야 한다. 하나 빠지면 로봇에서
 # gateway 가 아예 뜨지 않는다 (2026-08-13 relay_backend.py 로 실제로 겪었다).
 # tests/test_server_tools.py 의 test_deploy_list_covers_imports(runtime/ 전부)와
 # test_deploy_list_covers_core_imports_transitively(core/ 하위, 전이 의존까지)가 이 불변식을 지킨다.
 #
-# core/ 는 저장소 루트에 한 벌만 있고, 이 폴더의 core 는 ../core 로 가는 **심볼릭 링크**다 — PC 에서는
-# `import core` 가 그대로 되고, 아래 `tar` 는 링크를 통과해 진짜 파일을 담아 로봇에는 core/ 가 **진짜
-# 디렉터리**로 풀린다. core/catalog.py 는 일부러 뺐다: 로봇(--robot)은 venue 를 안 쓴다.
-DEPLOY_FILES=(server.py runtime/__init__.py runtime/gateway.py runtime/robot_backend.py
+# 저장소와 같은 배치의 부분집합이다 — 저장소 루트에서 tar 로 담아 로봇의 $ROBOT_DIR 에 같은 경로로 푼다.
+# core/catalog.py 는 일부러 뺐다: 로봇(--robot)은 UI 도 venue 도 없다.
+DEPLOY_FILES=(app.py runtime/__init__.py runtime/gateway.py runtime/robot_backend.py
               runtime/relay_backend.py runtime/rc_backend.py runtime/rc_serial.py
-              runtime/clip_len.py runtime/session_log.py gateway_config.yaml motions.yaml
+              runtime/clip_len.py runtime/session_log.py
+              config/solo/gateway_config.yaml config/solo/motions.yaml
               core/__init__.py core/ports.py core/stage.py)
 
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no)
@@ -148,7 +148,7 @@ start_gateway() {
   rexec "tmux kill-session -t $SESSION 2>/dev/null; \
     tmux new-session -d -s $SESSION \"export K1_GATEWAY_TOKEN='$K1_ROBOT_TOKEN'; \
       source /opt/ros/jazzy/setup.bash; source /root/ros2_ws/install/setup.bash; \
-      cd $ROBOT_DIR; exec python3 server.py --robot --https --port $GATEWAY_PORT --ready-only\"" >/dev/null
+      cd $ROBOT_DIR; exec python3 app.py --robot --https --port $GATEWAY_PORT --ready-only\"" >/dev/null
   for _ in $(seq 1 15); do
     gateway_healthy "$SSH_HOST" && return 0
     sleep 1
@@ -211,14 +211,14 @@ cmd_status() {
     warn "로봇에 SSH 불가 (${SSH_HOSTS[*]}) — 로봇이 꺼져 있거나 네트워크 문제"
   fi
   section "4. PC relay"
-  if pgrep -f "server.py --relay" >/dev/null; then ok "실행 중"; else info "실행 중 아님"; fi
+  if pgrep -f "app.py --relay" >/dev/null; then ok "실행 중"; else info "실행 중 아님"; fi
   echo
 }
 
 cmd_stop() {
   load_secrets
   section "정리"
-  if pkill -f "server.py --relay" 2>/dev/null; then ok "PC relay 종료"; else info "PC relay 실행 중 아니었음"; fi
+  if pkill -f "app.py --relay" 2>/dev/null; then ok "PC relay 종료"; else info "PC relay 실행 중 아니었음"; fi
   if find_ssh_host; then
     rexec "tmux kill-session -t $SESSION 2>/dev/null" >/dev/null 2>&1 || true
     ok "로봇 gateway 종료"
@@ -284,7 +284,7 @@ cmd_run() {
   exec env \
            K1_RELAY_TOKEN="$K1_ROBOT_TOKEN" \
            K1_GATEWAY_TOKEN="$K1_UI_TOKEN" \
-    python3 "$HERE/server.py" --relay "https://$relay_host:$GATEWAY_PORT" \
+    python3 "$HERE/app.py" --relay "https://$relay_host:$GATEWAY_PORT" \
       --https --port "$RELAY_PORT" --ready-only
 }
 
