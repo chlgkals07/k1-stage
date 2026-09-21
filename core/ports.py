@@ -15,8 +15,9 @@ RcFleetBackend. 이름도 파일도 서로 달라도 State 는 이 모양만 안
 다섯 백엔드는 전부 `stop()` 이라서 실제를 따랐다 — 이름을 바꾸려면 백엔드 다섯과 호출부를 같이 고쳐야 하고,
 그건 이 계약을 문서화하는 일과 다른 일이다.
 
-이 파일은 로봇 컨테이너에도 배포된다(server.py 가 최상단에서 import 한다). run.sh 의 DEPLOY_FILES 에
-있어야 하고, test_server_tools 의 test_deploy_list_covers_imports 가 그걸 지킨다.
+이 파일은 로봇 컨테이너에도 배포된다(core/stage.py 가 import 하고 server.py 가 stage 를 import 한다).
+run.sh 의 DEPLOY_FILES 에 core/ports.py 가 있어야 하고, test_server_tools 의
+test_deploy_list_covers_core_imports_transitively 가 그걸 전이 의존까지 따라가며 지킨다.
 """
 
 from __future__ import annotations

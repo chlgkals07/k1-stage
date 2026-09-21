@@ -211,6 +211,33 @@ class DeployListTest(unittest.TestCase):
         self.assertTrue(needed, "의존 모듈을 하나도 못 찾았다 — 정규식이 깨졌다")
         self.assertFalse(needed - deploy, f"배포 목록에서 빠짐: {sorted(needed - deploy)}")
 
+    def test_deploy_list_covers_core_imports_transitively(self):
+        """`from core.stage import …` 는 위 정규식(`from (\\w+) import`)에 안 걸린다 — 점 앞에서 끊긴다.
+        그래서 core/stage.py 를 배포 목록에서 빼도 위 테스트는 초록이었다 (변이로 확인). 로봇에서
+        server.py 가 import 에러로 안 뜨는, 이 저장소에서 두 번 실제로 났던 그 사고다.
+
+        core 는 앱 폴더의 링크로 보이고(../core), 로봇에는 core/ 가 진짜 디렉터리로 간다.
+        core/stage.py 가 다시 core.ports 를 import 하므로 **전이적으로** 따라간다.
+        """
+        import re
+        root = GATEWAY_CONFIG.parent
+        deploy = set(re.search(r"DEPLOY_FILES=\((.*?)\)",
+                               (root / "run.sh").read_text(), re.S).group(1).split())
+        top_level = re.compile(r"^from core\.(\w+) import", re.M)   # 들여쓴 늦은 import 는 제외
+        todo = [m for m in top_level.findall((root / "server.py").read_text())]
+        self.assertTrue(todo, "server.py 가 core 를 하나도 import 하지 않는다 — 정규식이 깨졌거나 구조가 바뀌었다")
+        needed, seen = {"core/__init__.py"}, set()
+        while todo:
+            mod = todo.pop()
+            if mod in seen:
+                continue
+            seen.add(mod)
+            needed.add(f"core/{mod}.py")
+            todo += top_level.findall((root / "core" / f"{mod}.py").read_text())
+        self.assertFalse(needed - deploy, f"배포 목록에서 빠짐: {sorted(needed - deploy)}")
+        self.assertIn("stage", seen)     # 이 테스트가 실제로 stage 를 봤다
+        self.assertIn("ports", seen)     # 그리고 stage 가 끌어오는 ports 까지 따라갔다
+
     def test_deploy_list_files_exist(self):
         root = GATEWAY_CONFIG.parent
         import re

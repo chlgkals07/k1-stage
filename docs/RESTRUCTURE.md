@@ -430,7 +430,7 @@ UI 목록이 transport 에 전혀 의존하지 않게 만들면 지뢰가 사라
 | 계획 | 실제 | 이유 |
 |---|---|---|
 | `adapters/` 로 파일 이동 | **보류** | 아래 참고 |
-| 루트 `ports.py` 한 벌 | **앱마다 한 벌**(동일 사본) | 로봇에 평평하게 배포된다. 루트에 두면 로봇에 `../ports.py` 를 따로 실어야 하고 `run.sh` 의 tar·md5 경로가 바뀐다. 두 사본이 갈라지는지는 `tests/` 와 preflight 가 본다. 7단계에서 한 벌이 된다 |
+| 루트 `ports.py` 한 벌 | **앱마다 한 벌**(동일 사본) → **6단계에서 `core/ports.py` 한 벌로** | (5단계 당시) 로봇에 평평하게 배포된다. 루트에 두면 로봇에 `../ports.py` 를 따로 실어야 하고 `run.sh` 의 tar·md5 경로가 바뀐다. 두 사본이 갈라지는지는 `tests/` 와 preflight 가 본다. 7단계에서 한 벌이 된다 |
 | `Transport.close()` | **`stop()`** | 다섯 백엔드가 전부 `stop()` 이다. 이름을 바꾸려면 백엔드 다섯과 호출부를 같이 고쳐야 하는데 그건 계약을 문서화하는 일과 다른 일이다. `stop_motion()`(로봇을 세운다)과 헷갈리는 이름이라는 점은 `ports.py` 에 적었다 |
 | `rescan() -> dict[str, bool]` | **`list[str]`** | 실제 `RcFleetBackend.rescan()` 이 이름 리스트를 돌려준다 |
 | `SupportsDiscovery` = `connect_check` + `rescan` | 그대로 | solo 의 `RcBackend` 는 `connect_check` 만 있어 대상이 아니다(라디오 하나라 재탐색할 게 없다). 이 경계를 테스트가 못박는다 |
@@ -468,7 +468,7 @@ UI 목록이 transport 에 전혀 의존하지 않게 만들면 지뢰가 사라
 **남은 것:** 정책을 모르는 호출(`State(MockBackend())` 만 쓰는 옛 테스트들)은 `api_allowlist=None` 이라 교집합을
 안 한다 — 옛 동작 그대로다. 운영 경로(`main()`)는 항상 정책을 넘기고 `MainBootTest` 가 그 경로를 탄다.
 
-### 6단계 — `core/stage.py` 추출
+### ✅ 6단계 — `core/stage.py` 추출 (완료)
 
 `server.py` 의 `State` 클래스를 들어낸다. **로직은 안 바꾼다.** 옮기고 의존성만 끊는다.
 
@@ -487,6 +487,71 @@ class Stage:
 
 **리스크**: 중. **얻는 것**: 도메인 테스트가 HTTP·파일시스템 없이 밀리초로 돈다.
 느린 테스트는 안 돌리게 되므로, 빨라지면 더 많이 쓰게 된다.
+
+**출발점의 측정:** `State` 는 410줄·메서드 21개였고, 두 앱의 `State` 를 메서드 단위로 대조하니
+**20개가 글자 하나까지 같고 다른 건 하나씩**이었다 — solo 의 `set_rc_mode`(Wi-Fi↔RC 토글)와 group 의
+`rescan_rc`(플릿 재탐색). 나머지 384줄이 도메인이다. 계획서가 7단계에서 말한 "차이는 배선뿐"이 여기서 이미
+확인됐다.
+
+**한 것:**
+
+- `core/stage.py` — 공통 20개 메서드를 **글자 그대로** 옮겼다. 손으로 옮기지 않고 스크립트로 추출했고, 치환은
+  정확히 한 번씩 일치하는지 단언했다. 끊은 앱 의존은 일곱 가지다: `load_catalog` · `llm_motions` ·
+  `load_presets` · `media_files` · `clip_len`+`CLIPS` · `SessionLog` · (solo) `RcBackend`+`HERE`.
+  `pyflakes` 가 정의 안 된 이름 0건을 확인한다 — 하나라도 남겼으면 여기서 잡힌다
+- 서버의 `State(Stage)` 는 이름·시그니처를 그대로 두고 **로더를 값이 아니라 함수로** 꽂는다. 테스트가
+  `server.MEDIA` · `server.PRESETS` · `server.CLIPS` 를 바꿔 끼우고 `/dance` 가 실행 중에 프리셋을 저장하기
+  때문이다. 덕분에 기존 테스트 약 170건이 **한 줄도 안 고치고** 통과했다 — 3단계에서 안전망을 먼저 세운 이유다.
+  앱 고유 메서드(`set_rc_mode` / `rescan_rc`)는 서브클래스에 남았다. 어댑터를 아는 일이라 `core` 에 못 둔다
+- `server.py` 는 solo 1093줄 → 718줄, group 1056줄 → 681줄로 줄었다
+- `ports.py` 를 `core/ports.py` 로 옮겼다. `core/stage.py` 가 그걸 import 하므로 같은 곳에 있어야 하고,
+  앱마다 한 벌씩 두던 사본이 **한 벌**이 됐다
+- 앱 폴더의 `core` 는 `../core` 로 가는 **심볼릭 링크**다. PC 에서는 `import core` 가 그대로 되고,
+  `run.sh` 의 `tar` 는 링크를 통과해 진짜 파일을 담아 로봇에는 `core/` 가 진짜 디렉터리로 풀린다.
+  `run.sh` 를 안 고치고 파일 이름만 목록에 더하면 된다
+- 배포 목록에 `core/__init__.py` · `core/ports.py` · `core/stage.py` 를 넣었다. `core/catalog.py` 는 일부러
+  뺐다 — 로봇(`--robot`)은 venue 를 안 쓴다
+
+**보상 — 도메인 테스트가 파일·HTTP·서버 없이 돈다:** `tests/test_stage.py` 18건이 **0.012초**다. 같은
+종류의 시나리오를 다루던 `test_dance` 는 29건에 1.4초였고 임시 디렉터리·프리셋 JSON·음원 파일·`fake_mp4` 가
+필요했다. 지금은 람다 몇 개다. 예를 들어 잠금 해제 타이머의 길이는 `clip_seconds=lambda s: 4.0` 하나로 시험한다.
+
+**검증:**
+
+- 변경 전 커밋과 같은 시나리오 16단계(패드 허용·목록 밖·운영자·없는 동작·정지·무대 시작 실패·화면 상태 등)를
+  양쪽 서버에 보내 응답을 비교했다 — solo·group 모두 **16/16 동일**
+- 변이 테스트 15개를 `core` 테스트만으로 전부 잡는다(앱 쪽 테스트가 대신 잡아 주는 것을 배제하려고 그것만
+  돌렸다). 처음엔 2개가 살아남았고 둘 다 테스트의 결함이었다: ① 가짜 `load_presets` 가 **같은 dict 객체**를
+  돌려줘서 "생성 때 한 번 읽음" 변이가 만든 스냅샷도 테스트가 제자리에서 바꾼 값을 봤다(진짜는 파일을 읽어 매번
+  새 dict 를 만든다 — 가짜가 현실보다 관대했다), ② 무대 중 관객 명령 차단을 검사하는 core 테스트가 없었다
+- **로봇 배포 경로를 실제 방식대로 시험했다.** `run.sh` 의 `DEPLOY_FILES` 를 그 파일에서 읽어 `cd $HERE && tar cf -
+  | tar xf -` 로 풀었다: 13개가 실리고 `core/` 는 진짜 디렉터리이며 md5 가 전부 일치한다. 그 디렉터리에서
+  `import server` 가 되고(`core` · `core.ports` · `core.stage` 로드, `core.catalog` 는 미로드),
+  **ROS 만 가짜로 바꾼 채 `--robot` 의 `main()` 이 `State` 를 만들고 끝까지 돈다** — 처음 시험은 `backend.start()`
+  에서 죽어 `State` 를 만들기 전에 끝났으므로 이 구멍을 따로 막았다
+- 배포 목록 테스트에 구멍이 있었다: `from core.stage import …` 는 기존 정규식(`from (\\w+) import`)에 안
+  걸려서 **`core/stage.py` 를 배포 목록에서 빼도 테스트가 초록**이었다(로봇에서 `server.py` 가 안 뜨는, 이 저장소에서
+  두 번 실제로 났던 그 사고). 실제로 빼 보고 확인한 뒤 `core/` 하위 임포트를 **전이적으로** 따라가는 테스트를 넣었고,
+  `stage` · `ports` · `__init__` 세 가지를 하나씩 빼 보니 전부 잡는다
+- `test_wiring.py`: 서버의 `State` 가 `Stage` 의 메서드를 다시 정의하면(= 도메인이 두 벌이 되면) 잡는다. 실제로 복사본을
+  넣어 확인했다
+
+**계획과 달라진 곳:**
+
+| 계획 | 실제 | 이유 |
+|---|---|---|
+| `Stage(catalog, policy, venue, transports, primary)` | 인자 이름이 다르다(`load_presets` · `media_files` · `clip_seconds` · `clip_exists` …) | 계획서 초안은 policy·venue 를 통째로 넘기는 모양이었는데, `State` 가 실제로 쓰는 것은 파일 로더 셋과 클립 조회 둘이었다. 필요한 것만 받는다 |
+| `switch_transport(name)` 로 일반화 | **`set_rc_mode(on)` 을 서브클래스에 그대로** | 어댑터를 만드는 일이라 `core` 에 못 두고, 일반화는 두 앱이 합쳐지는 7단계의 일이다. 지금 일반화하면 로직을 바꾸는 것이다 |
+| 루트 `ports.py` | `core/ports.py` | `core/stage.py` 가 import 하므로 같은 패키지에 있어야 한다. 7단계에서 루트에 `app.py` 가 생기면 옮길 수 있다 |
+| `adapters/` 이동 | **여전히 보류** | 5단계의 이유가 그대로다 — 두 앱의 `rc_serial.py` 가 다르다(드리프트 2번, `main` 에서 처리) |
+
+**한계 — 확인하지 못한 것:**
+
+- **GNU tar 로는 확인하지 않았다.** 이 Mac 에는 bsdtar 뿐이다. 링크된 디렉터리를 지나는 명시 경로를 일반 파일로 담는 것은
+  두 구현 모두의 표준 동작이지만 직접 돌려 보지는 않았다. Linux PC 에서 `run.sh --deploy` 의 md5 대조가 통과하는지가 그 확인이다
+- 실제 로봇 컨테이너에서 띄워 본 것은 아니다. ROS 만 가짜로 바꾼 로봇 모양 디렉터리까지다
+- `Stage` 가 아직 `time.time()` 을 직접 부른다(시계 주입 안 함). TTL 시험은 `stage_set_at` 을 과거로 돌려서 한다. 시계를 주입하면 더
+  깔끔하지만 그건 로직 변경이라 안 했다
 
 ### 7단계 — `app.py --mode` 로 두 앱 통합
 

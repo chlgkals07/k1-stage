@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 
 import server
-from ports import MotionResult, SupportsDiscovery, SupportsDuration, SupportsPrepare, Transport
+from core.ports import MotionResult, SupportsDiscovery, SupportsDuration, SupportsPrepare, Transport
 from rc_backend import RcBackend
 from test_rc_backend import FakeSerial
 from relay_backend import RelayBackend

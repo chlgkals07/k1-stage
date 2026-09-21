@@ -94,16 +94,19 @@ class PresetLocationTest(unittest.TestCase):
 
 
 class RobotDeployTest(unittest.TestCase):
-    def test_server_does_not_import_core_at_top_level(self):
-        """로봇 컨테이너에는 core/ 가 없다 — 배포 목록(DEPLOY_FILES)은 평평한 .py 파일뿐이다.
+    def test_server_imports_only_the_core_modules_the_robot_receives(self):
+        """로봇에는 core/stage.py · core/ports.py 가 간다(State 의 부모와 그 계약). core/catalog.py 는 안 간다.
 
-        server.py 최상단에서 core 를 import 하면 로봇에서 server.py 가 import 에러로 안 뜬다.
-        배포 목록이 어긋났을 때 실제로 두 번 났던 사고와 같은 모양이다. 로봇은 venue 를 안
-        쓰므로(--robot 은 UI 가 없다) 쓰는 자리에서 늦게 불러온다.
+        로봇(--robot)은 UI 가 없어 venue 를 안 쓴다. 그래서 catalog 는 최상단이 아니라 쓰는 자리에서
+        늦게 불러온다 — 최상단에서 import 하면 로봇에서 server.py 가 import 에러로 안 뜬다.
+        배포 목록이 어긋났을 때 실제로 두 번 났던 사고와 같은 모양이다.
+        (배포 목록이 이 임포트를 다 덮는지는 test_server_tools 가 본다.)
         """
         source = (HERE / "server.py").read_text()
-        top_level = re.findall(r"^(?:from|import)\s+(\w+)", source, re.M)
-        self.assertNotIn("core", top_level)
+        self.assertNotRegex(source, r"(?m)^from core import|^import core\b")   # 패키지 통째 import 금지
+        top_level_core = set(re.findall(r"(?m)^from core\.(\w+) import", source))
+        self.assertEqual(top_level_core - {"catalog"}, top_level_core)          # catalog 는 최상단 금지
+        self.assertTrue({"stage", "ports"} <= top_level_core, top_level_core)
         self.assertIn("def _catalog", source)   # 늦은 import 가 실제로 그 자리에 있다
 
     def test_robot_mode_skips_venue_entirely(self):

@@ -74,13 +74,13 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 
 ```
 k1-stage/
-├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 189 tests
-├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 149 tests
+├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 194 tests
+├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 153 tests
 ├── web/           두 앱이 같이 쓰는 프론트 — 관객 화면 2장 · k1.js · base/tool.css · themes/
-├── core/          설정 정합 검증 — 어댑터를 모른다. 하드웨어 없이 돈다
+├── core/          도메인 — 무대 상태기계(stage) · 백엔드 계약(ports) · 설정 검증(catalog). 어댑터를 모른다
 ├── config/        행사별 설정 — venues/<행사>/ (패드 12칸 · 프리셋 · 오프셋)
 ├── tools/         출발 전 점검 — preflight.py
-├── tests/         core/ 의 테스트 26개 — 저장소 루트에서 `python3 -m unittest discover -s tests -t .`
+├── tests/         core/ 의 테스트 44개 — 저장소 루트에서 `python3 -m unittest discover -s tests -t .`
 ├── rc_link/       라디오 Lua·믹서 패치·SD 백업·왕복 벤치
 └── robot/         ai_sapiens 변경분 (원본 · 현행 · patch)
 ```

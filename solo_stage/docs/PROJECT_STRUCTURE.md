@@ -14,16 +14,16 @@ solo_stage/
 ├── motions.yaml              # 동작 카탈로그
 ├── gateway_config.yaml       # api·llm allowlist, stop/entry state, ROS endpoint
 │                             # (패드 12칸·무대 프리셋은 ../config/venues/<행사>/ — 행사마다 바뀌는 것)
-├── server.py                 # HTTPS UI, stage 상태기계, 무대 싱크, backend 선택
+├── server.py                 # HTTPS UI, backend 선택, State 배선 (상태기계·무대 싱크는 core/stage.py)
 ├── relay_backend.py          # PC→robot HTTPS relay
 ├── robot_backend.py          # robot ROS 2 transport
 ├── rc_backend.py · rc_serial.py  # RC 폴백 경로 (PC→USB→라디오→ELRS)
 ├── gateway.py                # 실행 정책·lifecycle·정지·cooldown
-├── ports.py                  # 백엔드 계약(Protocol) — Transport · SupportsPrepare · SupportsDuration · SupportsDiscovery
+├── core -> ../core           # 저장소 루트 core/ 로 가는 링크. 도메인(stage) · 백엔드 계약(ports) · 설정 검증(catalog)
 ├── clip_len.py               # sim 클립 길이 → 잠금 타이밍 기준
 ├── session_log.py            # JSONL 세션 로그
 ├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal …)
-└── test_*.py                 # Python 단위 테스트 (189개)
+└── test_*.py                 # Python 단위 테스트 (194개)
 ```
 
 비밀값은 리포지토리에 두지 않는다 — `~/.k1/secrets.env` (chmod 600).
@@ -45,7 +45,7 @@ solo_stage/
 `mv` 하지 않은 채 `run.sh`의 `ROBOT_DIR`만 고치면 빈 디렉터리에 배포되고 gateway 는 옛
 코드를 계속 돌린다. 둘은 반드시 같이 바꾼다.
 
-PC와 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 11개: 서버·백엔드·`ports.py` 와 정책·카탈로그 yaml).
+PC와 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 13개: 서버·백엔드, 정책·카탈로그 yaml, 그리고 `core/` 세 개).
 목록은 `run.sh` 의 `DEPLOY_FILES` 가 정본이다 — 여기에 베껴 적으면 또 썩는다(실제로 코드는 10개인데 문서는 6개였다).
 `server.py` 가 import 하는 모듈이 목록에서 빠지면 로봇에서 gateway 가 안 뜨는데, `test_server_tools` 의
 `test_deploy_list_covers_imports` 가 그걸 지킨다.
