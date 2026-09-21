@@ -1,6 +1,6 @@
 """ROS 2 transport for the K1 motion gateway.
 
-This module is deliberately imported only for ``server.py --robot`` so mock
+This module is deliberately imported only for ``app.py --robot`` so mock
 and unit-test workflows do not need a ROS installation.
 """
 

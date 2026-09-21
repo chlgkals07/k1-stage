@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """K1 무대 운영 서버 — 버튼(preview→실행) · display 무대 화면 · dance 싱크.
 
-  아이패드(/pad) ──버튼──> 이 서버 ──> MotionBackend(mock/robot/relay) ──> 로봇
+  아이패드(/pad) ──버튼──> 이 서버 ──> Transport(mock/robot/relay/rc/fleet) ──> 로봇
   TV(/display)   ──폴링──> stage 상태 (idle/preview/executing/dance)
 
 음성·LLM 경로는 제거됐다. `source="llm"` 요청은 안전하게 거부한다.
 
 표준 라이브러리 + pyyaml 만 쓴다.
-  python3 server.py            # http 8000 (mock)
-  python3 server.py --https    # https 8443
+  python3 app.py                       # solo 모드, http 8000 (mock)
+  python3 app.py --https               # https 8443
+  python3 app.py --mode fleet --mock   # 라디오 플릿 모드, 라디오 없이
 """
 
 from __future__ import annotations

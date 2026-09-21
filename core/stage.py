@@ -12,11 +12,10 @@
 **의존은 안쪽으로만 흐른다.** core/ 는 adapters 를 import 하지 않는다 — 하드웨어 없이 테스트가 돌아야 한다.
 표준 라이브러리와 core.ports 밖의 것은 전부 생성자 인자다(Stage.__init__ 참고).
 
-server.py 의 State(Stage) 가 이 앱의 파일·어댑터를 꽂고, 앱마다 다른 메서드 하나씩(solo 의 set_rc_mode,
-group 의 rescan_rc)만 갖는다. 나머지 20개 메서드는 두 앱에서 글자 하나까지 같았다 — 그게 계획서가 말한
-"차이는 배선뿐"이다.
+app.py 의 State(Stage) 가 파일·어댑터를 꽂고, 모드마다 다른 메서드 하나씩(solo 의 set_rc_mode,
+fleet 의 rescan_rc)만 갖는다. 나머지 20개 메서드는 두 앱에서 글자 하나까지 같았다 — 그래서 하나가 됐다.
 
-이 파일은 로봇 컨테이너에도 배포된다(server.py 가 최상단에서 import 한다). run.sh 의 DEPLOY_FILES 에
+이 파일은 로봇 컨테이너에도 배포된다(app.py 가 최상단에서 import 한다). run.sh 의 DEPLOY_FILES 에
 core/__init__.py · core/stage.py · core/ports.py 가 있어야 한다.
 """
 

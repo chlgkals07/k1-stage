@@ -1,6 +1,6 @@
 """RcBackend — 명령을 Wi-Fi 게이트웨이 대신 유선 RC(ELRS)로 보내는 백엔드.
 
-경로: server.py → RcBackend → rc_serial(USB) → K1PC.lua → L1 펄스 → ELRS → 로봇.
+경로: app.py → RcBackend → rc_serial(USB) → K1PC.lua → L1 펄스 → ELRS → 로봇.
 로봇 쪽에는 정상 RC 입력으로 보이므로 로봇 소프트웨어 수정이 없다.
 
 relay 경로에서 로봇 게이트웨이가 해주던 busy/cooldown 검사는 RC 경로에 없으므로
