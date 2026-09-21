@@ -22,7 +22,7 @@ RELAY_PREFERRED=192.168.60.1            # 운영 경로 (로봇 AP)
 GATEWAY_PORT=8443
 RELAY_PORT=18444
 CONTAINER=ai_sapiens
-# 로봇 컨테이너 안 경로다. PC 폴더를 solo_stage 로 바꿨어도 여기는 그대로 둔다 —
+# 로봇 컨테이너 안 경로다. PC 폴더 이름을 바꿔 왔어도 여기는 그대로 둔다 —
 # 먼저 로봇에서 mv 하지 않고 이 값만 바꾸면 빈 디렉터리에 배포하고, 로봇 gateway 는
 # 옛 코드를 계속 돌린다. 바꾸려면 로봇에서 mv 한 뒤 이 값을 같이 고친다.
 ROBOT_DIR=/root/motion_llm
@@ -36,7 +36,7 @@ SESSION=motion-gateway
 # core/catalog.py 는 일부러 뺐다: 로봇(--robot)은 UI 도 venue 도 없다.
 DEPLOY_FILES=(app.py runtime/__init__.py runtime/gateway.py runtime/robot_backend.py
               runtime/relay_backend.py runtime/rc_backend.py runtime/rc_serial.py
-              runtime/clip_len.py runtime/session_log.py
+              runtime/clip_len.py runtime/session_log.py runtime/rc_fleet.py
               config/solo/gateway_config.yaml config/solo/motions.yaml
               core/__init__.py core/ports.py core/stage.py)
 

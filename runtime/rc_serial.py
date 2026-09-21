@@ -27,11 +27,15 @@ BY_ID_PATTERN = "/dev/serial/by-id/usb-OpenTX_Radiomaster_Pocket*"
 FALLBACK_PATTERN = "/dev/ttyACM*"
 KEEPALIVE_SEC = 0.2
 DEFAULT_TIMEOUT = 3.0
+# TLM/CHK 응답을 기다리는 시간. 단일 로봇은 1.5초를 실측했고, 플릿(라디오 여러 대)은 0.6초를 쓴다 —
+# 0.6 은 "전파 구간 미검증"이라 통일하지 않고 모드가 고른다(app.py 의 MODES).
+TLM_TIMEOUT_S = 1.5
 
 
 class RcSerial:
-    def __init__(self, port_pattern=None):
+    def __init__(self, port_pattern=None, tlm_timeout_s=TLM_TIMEOUT_S):
         self.port_pattern = port_pattern
+        self.tlm_timeout_s = tlm_timeout_s
         self._fd = None
         self._buf = b""
         self._lock = threading.Lock()        # 명령 왕복 직렬화
@@ -195,8 +199,8 @@ class RcSerial:
     def damp(self):
         return self._command("DAMP", ("OK DAMP",))
 
-    def _keyvalue_command(self, cmd, prefix, timeout_s=1.5):
-        res = self._command(cmd, (prefix,), timeout_s=timeout_s)
+    def _keyvalue_command(self, cmd, prefix):
+        res = self._command(cmd, (prefix,), timeout_s=self.tlm_timeout_s)
         if not res.get("ok"):
             return {"ok": False, "msg": res.get("msg", "")}
         parsed = {"ok": True}

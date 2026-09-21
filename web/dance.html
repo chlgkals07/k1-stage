@@ -101,7 +101,7 @@ function fill(sel,pairs,empty){
 
 async function loadMotions(){
   const d=await (await fetch('/motions')).json();
-  catalog=d.all||[]; backendName=d.backend||''; allowed=new Set(d.llm_allowed||[]);
+  catalog=d.all||[]; backendName=d.backend||''; allowed=new Set(d.llm_allowed||[]); danceStates=d.dance_motions||[];
   const b=$('#badge');
   b.textContent={mock:'MOCK · 기록만',relay:'RELAY · PC→ROBOT',robot:'ROBOT · 직접 연결'}[backendName]||'MODE 확인 불가';
   b.className='badge '+(backendName||'');
@@ -109,11 +109,12 @@ async function loadMotions(){
   // 클립은 카탈로그 state 이름으로 서빙된다.
   fill($('#clip'), [['','없음'], ...(d.clips||[]).map(s=>[s,s])]);
 }
-// 댄스 모드에는 무대 3종만 보인다 (2026-08-17 사용자 확정). 다른 동작은 /pad·/operator 로.
-const DANCE_STATES=['MimicNewSnuCheerHeadShort','MimicStraykidsThisAndThat','MimicBadChestpopVer2'];
+// 댄스 모드에는 이 행사의 무대 동작만 보인다 (2026-08-17 사용자 확정: 무대 3종). 목록은 서버가 준다 —
+// 프리셋이 쓰는 동작. 화면에 박아 두면 행사가 바뀔 때 앱마다 어긋난다. 다른 동작은 /pad·/operator 로.
+let danceStates=[];
 function renderMotions(){
   const sel=$('#motion'), keep=sel.value;
-  const list=catalog.filter(m=>DANCE_STATES.includes(m.state));
+  const list=catalog.filter(m=>danceStates.includes(m.state));
   fill(sel, list.map(m=>[m.state, m.ko+'  ('+m.state+')']), '무대 동작 없음');
   if(keep&&list.some(m=>m.state===keep)) sel.value=keep;
 }
@@ -154,7 +155,9 @@ function currentPreset(){
 function applyPreset(p){
   if(!p) return;
   const set=(sel,v)=>{if([...sel.options].some(o=>o.value===v)) sel.value=v;
-    else if(v) log('프리셋 항목 없음: '+v);};
+    // 목록에 없으면 이전 값이 그대로 남는다 — 그 상태로 시작하면 "영상은 A, 로봇은 B"가
+    // 된다 (2026-08-21 실제로 겪음: 뉴진스 프리셋인데 체스트팝이 나갔다). 눈에 띄게 알린다.
+    else if(v){ sel.value=''; log('⚠ 프리셋 항목이 목록에 없음: '+v+' — 동작을 직접 고르세요'); }};
   set($('#motion'),p.motion||''); set($('#media'),p.media||''); set($('#clip'),p.clip||'');
   $('#seek').value=p.seek||0; setOffset(p.offset_ms||0);
   $('#volume').value=p.volume==null?100:p.volume; $('#volume').oninput();

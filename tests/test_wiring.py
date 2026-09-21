@@ -11,9 +11,9 @@ import unittest
 import app
 from core.stage import Stage
 
-# 이 앱에만 있는 메서드. RcBackend 를 만든다.
-# 어댑터를 아는 일이라 core 에 둘 수 없다.
-APP_ONLY = {"set_rc_mode"}
+# 이 앱에만 있는 메서드 — 모드 하나씩이다. set_rc_mode 는 RcBackend 를 만들고(solo),
+# rescan_rc 는 플릿의 능력을 묻는다(fleet). 어댑터를 아는 일이라 core 에 둘 수 없다.
+APP_ONLY = {"set_rc_mode", "rescan_rc"}
 
 
 class WiringTest(unittest.TestCase):

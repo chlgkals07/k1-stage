@@ -6,7 +6,7 @@
 동시에 나간다 — PC 쪽 시차 <1ms, 로봇 간 체감 시차는 라디오 처리 지터(~30ms) 수준.
 
 백엔드 계약(name/submit/stop_motion/status/stop + prepare/motion_duration)을
-그대로 구현하므로 server.py 의 State·dance 스케줄러는 단일 로봇 때와 동일하게 동작한다.
+그대로 구현하므로 app.py 의 State·dance 스케줄러는 단일 로봇 때와 동일하게 동작한다.
 """
 
 import glob
@@ -15,8 +15,11 @@ import re
 import subprocess
 import threading
 
-from rc_backend import RcBackend
-from rc_serial import RcSerial, BY_ID_PATTERN
+from .rc_backend import RcBackend
+from .rc_serial import RcSerial, BY_ID_PATTERN
+
+# 라디오가 여러 대라 TLM 응답을 짧게만 기다린다 (단일 로봇은 rc_serial.TLM_TIMEOUT_S).
+FLEET_TLM_TIMEOUT_S = 0.6
 
 
 BY_PATH_DIR = "/dev/serial/by-path"
@@ -70,8 +73,9 @@ def _short_name(port):
 class RcFleetBackend:
     name = "rc"
 
-    def __init__(self, motions_path, gateway_config_path=None):
+    def __init__(self, motions_path, gateway_config_path=None, clips_dir=None):
         self._motions_path = motions_path
+        self._clips_dir = clips_dir
         self._lock = threading.Lock()
         self.units = {}   # 이름 -> RcBackend
         self._last_event = {"status": "idle", "msg": "대기"}
@@ -88,7 +92,8 @@ class RcFleetBackend:
             for port in discover_ports():
                 unit_name = _short_name(port)
                 self.units[unit_name] = RcBackend(
-                    self._motions_path, serial=RcSerial(port_pattern=port))
+                    self._motions_path, clips_dir=self._clips_dir,
+                    serial=RcSerial(port_pattern=port, tlm_timeout_s=FLEET_TLM_TIMEOUT_S))
             return sorted(self.units)
 
     def connect_check(self):

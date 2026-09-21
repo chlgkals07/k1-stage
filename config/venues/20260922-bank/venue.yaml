@@ -1,7 +1,7 @@
 # 2026-09-22 산업은행 본점 시연. 사람이 고치는 파일이다 — 주석을 마음껏 달아라.
 # 서버가 쓰는 값(/dance 에서 저장하는 프리셋)은 옆의 presets.json 에 따로 쌓인다.
 #
-# 통신 사전 협의와 RC-only 운영안은 solo_stage/docs/BANK_EVENT_20260922.md 에 있다.
+# 통신 사전 협의와 RC-only 운영안은 docs/solo/BANK_EVENT_20260922.md 에 있다.
 name: 2026-09-22 산업은행 본점 시연
 date: 2026-09-22
 notes: |

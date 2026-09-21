@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""solo_stage 최종 리뷰용 엣지 케이스 실증 — 실행 중인 mock 서버를 상대로 HTTP 로 때린다.
+"""solo 모드 최종 리뷰용 엣지 케이스 실증 — 실행 중인 mock 서버를 상대로 HTTP 로 때린다.
 
 사용: python3 edge_probe.py <port>
 프리셋 파일(config/venues/<행사>/presets.json)을 건드리는 테스트는 하지 않는다 (저장 경로는 별도 검증).

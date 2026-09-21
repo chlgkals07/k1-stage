@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""로봇 k1_config 백업과 solo_stage RC 목록의 정합을 읽기 전용으로 검사한다.
+"""로봇 k1_config 백업과 solo 모드 RC 목록의 정합을 읽기 전용으로 검사한다.
 
 사용:
   python3 tools/verify_robot_rc_config.py <robot-k1_config.yaml> [motions.yaml]

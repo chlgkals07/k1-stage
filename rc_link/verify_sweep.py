@@ -20,10 +20,10 @@ import sys
 import time
 
 HERE = pathlib.Path(__file__).parent
-sys.path.insert(0, str(HERE.parent / "group_stage"))
+sys.path.insert(0, str(HERE.parent))
 
 import yaml
-from rc_serial import RcSerial
+from runtime.rc_serial import RcSerial
 
 IDENTITY_TOL = 2    # pct 모델 대비 허용 (정수 반올림 경로 차이만 허용)
 CODE_TOL = 50       # 로봇 switch_match_tolerance 와 동일
@@ -51,7 +51,7 @@ def main():
         for path in sorted(glob.glob(BY_ID_PATTERN)):
             print(path)
         return
-    motions = yaml.safe_load(open(HERE.parent / "group_stage" / "motions.yaml"))
+    motions = yaml.safe_load(open(HERE.parent / "config" / "fleet" / "motions.yaml"))
     banks = motions["rc_list"]["banks"]
 
     rc = RcSerial(port_pattern=port)

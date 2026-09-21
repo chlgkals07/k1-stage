@@ -268,16 +268,15 @@ class RealFilesTest(unittest.TestCase):
         self.assertNotIn("pad_allowlist", self.policy)
 
     def test_the_default_venue_name_is_the_same_everywhere(self):
-        """기본 venue 이름이 세 곳에 적혀 있다(두 앱의 server.py 와 preflight). 어긋나면 preflight 는 통과하는데
+        """기본 venue 이름이 두 곳에 적혀 있다(app.py 와 preflight). 어긋나면 preflight 는 통과하는데
         서버는 다른 venue 로 뜬다."""
         import re
         names = {
-            "solo": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "app.py").read_text()).group(1),
-            "group": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "group_stage" / "server.py").read_text()).group(1),
+            "app": re.search(r'DEFAULT_VENUE = "([^"]+)"', (ROOT / "app.py").read_text()).group(1),
             "preflight": re.search(r'"--venue", default="([^"]+)"', (ROOT / "tools" / "preflight.py").read_text()).group(1),
         }
         self.assertEqual(len(set(names.values())), 1, names)
-        self.assertTrue((ROOT / "config" / "venues" / names["solo"]).is_dir())
+        self.assertTrue((ROOT / "config" / "venues" / names["app"]).is_dir())
 
 
 if __name__ == "__main__":

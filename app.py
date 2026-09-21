@@ -34,15 +34,40 @@ from runtime import clip_len
 from runtime.robot_backend import RobotBackend
 from runtime.relay_backend import RelayBackend
 from runtime.rc_backend import RcBackend
+from runtime.rc_fleet import RcFleetBackend
 from runtime.session_log import SessionLog
-from core.ports import Transport
+from core.ports import SupportsDiscovery, Transport
 from core.stage import Stage
 
 HERE = Path(__file__).parent
-# 모드별 데이터(카탈로그·정책)는 config/<모드>/ 에 있다. 지금은 solo 하나다.
-CONFIG = HERE / "config" / "solo"
+# 앱은 하나고 모드가 둘이다. 모드가 정하는 것은 (1) 어느 데이터를 읽나 — 카탈로그·정책은 로봇의
+# RC 다이얼 덤프가 달라 config/<모드>/ 에 따로 있다 — (2) 어느 화면을 여나 (3) 기본 포트·테마·백엔드.
+# 새 모드는 이 표에 한 줄과 config/<모드>/ 폴더를 더하는 것으로 시작한다.
+MODES = {
+    "solo": {   # 로봇 1대, Wi-Fi(relay)/유선 RC. 관객 패드가 있다
+        "landing": "/pad", "theme": "shape", "port": 8000, "port_https": 8443,
+        "pages": {"/operator": "operator.html", "/display": "display.html",
+                  "/pad": "pad.html", "/dance": "dance.html"},
+    },
+    "fleet": {  # 라디오 여러 대로 군무. 관객 패드가 없고 운영자가 기본 화면이다
+        "landing": "/operator", "theme": "shape-gym", "port": 19000, "port_https": 19000,
+        "pages": {"/operator": "operator.html", "/display": "display.html",
+                  "/dance": "dance.html"},
+    },
+}
+DEFAULT_MODE = "solo"
+CONFIG = HERE / "config" / DEFAULT_MODE      # select_mode() 가 main() 에서 바꾼다
 CATALOG = CONFIG / "motions.yaml"
 GATEWAY_CONFIG = CONFIG / "gateway_config.yaml"
+
+
+def select_mode(name):
+    """모드가 읽을 데이터와 화면 표를 정한다. main() 의 첫 일이고, 테스트는 기본(solo)으로 돌린다."""
+    global CONFIG, CATALOG, GATEWAY_CONFIG
+    CONFIG = HERE / "config" / name
+    CATALOG = CONFIG / "motions.yaml"
+    GATEWAY_CONFIG = CONFIG / "gateway_config.yaml"
+    Handler.mode = name
 CERT = HERE / ".cert.pem"
 KEY = HERE / ".key.pem"
 # 동작 sim 렌더 클립. tools/render_motion.py 가 굽고 /display 가 튼다.
@@ -234,12 +259,24 @@ class State(Stage):
             return {"ok": True, "backend": self.backend.name,
                     "msg": f"기본 경로({self.backend.name}) 복귀"}
 
+    def rescan_rc(self):
+        """USB 재탐색 — 지금 꽂혀 있는 Pocket 전부와 다시 연결한다 (fleet 모드)."""
+        with self.lock:
+            if not isinstance(self.backend, SupportsDiscovery):
+                return {"ok": True, "backend": self.backend.name,
+                        "msg": f"{self.backend.name} 백엔드 (재탐색 대상 아님)"}
+            units = self.backend.rescan()
+            ok, msg = self.backend.connect_check()
+            self.session_log.write("rc_rescan", ok=ok, units=units, msg=msg)
+            return {"ok": ok, "backend": self.backend.name, "msg": msg}
+
 
 # ───────────────────────────────────────────────────────────── HTTP
 
 class Handler(BaseHTTPRequestHandler):
     state: State = None  # main 에서 주입
     theme: str = "shape"  # 활성 테마 이름 (main 에서 주입)
+    mode: str = DEFAULT_MODE  # select_mode() 가 주입 — 화면 표와 기본 화면이 여기서 갈린다
     # HTTP/1.1 이라야 relay 가 연결을 재사용한다 (무선 링크에서 핸드셰이크 반복을 줄인다).
     # _send() 가 항상 Content-Length 를 보내므로 keep-alive 가 안전하다.
     protocol_version = "HTTP/1.1"
@@ -384,15 +421,16 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlsplit(self.path)
         path = parsed.path
         if path == "/":
-            # 음성 폰 화면 제거(2026-08-18). 옛 북마크는 관객 화면으로 보낸다.
-            # 페이지 원본은 archive/index_voice_20260818.html.
+            # 음성 폰 화면 제거(2026-08-18). 옛 북마크는 그 모드의 기본 화면으로 보낸다
+            # (solo 는 관객 패드, fleet 은 운영자).
             query = urllib.parse.urlsplit(self.path).query
             self.send_response(302)
-            self.send_header("Location", "/pad" + (f"?{query}" if query else ""))
+            self.send_header("Location", MODES[self.mode]["landing"] + (f"?{query}" if query else ""))
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
-        if path in {"/operator", "/display", "/pad", "/dance"}:
+        pages = MODES[self.mode]["pages"]
+        if path in pages:
             headers = None
             if self.state.access_token:
                 supplied = urllib.parse.parse_qs(parsed.query).get("token", [""])[0]
@@ -402,9 +440,7 @@ class Handler(BaseHTTPRequestHandler):
                     headers = {"Set-Cookie": f"k1_gateway={self.state.access_token}; Path=/; Secure; HttpOnly; SameSite=Strict"}
                 elif not self._authorized():
                     return self._send(403, {"error": "gateway authorization required"})
-            page = {"/operator": "operator.html", "/display": "display.html",
-                    "/pad": "pad.html", "/dance": "dance.html"}.get(path, "pad.html")
-            return self._send(200, (WEB / page).read_bytes(),
+            return self._send(200, (WEB / pages[path]).read_bytes(),
                               "text/html; charset=utf-8", headers)
         if not self._authorized():
             return self._send(403, {"error": "gateway authorization required"})
@@ -426,6 +462,10 @@ class Handler(BaseHTTPRequestHandler):
                 "all": st.items,
                 "llm_allowed": sorted(st.allowed),
                 "pad_allowed": st.pad_order,   # 정렬 금지 — 순서가 그리드 스펙이다
+                # /dance 가 고를 수 있는 무대 동작 = 이 행사의 프리셋이 쓰는 동작. 프리셋이 아직 없는
+                # 새 행사면 패드 동작으로 시작한다. (예전엔 dance.html 에 3개가 박혀 있었고, 앱마다 달랐다)
+                "dance_motions": sorted({p.get("motion") for p in load_presets().values()
+                                         if p.get("motion")}) or st.pad_order,
                 "clips": st.clip_states(),
                 "backend": st.backend.name,
             })
@@ -438,7 +478,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/conversation":
             return self._send(200, self.state.conversation_view())
         if path == "/status":
-            return self._send(200, self.state.status())
+            return self._send(200, {**self.state.status(), "mode": self.mode})
         return self._send(404, {"error": "not found"})
 
     def do_POST(self):
@@ -471,10 +511,15 @@ class Handler(BaseHTTPRequestHandler):
             self.state.clear_conversation()
             return self._send(200, {"ok": True})
 
-        if path == "/rc/mode":
+        if path == "/rc/mode" and self.mode == "solo":
             out = self.state.set_rc_mode(bool(payload.get("on")))
             print(f"  RC모드 {'ON 시도' if payload.get('on') else 'OFF'} → "
                   f"{out['backend']}  {out['msg']}")
+            return self._send(200 if out["ok"] else 400, out)
+
+        if path == "/rc/rescan" and self.mode == "fleet":
+            out = self.state.rescan_rc()
+            print(f"  RC 재탐색 → {out['msg']}")
             return self._send(200 if out["ok"] else 400, out)
 
         if path == "/stop":
@@ -582,7 +627,7 @@ def ensure_cert():
         subprocess.run(
             ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
              "-keyout", str(KEY), "-out", str(CERT), "-days", "365",
-             "-subj", "/CN=k1-solo-stage"],
+             "-subj", "/CN=k1-stage"],
             check=True, capture_output=True)
         print(f"  자체 서명 인증서 생성됨: {CERT.name}")
         return True
@@ -601,15 +646,20 @@ def local_ips():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--port", type=int, default=0, help="기본: http 8000 / https 8443")
-    ap.add_argument("--https", action="store_true", help="폰에서 마이크를 쓰려면 필요")
-    ap.add_argument("--robot", action="store_true", help="RobotBackend 사용 (2단계)")
+    ap.add_argument("--mode", default=DEFAULT_MODE, choices=sorted(MODES),
+                    help="solo: 로봇 1대(Wi-Fi/RC) · fleet: 라디오 여러 대 군무 (기본: solo)")
+    ap.add_argument("--port", type=int, default=0,
+                    help="기본: solo http 8000 / https 8443, fleet 19000")
+    ap.add_argument("--https", action="store_true", help="자체 서명 HTTPS 로 서빙")
+    ap.add_argument("--robot", action="store_true", help="[solo] RobotBackend 사용 (로봇 안에서)")
     ap.add_argument("--relay", metavar="URL",
                     help="PC relay 모드. 예: https://192.168.60.1:8443")
     ap.add_argument("--relay-token", default=os.environ.get("K1_RELAY_TOKEN", ""),
                     help="로봇 gateway token (기본: K1_RELAY_TOKEN)")
     ap.add_argument("--rc", action="store_true",
-                    help="RcBackend 사용 — 유선 RC(ELRS) 경로로 명령 전송")
+                    help="[solo] RcBackend 사용 — 유선 RC(ELRS) 경로로 명령 전송")
+    ap.add_argument("--mock", action="store_true",
+                    help="로봇·라디오 없이 UI/무대 흐름만 확인 (기록만 하는 가짜 백엔드). solo 는 기본이 mock")
     ap.add_argument("--gateway-token", default=os.environ.get("K1_GATEWAY_TOKEN", ""),
                     help="이 gateway의 고정 token (기본: K1_GATEWAY_TOKEN 또는 랜덤)")
     ap.add_argument("--ready-only", action="store_true",
@@ -619,11 +669,15 @@ def main():
     ap.add_argument("--no-log", action="store_true", help="세션 로그를 끈다")
     ap.add_argument("--venue", default=DEFAULT_VENUE,
                     help="행사 설정 (config/venues/ 의 폴더명). 패드 12칸과 프리셋이 여기서 온다")
-    ap.add_argument("--theme", default="shape",
-                    help="관객 화면 디자인 테마 (web/themes/ 의 폴더명)")
+    ap.add_argument("--theme", default=None,
+                    help="관객 화면 디자인 테마 (web/themes/ 의 폴더명). 기본은 모드가 정한다")
     ap.add_argument("--no-transcripts", action="store_true",
                     help="발화 원문 대신 길이만 기록 (행사장 프라이버시 모드)")
     args = ap.parse_args()
+    mode = MODES[args.mode]
+    select_mode(args.mode)
+    if args.mode == "fleet" and (args.robot or args.relay or args.rc):
+        ap.error("--robot / --relay / --rc 는 solo 모드 전용입니다 (fleet 은 라디오 전부에 직접 쏩니다)")
     if sum(map(bool, (args.robot, args.relay, args.rc))) > 1:
         ap.error("--robot / --relay / --rc 는 동시에 사용할 수 없습니다")
     if (args.robot or args.relay or args.rc) and not args.https:
@@ -631,7 +685,7 @@ def main():
     if args.relay and not args.relay_token:
         ap.error("--relay 는 --relay-token 또는 K1_RELAY_TOKEN 이 필요합니다")
 
-    port = args.port or (8443 if args.https else 8000)
+    port = args.port or (mode["port_https"] if args.https else mode["port"])
     gateway_config = yaml.safe_load(GATEWAY_CONFIG.read_text())
     if args.robot:
         backend = RobotBackend(GATEWAY_CONFIG)
@@ -641,6 +695,8 @@ def main():
                                policy.get("relay_timeout_sec", 2.0))
     elif args.rc:
         backend = RcBackend(CATALOG, GATEWAY_CONFIG, clips_dir=CLIPS)
+    elif args.mode == "fleet" and not args.mock:
+        backend = RcFleetBackend(CATALOG, clips_dir=CLIPS)
     else:
         backend = MockBackend()
     if args.robot:
@@ -656,13 +712,14 @@ def main():
                              enabled=not args.no_log)
     Handler.state = State(
         backend,
-        ready_only=args.ready_only or args.robot or bool(args.relay) or args.rc,
+        # 실제 통신 경로(로봇·relay·RC·라디오 플릿)면 학습 끝난 동작만 연다. mock 은 전부 보인다.
+        ready_only=args.ready_only or not isinstance(backend, MockBackend),
         access_token=args.gateway_token or None,
         api_allowlist=gateway_config["policy"]["api_allowlist"],
         pad_allowlist=venue["pad_grid"] if venue else None,
         session_log=session_log,
     )
-    Handler.theme = args.theme
+    Handler.theme = args.theme or mode["theme"]
     st = Handler.state
     started_at = time.monotonic()
     session_log.write("session_start", backend=backend.name,

@@ -4,13 +4,19 @@ import pathlib
 import time
 import unittest
 
-import rc_fleet
-from rc_backend import RcBackend
-from rc_fleet import RcFleetBackend, _short_name
-from test_rc_backend import KNOWN_A, KNOWN_B, FakeSerial
+from runtime import rc_fleet
+from runtime.rc_backend import RcBackend, load_rc_map
+from runtime.rc_fleet import RcFleetBackend, _short_name
+from tests.test_rc_backend import FakeSerial
 
-HERE = pathlib.Path(__file__).parent
-MOTIONS = HERE / "motions.yaml"
+HERE = pathlib.Path(__file__).parent.parent
+# 플릿 모드는 자기 카탈로그·다이얼 덤프를 쓴다(config/fleet/) — solo 의 것과 다르다.
+MOTIONS = HERE / "config" / "fleet" / "motions.yaml"
+# 2026-08-18 로봇 백업 k1_config 기준 앵커
+KNOWN_A = "MimicNewWelcoming001A142"   # 뱅크 A, code 200 → slot 1
+KNOWN_B = "MimicSnuCheer"              # 뱅크 B, code 203 → slot 4
+KNOWN_B_SLOT = 4
+KNOWN_NOTE_DUR = "MimicNewMacarena001A545"   # note "29.5s..."
 
 
 class StampedSerial(FakeSerial):
@@ -126,3 +132,43 @@ class TestFleet(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FleetDialTest(unittest.TestCase):
+    """플릿 모드의 다이얼 덤프(config/fleet/motions.yaml)가 solo 것과 다르다는 사실을 못박는다."""
+
+    def test_known_slots(self):
+        mapping, _ = load_rc_map(MOTIONS)
+        self.assertEqual((mapping[KNOWN_A]["bank"], mapping[KNOWN_A]["slot"]), ("A", 1))
+        self.assertEqual((mapping[KNOWN_B]["bank"], mapping[KNOWN_B]["slot"]), ("B", KNOWN_B_SLOT))
+
+    def test_duration_from_note_and_cooldown(self):
+        mapping, cooldowns = load_rc_map(MOTIONS)
+        self.assertAlmostEqual(mapping[KNOWN_NOTE_DUR]["duration_sec"], 29.5)
+        self.assertEqual(cooldowns.get("MimicBadChestpopVer2"), 8.0)
+
+
+class FleetTlmTimeoutTest(unittest.TestCase):
+    def test_a_fleet_waits_less_for_telemetry_than_a_single_radio(self):
+        """1.5s(단일)와 0.6s(플릿)는 통일하지 않고 모드가 고른다. 통일하면 둘 중 하나의 실측이 사라진다."""
+        from runtime.rc_serial import RcSerial, TLM_TIMEOUT_S
+        self.assertEqual(RcSerial.__init__.__defaults__[-1], TLM_TIMEOUT_S)
+        self.assertEqual(TLM_TIMEOUT_S, 1.5)
+        self.assertEqual(rc_fleet.FLEET_TLM_TIMEOUT_S, 0.6)
+
+    def test_fleet_units_are_built_with_the_fleet_timeout(self):
+        made = []
+
+        class Recorder(FakeSerial):
+            def __init__(self, port_pattern=None, tlm_timeout_s=None):
+                super().__init__()
+                made.append((port_pattern, tlm_timeout_s))
+
+        orig = (rc_fleet.discover_ports, rc_fleet.RcSerial)
+        rc_fleet.discover_ports = lambda: ["/dev/serial/by-path/pci-0:usb-0:1.2:1.0"]
+        rc_fleet.RcSerial = Recorder
+        try:
+            RcFleetBackend(MOTIONS)
+        finally:
+            rc_fleet.discover_ports, rc_fleet.RcSerial = orig
+        self.assertEqual(made, [("/dev/serial/by-path/pci-0:usb-0:1.2:1.0", 0.6)])

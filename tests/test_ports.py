@@ -23,6 +23,7 @@ import app
 from core.ports import MotionResult, SupportsDiscovery, SupportsDuration, SupportsPrepare, Transport
 from runtime.rc_backend import RcBackend
 from tests.test_rc_backend import FakeSerial
+from tests.test_rc_fleet import make_fleet
 from runtime.relay_backend import RelayBackend
 from runtime.robot_backend import RobotBackend
 
@@ -35,6 +36,7 @@ CAPS_EXPECTED = {
     "relay": (False, False, False),
     "robot": (False, False, False),
     "rc":    (True,  True,  False),     # connect_check 는 있지만 rescan 이 없다 — 단일 라디오라 재탐색할 게 없다
+    "fleet": (True,  True,  True),      # 라디오를 꽂고 뺄 수 있어 재탐색이 의미가 있다
 }
 
 
@@ -45,6 +47,7 @@ def backends():
         "relay": RelayBackend("https://127.0.0.1:1", "token", POLICY["api_allowlist"]),
         "robot": RobotBackend(app.GATEWAY_CONFIG),
         "rc": RcBackend(app.CATALOG, serial=FakeSerial()),
+        "fleet": make_fleet(2),      # make_fleet 이 USB 열거를 비운다 — 개발 PC 의 라디오를 열지 않는다
     }
 
 
