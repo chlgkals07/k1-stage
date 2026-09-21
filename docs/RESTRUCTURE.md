@@ -362,7 +362,7 @@ group 이 부팅할 때마다 `AttributeError` 로 죽었다. 테스트가 전�
 하지 않고 venue 를 건너뛰는 구조를 테스트가 지키지만, 실제 컨테이너에서 띄워 본 것은 아니다.
 `run.sh --deploy` 는 배포 파일 목록이 바뀌지 않았으므로 그대로다.
 
-### 5단계 — `ports.py` + `adapters/` 이동
+### 5단계 — `ports.py` + `adapters/` 이동 (`ports.py` 는 완료 · `adapters/` 이동은 보류)
 
 ```python
 class Transport(Protocol):
@@ -409,6 +409,64 @@ UI 목록이 transport 에 전혀 의존하지 않게 만들면 지뢰가 사라
 동작" 거부는 `submit()` 이 하면 된다 — 주석이 원하던 바로 그 동작이다.
 
 **리스크**: 낮음 (런타임 동작 100% 동일해야 함).
+
+**한 것 (5-a — 이 단계의 실질):**
+
+- `ports.py` — `Transport` · `SupportsPrepare` · `SupportsDuration` · `SupportsDiscovery` · `MotionResult`.
+  다섯 백엔드(Mock · Relay · Robot · Rc · RcFleet)가 이미 갖고 있던 모양을 이름 붙여 문서화했다
+- `State` 의 `hasattr(backend, "prepare")` · `"motion_duration"` · (group) `"rescan"` 을 `isinstance` 로
+  바꿨다. 같은 질문에 의도가 이름으로 드러난다. 이 백엔드들에서 두 방식의 답이 같다는 것을 테스트가 직접 확인한다
+- **`api_allowlist` 지뢰를 없앴다.** 예전에는 `backend.api_allowlist` 속성이 있을 때만 `State` 가 패드·LLM
+  목록을 교집합했다. 그래서 `RcBackend` 는 그 속성이 **없어야만** 올바르게 동작했고, 누가 일관성을 위해
+  추가하면 관객 패드가 조용히 줄어들었다. 이제 `State` 가 정책에서 받은 `api_allowlist` 인자로 자른다.
+  UI 목록은 백엔드가 무엇을 갖든 같다 — RC 로 토글해도 패드 12개가 그대로라는 사용자 확정(2026-08-18)이
+  주석이 아니라 구조로 보장된다
+- `ports.py` 를 배포 목록(`run.sh` 의 `DEPLOY_FILES`)에 넣었다. `server.py` 가 최상단에서 import 하므로
+  로봇에도 있어야 한다. 넣기 전에 `test_deploy_list_covers_imports` 가 `['ports.py']` 를 잡는 것을
+  확인했다 — 안전장치가 실제로 작동한다
+
+**계획과 달라진 곳 — 이유와 함께:**
+
+| 계획 | 실제 | 이유 |
+|---|---|---|
+| `adapters/` 로 파일 이동 | **보류** | 아래 참고 |
+| 루트 `ports.py` 한 벌 | **앱마다 한 벌**(동일 사본) | 로봇에 평평하게 배포된다. 루트에 두면 로봇에 `../ports.py` 를 따로 실어야 하고 `run.sh` 의 tar·md5 경로가 바뀐다. 두 사본이 갈라지는지는 `tests/` 와 preflight 가 본다. 7단계에서 한 벌이 된다 |
+| `Transport.close()` | **`stop()`** | 다섯 백엔드가 전부 `stop()` 이다. 이름을 바꾸려면 백엔드 다섯과 호출부를 같이 고쳐야 하는데 그건 계약을 문서화하는 일과 다른 일이다. `stop_motion()`(로봇을 세운다)과 헷갈리는 이름이라는 점은 `ports.py` 에 적었다 |
+| `rescan() -> dict[str, bool]` | **`list[str]`** | 실제 `RcFleetBackend.rescan()` 이 이름 리스트를 돌려준다 |
+| `SupportsDiscovery` = `connect_check` + `rescan` | 그대로 | solo 의 `RcBackend` 는 `connect_check` 만 있어 대상이 아니다(라디오 하나라 재탐색할 게 없다). 이 경계를 테스트가 못박는다 |
+
+**`adapters/` 이동을 보류한 이유 — 둘 다 실제로 확인한 것:**
+
+1. **`rc_serial.py` 가 두 앱에서 다르다**(TLM 타임아웃 1.5s 대 0.6s, 드리프트 2번). 공유 위치로 옮기면 지금
+   하나를 골라야 하는데, 이 브랜치가 안 고치기로 한 것이다(`main` 에서 한다)
+2. **로봇 컨테이너가 `robot_backend` · `relay_backend` · `gateway` 를 평평하게 실행한다.** 셋은 solo 에만
+   있고 배포 목록에 있다. 루트 `adapters/` 로 옮기면 `run.sh` 의 tar·md5·컨테이너 안 경로, 그리고
+   `server.py` 의 `sys.path` 가 다 바뀐다. 로봇 없이는 끝까지 검증할 수 없는 변경이다
+
+파일을 옮기는 것은 이 브랜치의 원칙 5("구조는 기억해야 하는 것을 틀릴 수 없는 것으로 바꿀 때만 값을
+한다 — 효과가 없는 재배치는 그냥 파일 옮기기다")에도 걸린다. `ports.py` 로 얻을 것은 이미 얻었다.
+**드리프트 2번이 `main` 에서 정리되고 나면 그때 옮긴다.**
+
+**검증:**
+
+- 변경 전 커밋과 API 를 비교했다 — `/motions` · `/status` · `/dance/presets` 가 solo·group 모두 동일하고,
+  관객 경로(허용 동작은 실행, 목록 밖 동작은 거부)의 응답도 같다
+- 변이 테스트: 지뢰를 되살리기(패드·LLM 각각), 정책 교집합 지우기, PREP 를 모든/어떤 백엔드에도 안
+  걸기, 동작 길이 무시, `max` 제거, 능력 이름 바꾸기, `Protocol` 정의에서 멤버 지우기 — solo 13개를
+  전부 잡고, group 전용 6개(`rescan_rc` 의 능력 검사 포함)도 전부 잡는다.
+  처음엔 `Transport` 에서 `stop` 을 지워도 통과했다(각 백엔드가 `stop` 을 갖는지만 보고 `Protocol` 이 그걸
+  요구하는지는 안 봤다). `ProtocolDefinitionTest` 를 넣어 막았다
+- 로봇 배포 모양(배포 파일 11개만 평평하게, `core/` · `config/` · `web/` 없음)을 재현해 `import server` 와
+  `--robot` 의 `main()` 진입을 확인했다. `ports` 는 로드되고 `core` 는 안 로드되며, ROS 가 없는 지점
+  (`No module named 'rclpy'`)에서 죽는다. 실제 로봇 컨테이너에서 끝까지 띄운 것은 아니다
+
+**낡은 테스트 정리:** `test_no_api_allowlist_attr` 는 지뢰 자체("이 속성이 있으면 안 된다")를 요구하고
+있어 지웠다. 그 의도는 `test_ports.UiListsDoNotDependOnTheBackendTest` 가 불변식으로 지킨다. 가짜 백엔드의
+아무도 안 읽는 `api_allowlist` 속성도 지웠고, 이름은 "api_allowlist 교집합"인데 카탈로그 필터만 검사하던
+`test_pad_list_intersects_api_allowlist` 가 실제로 그걸 검사하게 했다.
+
+**남은 것:** 정책을 모르는 호출(`State(MockBackend())` 만 쓰는 옛 테스트들)은 `api_allowlist=None` 이라 교집합을
+안 한다 — 옛 동작 그대로다. 운영 경로(`main()`)는 항상 정책을 넘기고 `MainBootTest` 가 그 경로를 탄다.
 
 ### 6단계 — `core/stage.py` 추출
 

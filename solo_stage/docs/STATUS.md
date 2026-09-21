@@ -20,7 +20,7 @@
 | gateway `llm_allowlist` | **21개** — 코드에 살아 있으나 **이 경로로 들어오는 요청은 없다** (`voice-llm-dev` 브랜치용) |
 | 정지 목표 상태 | **`Velocity`** (Damping일 때만 `ReadyPose`) |
 | RC 다이얼 | 2뱅크 × 20슬롯 = **40**. CH5로 뱅크, CH11로 슬롯 |
-| 테스트 | `solo_stage` 172 · `group_stage` 130 · 루트 `tests/` 26 |
+| 테스트 | `solo_stage` 189 · `group_stage` 149 · 루트 `tests/` 26 |
 
 실기 검증된 인사 3종은 `MimicWaveHand`(손 흔들기) · `MimicBowNavel`(배꼽 인사) ·
 `MimicBadChestpopVer2`(체스트팝)이다. 개소식에서 패드 12개 중 10개가 정상 동작했다
@@ -248,7 +248,6 @@ PC 쪽 `motions.yaml`의 rc_list는 이미 v2로 바꿔 뒀다.
 | 로봇 sim2real 소스 | 로봇의 `/root/ros2_ws` | API authority와 Mimic 실행 상태머신 |
 | 그 관리본 | `k1-stage/robot/` | 로봇에 적용·빌드한 변경의 원본·현행·patch |
 
-로봇과 동기화가 필요한 파일은 6개다: `server.py` `gateway.py` `robot_backend.py`
-`relay_backend.py` `gateway_config.yaml` `motions.yaml`.
-`run.sh`가 md5로 대조하고 `--deploy`로 동기화한다. `static/`은 PC relay가 서빙하므로
+로봇과 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 11개). 목록을 여기 베껴 적지 않는다 —
+코드는 10개인데 문서는 6개라고 적고 있었다. `run.sh`가 md5로 대조하고 `--deploy`로 동기화한다. `static/`은 PC relay가 서빙하므로
 로봇에 없어도 된다. **이 경로에서 실제로 두 번 사고가 났다.**

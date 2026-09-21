@@ -101,11 +101,11 @@ class RcBackend:
         motions_path = Path(motions_path)
         self.rc_map, self._cooldowns = load_rc_map(motions_path)
         self._clips = motions_path.parent / "static" / "clips"
-        # 주의: api_allowlist **속성**은 일부러 두지 않는다 — 두면 State 가 패드·LLM
-        # 목록을 여기에 교집합해 버린다. UI(패드 12개·운영자 목록)는 primary 경로와
-        # 완전히 동일해야 한다 (2026-08-18 사용자 확정). 다만 운영자 화면은 목록을
-        # /status 의 api_allowlist 에서 읽으므로, 그 값만 primary 와 같게 실어 보낸다.
-        # 이게 없으면 RC 모드로 켜는 순간 수동 실행 버튼이 통째로 사라진다.
+        # 운영자 화면은 수동 실행 목록을 /status 의 api_allowlist 에서 읽는다. 그 값을 primary 와
+        # 같게 실어 보낸다 — 이게 없으면 RC 모드로 켜는 순간 수동 실행 버튼이 통째로 사라진다.
+        # (예전에는 이 이름의 **속성**을 일부러 두지 않아야 했다. State 가 backend.api_allowlist 가
+        # 있으면 패드·LLM 목록을 거기에 교집합했기 때문이다. 지금은 State 가 정책에서 받은 값으로
+        # 자르므로 백엔드가 무엇을 갖든 UI 목록은 같다 — test_ports.py 가 지킨다.)
         self._api_allowlist = []
         if gateway_config_path:
             try:

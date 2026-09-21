@@ -56,7 +56,7 @@ Radiomaster RC
 - PC RelayBackend → 로봇 gateway 무선 `/status` 조회
 - 아이패드 → PC relay → 로봇 gateway → `MimicWaveHand` 실행
 - 개소식 현장 운영 (패드 12개 중 10개 정상, 나머지 2개는 로봇 config 미등록)
-- Python 단위 테스트 통과 (현재 172개 — [STATUS.md](STATUS.md) 참고)
+- Python 단위 테스트 통과 (현재 189개 — [STATUS.md](STATUS.md) 참고)
 - locomotion 유지용 teleop velocity passthrough를 로봇 sim2real 소스에 배포하고 패키지 빌드 완료
 - 로봇에서 `ReadyPose/Velocity → API`, Mimic 완료 후 최신 RC 속도 복귀, heartbeat 정지 우선순위 C++ 테스트 25/25 통과
 

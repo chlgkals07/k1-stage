@@ -166,11 +166,6 @@ class TestRcBackend(unittest.TestCase):
         self.assertEqual(st["gateway"], "ready")
         self.assertEqual(st["stop_state"], "Velocity")
 
-    def test_no_api_allowlist_attr(self):
-        # UI 목록(패드 12개·운영자)은 primary 와 동일해야 한다 — 교집합 축소 금지
-        b = make_backend()
-        self.assertFalse(hasattr(b, "api_allowlist"))
-
     def test_obs_verification(self):
         from rc_backend import _model_us, _parse_obs, _verify_obs
         entry = {"slot": 1, "bank": "A"}
@@ -298,7 +293,6 @@ class TestServerIntegration(unittest.TestCase):
 
         class HookBackend:
             name = "rc"
-            api_allowlist = {KNOWN_B}
 
             def submit(self, motion, source, reason):
                 events.append(("submit", motion, time.monotonic()))

@@ -74,8 +74,8 @@ cd group_stage && python3 server.py --mock     # 라디오 없이 UI 확인
 
 ```
 k1-stage/
-├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 172 tests
-├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 130 tests
+├── solo_stage/    로봇 1대 운영 서버 (정본). Wi-Fi + RC 폴백. 189 tests
+├── group_stage/   RC 군무 서버 — 연결된 Pocket 전부 동시 발사. 149 tests
 ├── web/           두 앱이 같이 쓰는 프론트 — 관객 화면 2장 · k1.js · base/tool.css · themes/
 ├── core/          설정 정합 검증 — 어댑터를 모른다. 하드웨어 없이 돈다
 ├── config/        행사별 설정 — venues/<행사>/ (패드 12칸 · 프리셋 · 오프셋)

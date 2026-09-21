@@ -19,10 +19,11 @@ solo_stage/
 ├── robot_backend.py          # robot ROS 2 transport
 ├── rc_backend.py · rc_serial.py  # RC 폴백 경로 (PC→USB→라디오→ELRS)
 ├── gateway.py                # 실행 정책·lifecycle·정지·cooldown
+├── ports.py                  # 백엔드 계약(Protocol) — Transport · SupportsPrepare · SupportsDuration · SupportsDiscovery
 ├── clip_len.py               # sim 클립 길이 → 잠금 타이밍 기준
 ├── session_log.py            # JSONL 세션 로그
 ├── tools/                    # 진단·검증 스크립트 (check_modes, edge_probe, rehearsal …)
-└── test_*.py                 # Python 단위 테스트 (172개)
+└── test_*.py                 # Python 단위 테스트 (189개)
 ```
 
 비밀값은 리포지토리에 두지 않는다 — `~/.k1/secrets.env` (chmod 600).
@@ -44,12 +45,10 @@ solo_stage/
 `mv` 하지 않은 채 `run.sh`의 `ROBOT_DIR`만 고치면 빈 디렉터리에 배포되고 gateway 는 옛
 코드를 계속 돌린다. 둘은 반드시 같이 바꾼다.
 
-PC와 동기화가 필요한 파일은 6개다.
-
-```text
-server.py  gateway.py  robot_backend.py  relay_backend.py
-gateway_config.yaml  motions.yaml
-```
+PC와 동기화가 필요한 파일은 `run.sh` 의 `DEPLOY_FILES` 다(지금 11개: 서버·백엔드·`ports.py` 와 정책·카탈로그 yaml).
+목록은 `run.sh` 의 `DEPLOY_FILES` 가 정본이다 — 여기에 베껴 적으면 또 썩는다(실제로 코드는 10개인데 문서는 6개였다).
+`server.py` 가 import 하는 모듈이 목록에서 빠지면 로봇에서 gateway 가 안 뜨는데, `test_server_tools` 의
+`test_deploy_list_covers_imports` 가 그걸 지킨다.
 
 `run.sh`가 md5로 대조하고 `--deploy`로 동기화한다.
 `static/`은 PC relay가 서빙하므로 로봇에 없어도 된다.

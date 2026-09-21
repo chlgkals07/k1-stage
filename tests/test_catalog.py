@@ -226,8 +226,10 @@ class RealFilesTest(unittest.TestCase):
         self.assertNotIn("pad_allowlist", self.policy)
 
     def test_apps_share_identical_catalog_and_policy(self):
-        """앱 폴더에 남긴 사본 둘(로봇에 평평하게 배포돼서 못 옮겼다)이 갈라지면 드리프트다."""
-        for name in ("motions.yaml", "gateway_config.yaml"):
+        """앱 폴더에 남긴 사본(로봇에 평평하게 배포돼서 못 옮겼다)이 갈라지면 드리프트다.
+
+        ports.py 는 계약이라 두 앱이 다른 계약을 들고 있으면 안 된다. 한 벌로 합치는 건 7단계다."""
+        for name in ("motions.yaml", "gateway_config.yaml", "ports.py"):
             with self.subTest(name):
                 self.assertEqual((ROOT / "solo_stage" / name).read_bytes(),
                                  (ROOT / "group_stage" / name).read_bytes())

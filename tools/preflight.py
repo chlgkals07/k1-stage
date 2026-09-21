@@ -26,7 +26,7 @@ from core import catalog  # noqa: E402
 
 # 두 앱이 같은 사본을 가져야 하는 파일. 로봇에 평평하게 배포돼 앱 폴더에 남아 있는 것들이다.
 # 한쪽만 고치면 드리프트다 — 8/31 에 display.html 이 그렇게 갈렸다.
-SHARED_COPIES = ("motions.yaml", "gateway_config.yaml")
+SHARED_COPIES = ("motions.yaml", "gateway_config.yaml", "ports.py")
 
 
 def check_apps_agree(apps):

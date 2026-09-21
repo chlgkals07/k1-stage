@@ -37,6 +37,7 @@ import yaml
 import clip_len
 from rc_fleet import RcFleetBackend
 from session_log import SessionLog
+from ports import SupportsDiscovery, SupportsDuration, SupportsPrepare, Transport
 
 HERE = Path(__file__).parent
 CATALOG = HERE / "motions.yaml"
@@ -206,24 +207,31 @@ class MockBackend:
 # ───────────────────────────────────────────────────────────── 상태
 
 class State:
-    def __init__(self, backend, ready_only=False, access_token=None, llm_allowlist=None,
-                 session_log=None, pad_allowlist=None, pad_llm_exclude=None):
+    def __init__(self, backend: Transport, ready_only=False, access_token=None, llm_allowlist=None,
+                 session_log=None, pad_allowlist=None, pad_llm_exclude=None, api_allowlist=None):
         self.backend = backend
         # RC 모드 토글의 복귀 지점. 토글은 self.backend 만 바꾼다.
         self._primary_backend = backend
         self.ready_only = ready_only
         self.items, self.by_state = load_catalog()
         self.allowed = {m["state"] for m in llm_motions(self.items, ready_only)}
-        if hasattr(backend, "api_allowlist"):
-            self.allowed &= backend.api_allowlist
+        # 관객·모델에게 여는 목록은 api_allowlist 를 넘을 수 없다. **정책에서 온 값**으로 자른다.
+        # 예전에는 backend.api_allowlist 속성이 있을 때만 잘랐다. 그래서 RcBackend 는 그 속성을 일부러
+        # 갖지 않아야만 올바르게 동작했고(있으면 패드가 조용히 줄어든다), 누가 일관성을 위해 추가하면
+        # 사고가 났다. 이제 UI 목록은 백엔드가 무엇을 갖고 있는지와 무관하다 — RC 로 토글해도 목록이
+        # 그대로인 것(2026-08-18 사용자 확정)이 구조로 보장된다.
+        # None 이면 안 자른다: 정책을 모르는 호출(테스트의 State(MockBackend()) 등)은 옛 동작 그대로다.
+        api = set(api_allowlist) if api_allowlist is not None else None
+        if api is not None:
+            self.allowed &= api
         if llm_allowlist is not None:
             self.allowed &= set(llm_allowlist)
         # 관객용(/pad) 버튼 목록. self.allowed 와 같은 방식으로 교집합을 취해
         # 카탈로그·api 밖 항목이 오타 하나로 조용히 통과하는 일이 없게 한다.
         self.pad_allowed = set(pad_allowlist or ())
         self.pad_allowed &= set(self.by_state)
-        if hasattr(backend, "api_allowlist"):
-            self.pad_allowed &= backend.api_allowlist
+        if api is not None:
+            self.pad_allowed &= api
         # 패드 그리드 번호 = 목록 순서 (2026-08-18 사용자 확정 스펙).
         # set 은 순서를 잃으므로 원본 순서를 따로 보존해 API 로 내보낸다.
         self.pad_order = [s for s in (pad_allowlist or ()) if s in self.pad_allowed]
@@ -419,7 +427,7 @@ class State:
     def rescan_rc(self):
         """USB 재탐색 — 지금 꽂혀 있는 Pocket 전부와 다시 연결한다."""
         with self.lock:
-            if not hasattr(self.backend, "rescan"):
+            if not isinstance(self.backend, SupportsDiscovery):
                 return {"ok": True, "backend": self.backend.name,
                         "msg": f"{self.backend.name} 백엔드 (재탐색 대상 아님)"}
             units = self.backend.rescan()
@@ -495,14 +503,14 @@ class State:
             self._dance_timer.start()
             # RC 백엔드는 발사 엣지 지터를 줄이려고 1.5s 전에 PREP(code 0, 무해)를 건다.
             # 실패해도 발사는 RUN 으로 폴백되므로 best-effort 다.
-            if motion and hasattr(self.backend, "prepare"):
+            if motion and isinstance(self.backend, SupportsPrepare):
                 self._dance_prep_timer = threading.Timer(
                     max(0.0, motion_at - time.time() - 1.5),
                     self._prep_dance_motion, (motion, self._dance_gen))
                 self._dance_prep_timer.daemon = True
                 self._dance_prep_timer.start()
             motion_dur = None
-            if motion and hasattr(self.backend, "motion_duration"):
+            if motion and isinstance(self.backend, SupportsDuration):
                 motion_dur = self.backend.motion_duration(motion)
             media_len = None
             try:
@@ -996,6 +1004,7 @@ def main():
         backend,
         ready_only=args.ready_only or not args.mock,
         access_token=args.gateway_token or None,
+        api_allowlist=gateway_config["policy"]["api_allowlist"],
         llm_allowlist=gateway_config["policy"].get("llm_allowlist"),
         pad_allowlist=venue["pad_grid"] if venue else None,
         pad_llm_exclude=gateway_config["policy"].get("pad_llm_exclude"),

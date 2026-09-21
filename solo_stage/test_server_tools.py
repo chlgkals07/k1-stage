@@ -14,7 +14,6 @@ GATEWAY_CONFIG = Path(__file__).parent / "gateway_config.yaml"
 
 class Backend:
     name = "relay"
-    api_allowlist = {"MimicWaveHand", "MimicBowNavel", "MimicBadChestpopVer2"}
 
     def status(self):
         return {}
@@ -180,9 +179,14 @@ class PadAllowlistTest(unittest.TestCase):
         self.assertTrue(self._state().play("MimicBadChestpopVer2", source="manual")["ok"])
 
     def test_pad_list_intersects_api_allowlist(self):
-        """오타 하나로 카탈로그 밖 항목이 조용히 통과하지 않는다."""
+        """오타 하나로 카탈로그 밖 항목이 조용히 통과하지 않는다. api_allowlist 밖 항목도 마찬가지다.
+
+        api_allowlist 는 백엔드의 속성이 아니라 정책에서 State 로 직접 들어온다."""
         st = State(Backend(), ready_only=True, pad_allowlist=["NotARealMotion"])
         self.assertEqual(st.pad_allowed, set())
+        st = State(Backend(), ready_only=True, pad_allowlist=["MimicWaveHand", "MimicBowNavel"],
+                   api_allowlist=["MimicWaveHand"])
+        self.assertEqual(st.pad_allowed, {"MimicWaveHand"})
 
 
 # PadSessionTest 는 음성 세션과 함께 제거됨 (2026-08-18)
